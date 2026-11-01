@@ -91,7 +91,7 @@ export function FabricCanvas({
 
       const checkBleed = () => {
         const safe = product.safe_zone_bounds;
-        const designs = canvas.getObjects().filter((obj) => obj.name === "design");
+        const designs = canvas.getObjects().filter((obj) => (obj as any).name === "design");
         const outside = designs.some((obj) => {
           const box = obj.getBoundingRect();
           return (
@@ -109,7 +109,7 @@ export function FabricCanvas({
 
       const syncSelection = () => {
         const obj = canvas.getActiveObject();
-        if (!obj || obj.name !== "design") {
+        if (!obj || (obj as any).name !== "design") {
           setSelectedKind("none");
           return;
         }
@@ -117,7 +117,7 @@ export function FabricCanvas({
           setSelectedKind("text");
           setTextDraft({
             content: "text" in obj ? String((obj as { text?: string }).text ?? "") : "",
-            fontFamily: String(obj.fontFamily ?? "Nunito"),
+            fontFamily: String((obj as any).fontFamily ?? "Nunito"),
             fill: String(obj.fill ?? "#333333"),
           });
         } else {
@@ -135,7 +135,7 @@ export function FabricCanvas({
 
       const applyLaser = (enabled: boolean) => {
         canvas.getObjects().forEach((obj) => {
-          if (obj.name === "design" && obj instanceof fabric.FabricImage) {
+          if ((obj as any).name === "design" && obj instanceof fabric.FabricImage) {
             obj.filters = enabled
               ? [
                   new fabric.filters.Grayscale(),
@@ -220,7 +220,7 @@ export function FabricCanvas({
         applyLaser,
         deleteSelected: () => {
           const obj = canvas.getActiveObject();
-          if (obj && obj.name === "design") {
+          if (obj && (obj as any).name === "design") {
             canvas.remove(obj);
             checkBleed();
           }
@@ -228,7 +228,7 @@ export function FabricCanvas({
         exportMockup,
         exportJson: () => JSON.stringify(canvas.toJSON()),
         hasDesign: () =>
-          canvas.getObjects().some((obj) => obj.name === "design"),
+          canvas.getObjects().some((obj) => (obj as any).name === "design"),
       });
 
       canvas.requestRenderAll();
@@ -248,7 +248,7 @@ export function FabricCanvas({
       ?.getObjects()
       .forEach((obj) => {
         const fabric = fabricRef.current;
-        if (!fabric || obj.name !== "design" || !(obj instanceof fabric.FabricImage)) {
+        if (!fabric || (obj as any).name !== "design" || !(obj instanceof fabric.FabricImage)) {
           return;
         }
         obj.filters = laserPreview
