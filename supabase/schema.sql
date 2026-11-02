@@ -1,0 +1,102 @@
+-- BOO Custom Creations — run in the Supabase SQL editor.
+-- Storage bucket: inquiry-assets (private)
+
+create extension if not exists "pgcrypto";
+
+create sequence if not exists public.inquiry_ref_seq start with 1004;
+
+create table if not exists public.inquiries (
+  id uuid primary key default gen_random_uuid(),
+  reference_code text unique not null default ('BOO-' || nextval('public.inquiry_ref_seq')::text),
+  product_slug text not null,
+  product_name text not null,
+  customer_name text not null,
+  customer_email text,
+  customer_phone text not null,
+  material text,
+  quantity integer not null default 1 check (quantity > 0),
+  notes text,
+  status text not null default 'pending'
+    check (status in ('pending', 'quoted', 'fulfilled', 'cancelled')),
+  quoted_price numeric(12, 2),
+  mockup_path text,
+  production_paths text[] default '{}',
+  canvas_json jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  cleanup_requested_at timestamptz
+);
+
+create index if not exists inquiries_status_idx on public.inquiries (status, created_at desc);
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists inquiries_set_updated_at on public.inquiries;
+create trigger inquiries_set_updated_at
+before update on public.inquiries
+for each row execute procedure public.set_updated_at();
+
+-- Marks a row for storage cleanup. The Next.js admin action also deletes
+-- files immediately. If pg_net is available, the trigger POSTs to the app webhook.
+create or replace function public.flag_inquiry_storage_cleanup()
+returns trigger
+language plpgsql
+security definer
+as $$
+declare
+  webhook_url text := current_setting('app.settings.cleanup_webhook_url', true);
+  webhook_secret text := current_setting('app.settings.cleanup_webhook_secret', true);
+begin
+  if new.status in ('fulfilled', 'cancelled')
+     and old.status is distinct from new.status then
+    new.cleanup_requested_at := now();
+
+    if webhook_url is not null and webhook_secret is not null
+       and exists (select 1 from pg_extension where extname = 'pg_net') then
+      perform net.http_post(
+        url := webhook_url,
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || webhook_secret
+        ),
+        body := jsonb_build_object('id', new.id, 'status', new.status)
+      );
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists inquiries_cleanup_on_terminal on public.inquiries;
+create trigger inquiries_cleanup_on_terminal
+before update of status on public.inquiries
+for each row execute procedure public.flag_inquiry_storage_cleanup();
+
+alter table public.inquiries enable row level security;
+
+drop policy if exists "service role full access" on public.inquiries;
+create policy "service role full access"
+on public.inquiries
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+-- Storage
+insert into storage.buckets (id, name, public)
+values ('inquiry-assets', 'inquiry-assets', false)
+on conflict (id) do nothing;
+
+drop policy if exists "service role storage" on storage.objects;
+create policy "service role storage"
+on storage.objects
+for all
+using (bucket_id = 'inquiry-assets' and auth.role() = 'service_role')
+with check (bucket_id = 'inquiry-assets' and auth.role() = 'service_role');

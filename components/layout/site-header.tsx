@@ -14,7 +14,7 @@ const LINKS = [
 
 export function SiteHeader() {
   const pathname = usePathname();
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) return null;
 
   return (
     <header className="sticky top-0 z-40">

@@ -25,6 +25,7 @@ export function FabricCanvas({
   onReady: (handle: CanvasHandle) => void;
 }) {
   const hostRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<InstanceType<FabricMod["Canvas"]> | null>(null);
   const fabricRef = useRef<FabricMod | null>(null);
   const setBleedWarning = useCustomizerStore((s) => s.setBleedWarning);
@@ -40,6 +41,7 @@ export function FabricCanvas({
 
   useEffect(() => {
     let disposed = false;
+    let observer: ResizeObserver | undefined;
 
     async function boot() {
       const fabric = await import("fabric");
@@ -55,43 +57,32 @@ export function FabricCanvas({
         width: product.canvasWidth,
         height: product.canvasHeight,
         preserveObjectStacking: true,
-        backgroundColor: "#f6f3ee",
+        backgroundColor: "transparent",
         selection: true,
       });
       canvasRef.current = canvas;
 
-      const mockup = await fabric.FabricImage.fromURL(product.mockup, {
-        crossOrigin: "anonymous",
-      });
-      mockup.set({
-        selectable: false,
-        evented: false,
-        name: "mockup",
-        originX: "left",
-        originY: "top",
-      });
-      mockup.scaleToWidth(product.canvasWidth);
-      canvas.add(mockup);
-      canvas.sendObjectToBack(mockup);
-
-      const zone = new fabric.Rect({
-        left: product.safe_zone_bounds.left,
-        top: product.safe_zone_bounds.top,
-        width: product.safe_zone_bounds.width,
-        height: product.safe_zone_bounds.height,
-        fill: "rgba(50,183,178,0.06)",
-        stroke: "#32B7B2",
-        strokeDashArray: [10, 7],
-        strokeWidth: 2,
-        selectable: false,
-        evented: false,
-        name: "safe-zone",
-      });
-      canvas.add(zone);
+      const fit = () => {
+        const width = Math.max(
+          280,
+          Math.round(wrapRef.current?.clientWidth || product.canvasWidth),
+        );
+        const zoom = width / product.canvasWidth;
+        canvas.setDimensions({ width, height: width });
+        canvas.setZoom(zoom);
+        if (canvas.wrapperEl) {
+          canvas.wrapperEl.style.width = `${width}px`;
+          canvas.wrapperEl.style.height = `${width}px`;
+        }
+        canvas.requestRenderAll();
+      };
+      fit();
+      observer = new ResizeObserver(fit);
+      if (wrapRef.current) observer.observe(wrapRef.current);
 
       const checkBleed = () => {
         const safe = product.safe_zone_bounds;
-        const designs = canvas.getObjects().filter((obj) => (obj as any).name === "design");
+        const designs = canvas.getObjects().filter(isDesign);
         const outside = designs.some((obj) => {
           const box = obj.getBoundingRect();
           return (
@@ -101,15 +92,12 @@ export function FabricCanvas({
             box.top + box.height > safe.top + safe.height + 1
           );
         });
-        zone.set("stroke", outside ? "#e11d48" : "#32B7B2");
-        zone.set("strokeDashArray", outside ? [6, 4] : [10, 7]);
         setBleedWarning(outside);
-        canvas.requestRenderAll();
       };
 
       const syncSelection = () => {
         const obj = canvas.getActiveObject();
-        if (!obj || (obj as any).name !== "design") {
+        if (!obj || !isDesign(obj)) {
           setSelectedKind("none");
           return;
         }
@@ -135,7 +123,7 @@ export function FabricCanvas({
 
       const applyLaser = (enabled: boolean) => {
         canvas.getObjects().forEach((obj) => {
-          if ((obj as any).name === "design" && obj instanceof fabric.FabricImage) {
+          if (isDesign(obj) && obj instanceof fabric.FabricImage) {
             obj.filters = enabled
               ? [
                   new fabric.filters.Grayscale(),
@@ -161,9 +149,9 @@ export function FabricCanvas({
           top: safe.top + safe.height / 2,
           originX: "center",
           originY: "center",
-          name: "design",
-          assetId: id,
-        } as never);
+          selectable: true,
+          evented: true,
+        });
         canvas.add(image);
         canvas.setActiveObject(image);
         applyLaser(laserRef.current);
@@ -181,7 +169,8 @@ export function FabricCanvas({
           fontFamily: draft.fontFamily,
           fill: draft.fill,
           fontSize: 42,
-          name: "design",
+          selectable: true,
+          evented: true,
         });
         canvas.add(text);
         canvas.setActiveObject(text);
@@ -204,13 +193,44 @@ export function FabricCanvas({
       };
 
       const exportMockup = async () => {
-        const dataUrl = canvas.toDataURL({
-          format: "jpeg",
-          quality: 0.72,
-          multiplier: 0.55,
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        canvas.setDimensions({
+          width: product.canvasWidth,
+          height: product.canvasHeight,
         });
-        const res = await fetch(dataUrl);
-        return res.blob();
+        const overlay = canvas.toDataURL({
+          format: "png",
+          multiplier: 1,
+        });
+        fit();
+        const dest = document.createElement("canvas");
+        dest.width = product.canvasWidth;
+        dest.height = product.canvasHeight;
+        const ctx = dest.getContext("2d");
+        if (!ctx) throw new Error("Could not export mockup");
+        ctx.fillStyle = "#f6f3ee";
+        ctx.fillRect(0, 0, dest.width, dest.height);
+        const productImage = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new window.Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = product.mockup;
+        });
+        ctx.drawImage(productImage, 0, 0, dest.width, dest.height);
+        const overlayImage = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new window.Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = overlay;
+        });
+        ctx.drawImage(overlayImage, 0, 0, dest.width, dest.height);
+        return await new Promise<Blob>((resolve, reject) => {
+          dest.toBlob(
+            (blob) => (blob ? resolve(blob) : reject(new Error("blob failed"))),
+            "image/jpeg",
+            0.72,
+          );
+        });
       };
 
       onReady({
@@ -220,7 +240,7 @@ export function FabricCanvas({
         applyLaser,
         deleteSelected: () => {
           const obj = canvas.getActiveObject();
-          if (obj && (obj as any).name === "design") {
+          if (obj && isDesign(obj)) {
             canvas.remove(obj);
             checkBleed();
           }
@@ -228,7 +248,7 @@ export function FabricCanvas({
         exportMockup,
         exportJson: () => JSON.stringify(canvas.toJSON()),
         hasDesign: () =>
-          canvas.getObjects().some((obj) => (obj as any).name === "design"),
+          canvas.getObjects().some(isDesign),
       });
 
       canvas.requestRenderAll();
@@ -238,6 +258,7 @@ export function FabricCanvas({
 
     return () => {
       disposed = true;
+      observer?.disconnect();
       canvasRef.current?.dispose();
       canvasRef.current = null;
     };
@@ -248,7 +269,7 @@ export function FabricCanvas({
       ?.getObjects()
       .forEach((obj) => {
         const fabric = fabricRef.current;
-        if (!fabric || (obj as any).name !== "design" || !(obj instanceof fabric.FabricImage)) {
+        if (!fabric || !isDesign(obj) || !(obj instanceof fabric.FabricImage)) {
           return;
         }
         obj.filters = laserPreview
@@ -264,13 +285,22 @@ export function FabricCanvas({
 
   return (
     <div
-      className={`overflow-hidden rounded-[1.6rem] bg-[#f6f3ee] ring-1 ring-foreground/10 ${
-        useCustomizerStore.getState().bleedWarning ? "ring-2 ring-red-500" : ""
-      }`}
+      ref={wrapRef}
+      className="relative aspect-square w-full overflow-hidden rounded-[1.6rem] bg-[#f6f3ee] ring-1 ring-foreground/10"
     >
-      <canvas ref={hostRef} className="h-auto w-full" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={product.mockup}
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+      />
+      <canvas ref={hostRef} className="relative z-10" />
     </div>
   );
+}
+
+function isDesign(obj: { selectable?: boolean; evented?: boolean }) {
+  return obj.selectable !== false && obj.evented !== false;
 }
 
 async function fileToImageDataUrl(file: File) {

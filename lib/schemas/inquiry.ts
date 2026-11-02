@@ -11,7 +11,7 @@ export const inquirySchema = z.object({
     .optional(),
   customerPhone: z.string().min(8, "WhatsApp number helps us reply faster"),
   material: z.string().min(1, "Pick a material"),
-  quantity: z.coerce.number().int().min(1).max(500),
+  quantity: z.number().int().min(1).max(500),
   notes: z.string().max(2000).optional().or(z.literal("")),
 });
 

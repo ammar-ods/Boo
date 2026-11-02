@@ -21,7 +21,9 @@ async function hmac(message: string) {
     key,
     new TextEncoder().encode(message),
   );
-  return Buffer.from(sig).toString("hex");
+  return [...new Uint8Array(sig)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export function adminCookieName() {
