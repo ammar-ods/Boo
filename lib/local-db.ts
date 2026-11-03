@@ -105,15 +105,40 @@ export async function nextReferenceCode() {
   return `BOO-${next}`;
 }
 
+import { createAdminClient } from "@/lib/supabase/admin";
+
+// (Keep all your existing imports and helper functions above...)
+
 export async function savePublicUpload(
   folder: "orders" | "products",
   filename: string,
   bytes: Buffer,
+  contentType: string = "image/jpeg"
 ) {
   if (isProduction) {
-    throw new Error("Local file system uploads are disabled in production. Use Supabase Storage.");
+    // Upload directly to Supabase Storage in production
+    const supabase = createAdminClient();
+    const filePath = `${folder}/${filename}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("uploads")
+      .upload(filePath, bytes, {
+        contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw new Error(`Supabase storage upload failed: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("uploads")
+      .getPublicUrl(filePath);
+
+    return publicUrlData.publicUrl;
   }
-  await ensureDirs();
+
+  // Local development fallback
   const relative = `/uploads/${folder}/${filename}`;
   const full = path.join(process.cwd(), "public", relative);
   const { mkdir, writeFile } = await import("fs/promises");
