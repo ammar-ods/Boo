@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/products";
 
 const accentMap = {
@@ -32,7 +31,9 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-start justify-between gap-3">
           <h3 className="font-heading text-xl">{product.name}</h3>
           {product.is_laser_cut ? (
-            <Badge variant="secondary">Laser</Badge>
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-heading">
+              Laser
+            </span>
           ) : null}
         </div>
         <p className="text-sm text-muted-foreground">{product.tagline}</p>

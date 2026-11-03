@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/catalog/product-card";
-import { CATEGORIES, PRODUCTS, type ProductCategory } from "@/lib/products";
+import { CATEGORIES, type Product, type ProductCategory } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
 export function ProductGrid({
+  products,
   initialCategory,
 }: {
+  products: Product[];
   initialCategory?: ProductCategory;
 }) {
   const [category, setCategory] = useState<ProductCategory | "All">(
@@ -16,9 +18,9 @@ export function ProductGrid({
   const items = useMemo(
     () =>
       category === "All"
-        ? PRODUCTS
-        : PRODUCTS.filter((product) => product.category === category),
-    [category],
+        ? products
+        : products.filter((product) => product.category === category),
+    [category, products],
   );
 
   return (

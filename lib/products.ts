@@ -26,6 +26,8 @@ export type Product = {
   safe_zone_bounds: SafeZone;
   mockup: string;
   accent: "pink" | "orange" | "teal";
+  showSafeZone?: boolean;
+  archived?: boolean;
 };
 
 export const CATEGORIES: ProductCategory[] = [
@@ -36,7 +38,7 @@ export const CATEGORIES: ProductCategory[] = [
   "Stickers",
 ];
 
-export const PRODUCTS: Product[] = [
+export const SEED_PRODUCTS: Product[] = [
   {
     slug: "classic-tee",
     name: "Classic Cotton Tee",
@@ -183,11 +185,13 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-export function getProduct(slug: string) {
-  return PRODUCTS.find((product) => product.slug === slug);
-}
+/** Seed catalog only. Runtime catalog lives in data/catalog.json via lib/local-db. */
+export const PRODUCTS = SEED_PRODUCTS;
 
-export function getProductsByCategory(category?: ProductCategory) {
-  if (!category) return PRODUCTS;
-  return PRODUCTS.filter((product) => product.category === category);
+export function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 60);
 }

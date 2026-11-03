@@ -7,10 +7,10 @@ import {
   createAdminSessionToken,
   verifyAdminPassword,
 } from "@/lib/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { inquiryStatusSchema } from "@/lib/schemas/inquiry";
-import { deleteInquiryStorage } from "@/lib/storage-cleanup";
-import type { InquiryRecord } from "@/lib/inquiry-types";
+import { getOrder, saveOrder } from "@/lib/local-db";
+import { unlink } from "fs/promises";
+import path from "path";
 
 export async function loginAdmin(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -39,26 +39,31 @@ export async function updateInquiryStatus(formData: FormData) {
   const status = inquiryStatusSchema.parse(String(formData.get("status") ?? "pending"));
   const quotedRaw = String(formData.get("quoted_price") ?? "");
   const quoted_price = quotedRaw ? Number(quotedRaw) : null;
+  const current = await getOrder(id);
+  if (!current) throw new Error("Order not found");
 
-  const supabase = createAdminClient();
-  const { data: current, error } = await supabase
-    .from("inquiries")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error || !current) {
-    throw new Error(error?.message ?? "Inquiry not found");
-  }
-
-  const { error: updateError } = await supabase
-    .from("inquiries")
-    .update({ status, quoted_price, updated_at: new Date().toISOString() })
-    .eq("id", id);
-  if (updateError) throw updateError;
+  const next = {
+    ...current,
+    status,
+    quoted_price,
+    updated_at: new Date().toISOString(),
+  };
 
   if (status === "fulfilled" || status === "cancelled") {
-    await deleteInquiryStorage(current as InquiryRecord);
+    const files = [current.mockup_path, ...(current.production_paths ?? [])].filter(Boolean);
+    for (const file of files) {
+      if (!file?.startsWith("/uploads/")) continue;
+      try {
+        await unlink(path.join(process.cwd(), "public", file));
+      } catch {
+        /* already gone */
+      }
+    }
+    next.mockup_path = null;
+    next.production_paths = [];
+    next.cleanup_requested_at = new Date().toISOString();
   }
 
+  await saveOrder(next);
   redirect(`/admin/inquiries/${id}`);
 }

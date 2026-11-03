@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { CustomizerShell } from "@/components/customizer/customizer-shell";
-import { getProduct, PRODUCTS } from "@/lib/products";
+import { getCatalogProduct } from "@/lib/local-db";
 
-export function generateStaticParams() {
-  return PRODUCTS.map((product) => ({ slug: product.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function CustomizePage({
   params,
@@ -12,7 +10,7 @@ export default async function CustomizePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) notFound();
+  const product = await getCatalogProduct(slug);
+  if (!product || product.archived) notFound();
   return <CustomizerShell product={product} />;
 }

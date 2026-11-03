@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { Eye, Pencil } from "lucide-react";
 import type { Product } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
@@ -13,6 +14,8 @@ import { SuccessModal } from "./success-modal";
 export function CustomizerShell({ product }: { product: Product }) {
   const hydrateProduct = useCustomizerStore((s) => s.hydrateProduct);
   const bleedWarning = useCustomizerStore((s) => s.bleedWarning);
+  const previewMode = useCustomizerStore((s) => s.previewMode);
+  const setPreviewMode = useCustomizerStore((s) => s.setPreviewMode);
   const [canvas, setCanvas] = useState<CanvasHandle | null>(null);
   const [success, setSuccess] = useState<{
     referenceCode: string;
@@ -20,19 +23,21 @@ export function CustomizerShell({ product }: { product: Product }) {
   } | null>(null);
 
   useEffect(() => {
-    hydrateProduct(product.slug);
+    hydrateProduct(product);
     return () => {
       clearRememberedFiles();
     };
-  }, [hydrateProduct, product.slug]);
-
-  if (useCustomizerStore.getState().product?.slug !== product.slug) {
-    hydrateProduct(product.slug);
-  }
+  }, [hydrateProduct, product]);
 
   const onReady = useCallback((handle: CanvasHandle) => {
     setCanvas(handle);
   }, []);
+
+  function togglePreview() {
+    const next = !previewMode;
+    setPreviewMode(next);
+    canvas?.setPreviewMode(next);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,14 +48,26 @@ export function CustomizerShell({ product }: { product: Product }) {
             <Link href="/catalog" className="text-sm text-boo-teal hover:underline">
               ← Catalog
             </Link>
-            <p className="font-heading text-boo-ink">{product.name}</p>
+            <button
+              type="button"
+              onClick={togglePreview}
+              className="inline-flex items-center gap-2 rounded-full bg-boo-ink px-4 py-2 font-heading text-sm text-white"
+            >
+              {previewMode ? <Pencil className="size-4" /> : <Eye className="size-4" />}
+              {previewMode ? "Back to editor" : "Preview final product"}
+            </button>
           </div>
-          <div className={bleedWarning ? "rounded-[1.7rem] p-1 ring-2 ring-red-400" : ""}>
+          <div
+            className={
+              bleedWarning && !previewMode ? "rounded-[1.7rem] p-1 ring-2 ring-red-400" : ""
+            }
+          >
             <FabricCanvas product={product} onReady={onReady} />
           </div>
           <p className="text-xs text-muted-foreground">
-            Dashed teal box is the safe print/etch zone. A red dashed border means
-            something is outside and may bleed.
+            {previewMode
+              ? "This is the clean product preview — no guides or handles."
+              : "Dashed box is the safe print/etch zone. Preview hides it so you can see the finished piece."}
           </p>
         </section>
 
@@ -58,7 +75,13 @@ export function CustomizerShell({ product }: { product: Product }) {
           <p className="font-script text-2xl text-boo-pink">customize it</p>
           <h1 className="font-heading text-3xl">{product.name}</h1>
           <p className="mb-5 mt-1 text-sm text-muted-foreground">{product.description}</p>
-          <ControlsPanel product={product} canvas={canvas} />
+          {previewMode ? (
+            <div className="rounded-2xl bg-secondary p-4 text-sm">
+              Happy with the look? Send an inquiry and we’ll quote it on WhatsApp.
+            </div>
+          ) : (
+            <ControlsPanel product={product} canvas={canvas} />
+          )}
           <div className="mt-8 border-t border-border pt-5">
             <h2 className="mb-3 font-heading text-xl">Inquiry</h2>
             <InquiryForm

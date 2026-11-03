@@ -18,8 +18,7 @@ export default async function AdminLoginPage({
         <BooLogo />
         <h1 className="font-heading text-3xl">Studio desk</h1>
         <p className="text-sm text-muted-foreground">
-          Protected inquiry dashboard. Default local password is{" "}
-          <code>boo-studio</code> unless <code>ADMIN_PASSWORD</code> is set.
+          Studio password unlocks orders and the product catalog editor.
         </p>
         {error ? (
           <p className="text-sm text-destructive">That password did not match.</p>

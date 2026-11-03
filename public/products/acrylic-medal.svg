@@ -1,8 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
-  <rect width="800" height="800" fill="#f6f3ee"/>
-  <path d="M360 140h80l10 90h-100z" fill="#F96C9F"/>
-  <path d="M340 140h50l10 90h-70z" fill="#32B7B2"/>
-  <polygon points="400,190 470,250 445,330 355,330 330,250" fill="#d9f7f5" stroke="#32B7B2" stroke-width="10"/>
-  <polygon points="400,250 510,330 470,470 330,470 290,330" fill="#ffffff" fill-opacity=".7" stroke="#333333" stroke-width="8"/>
-  <rect x="230" y="210" width="340" height="380" rx="30" fill="none" stroke="#32B7B2" stroke-dasharray="8 8"/>
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".85"/>
+      <stop offset=".5" stop-color="#d9f7f5" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#9ad9d6" stop-opacity=".4"/>
+    </linearGradient>
+    <filter id="ash" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="12" flood-opacity=".16"/>
+    </filter>
+  </defs>
+  <rect width="800" height="800" fill="#eef3f2"/>
+  <g filter="url(#ash)">
+    <path d="M348 132h44l16 108h-76z" fill="#F96C9F"/>
+    <path d="M392 132h60l-10 108h-66z" fill="#32B7B2"/>
+    <path d="M348 132h104" stroke="#fff" stroke-opacity=".4" stroke-width="6"/>
+    <polygon points="400,208 486,268 458,352 342,352 314,268" fill="#e7fffd" stroke="#32B7B2" stroke-width="8"/>
+    <polygon points="400,268 530,352 486,510 314,510 270,352" fill="url(#glass)" stroke="#2a2a2a" stroke-width="8"/>
+    <path d="M340 320l60-28 70 40" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="400" cy="400" r="36" fill="#F99B36" opacity=".35"/>
+  </g>
 </svg>

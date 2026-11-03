@@ -1,6 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
-  <rect width="800" height="800" fill="#f6f3ee"/>
-  <path d="M260 210c-10-70 50-120 140-120s150 50 140 120l90 40 36 80-70 28v332H204V358l-70-28 36-80z" fill="#333333"/>
-  <path d="M340 210c10-50 40-78 60-78s50 28 60 78c-18 20-40 28-60 28s-42-8-60-28z" fill="#F96C9F"/>
-  <rect x="270" y="230" width="260" height="250" rx="18" fill="#ffffff" fill-opacity=".08" stroke="#F96C9F" stroke-dasharray="8 8"/>
+  <defs>
+    <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4a4a"/>
+      <stop offset="1" stop-color="#222"/>
+    </linearGradient>
+    <filter id="hsh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="16" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect width="800" height="800" fill="#efeae3"/>
+  <ellipse cx="400" cy="730" rx="220" ry="20" fill="#d5cdc2"/>
+  <g filter="url(#hsh)">
+    <path d="M250 210c-8-78 52-132 150-132s158 54 150 132l96 42 32 78-72 24v340H194V354l-72-24 32-78z" fill="url(#hood)"/>
+    <path d="M338 198c8-58 36-88 62-88s54 30 62 88c-16 22-38 34-62 34s-46-12-62-34z" fill="#F96C9F"/>
+    <path d="M250 430h300" stroke="#fff" stroke-opacity=".08" stroke-width="70"/>
+    <path d="M300 250c20 90 8 160 8 220" fill="none" stroke="#F99B36" stroke-width="8" stroke-linecap="round"/>
+    <path d="M500 250c-20 90-8 160-8 220" fill="none" stroke="#32B7B2" stroke-width="8" stroke-linecap="round"/>
+    <rect x="300" y="430" width="200" height="120" rx="18" fill="#2c2c2c"/>
+    <circle cx="318" cy="470" r="6" fill="#F99B36"/>
+    <circle cx="482" cy="470" r="6" fill="#32B7B2"/>
+  </g>
 </svg>

@@ -1,19 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/#about", label: "About" },
   { href: "/catalog", label: "Shop" },
-  { href: "/#creations", label: "Creations" },
+  { href: "/#how", label: "How it works" },
   { href: "/#contact", label: "Contact" },
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
   if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) return null;
 
   return (
@@ -38,13 +41,41 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-          <Link
-            href="/catalog"
-            className="rounded-full bg-boo-pink px-4 py-2 font-heading text-sm text-white shadow-sm transition hover:bg-boo-pink/90"
-          >
-            Start a custom
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/login"
+              className="hidden rounded-full border border-border px-4 py-2 font-heading text-sm text-boo-ink hover:border-boo-teal sm:inline-flex"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/catalog"
+              className="rounded-full bg-boo-pink px-4 py-2 font-heading text-sm text-white shadow-sm transition hover:bg-boo-pink/90"
+            >
+              Start a custom
+            </Link>
+            <button
+              type="button"
+              className="rounded-full p-2 md:hidden"
+              onClick={() => setOpen((value) => !value)}
+              aria-label="Menu"
+            >
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
+        {open ? (
+          <div className="flex flex-col gap-2 border-t border-border px-4 py-3 font-heading md:hidden">
+            {LINKS.map((link) => (
+              <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
+                {link.label}
+              </Link>
+            ))}
+            <Link href="/admin/login" onClick={() => setOpen(false)}>
+              Log in
+            </Link>
+          </div>
+        ) : null}
       </div>
     </header>
   );

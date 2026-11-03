@@ -4,6 +4,12 @@ import { inquirySchema } from "@/lib/schemas/inquiry";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import {
+  nextReferenceCode,
+  saveOrder,
+  savePublicUpload,
+} from "@/lib/local-db";
+import type { InquiryRecord } from "@/lib/inquiry-types";
 
 export type SubmitInquiryResult =
   | { ok: true; referenceCode: string; whatsappUrl: string }
@@ -25,13 +31,6 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid inquiry" };
   }
 
-  if (!isSupabaseConfigured()) {
-    return {
-      ok: false,
-      error: "Studio storage is not connected yet. Add Supabase keys in .env.local.",
-    };
-  }
-
   const mockup = formData.get("mockup");
   if (!(mockup instanceof File) || mockup.size === 0) {
     return { ok: false, error: "Mockup thumbnail is missing." };
@@ -42,71 +41,80 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
     .filter((item): item is File => item instanceof File && item.size > 0);
 
   try {
-    const supabase = createAdminClient();
-    const { data: inserted, error: insertError } = await supabase
-      .from("inquiries")
-      .insert({
-        product_slug: parsed.data.productSlug,
-        product_name: parsed.data.productName,
-        customer_name: parsed.data.customerName,
-        customer_email: parsed.data.customerEmail || null,
-        customer_phone: parsed.data.customerPhone,
-        material: parsed.data.material,
-        quantity: parsed.data.quantity,
-        notes: parsed.data.notes || null,
-        canvas_json: safeJson(formData.get("canvasJson")),
-        status: "pending",
-      })
-      .select("id, reference_code")
-      .single();
-
-    if (insertError || !inserted) {
-      return {
-        ok: false,
-        error: insertError?.message ?? "Could not create the inquiry record.",
-      };
-    }
-
-    const folder = inserted.reference_code.replace("#", "");
-    const mockupPath = `${folder}/mockup.jpg`;
-    const { error: mockupError } = await supabase.storage
-      .from("inquiry-assets")
-      .upload(mockupPath, mockup, {
-        contentType: mockup.type || "image/jpeg",
-        upsert: true,
-      });
-    if (mockupError) {
-      return { ok: false, error: mockupError.message };
-    }
-
+    const referenceCode = await nextReferenceCode();
+    const id = crypto.randomUUID();
+    const stamp = Date.now();
+    const mockupPath = await savePublicUpload(
+      "orders",
+      `${referenceCode}-mockup.jpg`,
+      Buffer.from(await mockup.arrayBuffer()),
+    );
     const productionPaths: string[] = [];
     for (const file of production) {
       const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-      const path = `${folder}/production/${Date.now()}-${safeName}`;
-      const { error } = await supabase.storage.from("inquiry-assets").upload(path, file, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
-      if (!error) productionPaths.push(path);
+      productionPaths.push(
+        await savePublicUpload(
+          "orders",
+          `${referenceCode}-${stamp}-${safeName}`,
+          Buffer.from(await file.arrayBuffer()),
+        ),
+      );
     }
 
-    await supabase
-      .from("inquiries")
-      .update({
-        mockup_path: mockupPath,
-        production_paths: productionPaths,
-      })
-      .eq("id", inserted.id);
+    const now = new Date().toISOString();
+    const record: InquiryRecord = {
+      id,
+      reference_code: referenceCode,
+      product_slug: parsed.data.productSlug,
+      product_name: parsed.data.productName,
+      customer_name: parsed.data.customerName,
+      customer_email: parsed.data.customerEmail || null,
+      customer_phone: parsed.data.customerPhone,
+      material: parsed.data.material,
+      quantity: parsed.data.quantity,
+      notes: parsed.data.notes || null,
+      status: "pending",
+      quoted_price: null,
+      mockup_path: mockupPath,
+      production_paths: productionPaths,
+      canvas_json: safeJson(formData.get("canvasJson")),
+      created_at: now,
+      updated_at: now,
+      cleanup_requested_at: null,
+    };
 
-    const referenceCode = inserted.reference_code.startsWith("#")
-      ? inserted.reference_code
-      : `#${inserted.reference_code}`;
+    await saveOrder(record);
 
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createAdminClient();
+        await supabase.from("inquiries").insert({
+          id,
+          reference_code: referenceCode,
+          product_slug: record.product_slug,
+          product_name: record.product_name,
+          customer_name: record.customer_name,
+          customer_email: record.customer_email,
+          customer_phone: record.customer_phone,
+          material: record.material,
+          quantity: record.quantity,
+          notes: record.notes,
+          canvas_json: record.canvas_json,
+          status: "pending",
+          mockup_path: mockupPath,
+          production_paths: productionPaths,
+        });
+      } catch {
+        /* local copy is the source of truth */
+      }
+    }
+
+    const display = referenceCode.startsWith("#") ? referenceCode : `#${referenceCode}`;
     return {
       ok: true,
-      referenceCode,
+      referenceCode: display,
       whatsappUrl: buildWhatsAppUrl({
-        referenceCode,
+        referenceCode: display,
         productName: parsed.data.productName,
         quantity: parsed.data.quantity,
       }),

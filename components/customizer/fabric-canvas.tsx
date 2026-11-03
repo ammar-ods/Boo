@@ -11,6 +11,7 @@ export type CanvasHandle = {
   addText: () => void;
   applyTextDraft: () => void;
   applyLaser: (enabled: boolean) => void;
+  setPreviewMode: (preview: boolean) => void;
   deleteSelected: () => void;
   exportMockup: () => Promise<Blob>;
   exportJson: () => string;
@@ -32,6 +33,7 @@ export function FabricCanvas({
   const setSelectedKind = useCustomizerStore((s) => s.setSelectedKind);
   const setTextDraft = useCustomizerStore((s) => s.setTextDraft);
   const laserPreview = useCustomizerStore((s) => s.laserPreview);
+  const previewMode = useCustomizerStore((s) => s.previewMode);
   const textDraft = useCustomizerStore((s) => s.textDraft);
 
   const textDraftRef = useRef(textDraft);
@@ -84,12 +86,20 @@ export function FabricCanvas({
         const safe = product.safe_zone_bounds;
         const designs = canvas.getObjects().filter(isDesign);
         const outside = designs.some((obj) => {
-          const box = obj.getBoundingRect();
+          obj.setCoords();
+          const corners = obj.aCoords;
+          if (!corners) return false;
+          const xs = [corners.tl.x, corners.tr.x, corners.bl.x, corners.br.x];
+          const ys = [corners.tl.y, corners.tr.y, corners.bl.y, corners.br.y];
+          const left = Math.min(...xs);
+          const top = Math.min(...ys);
+          const right = Math.max(...xs);
+          const bottom = Math.max(...ys);
           return (
-            box.left < safe.left - 1 ||
-            box.top < safe.top - 1 ||
-            box.left + box.width > safe.left + safe.width + 1 ||
-            box.top + box.height > safe.top + safe.height + 1
+            left < safe.left - 1 ||
+            top < safe.top - 1 ||
+            right > safe.left + safe.width + 1 ||
+            bottom > safe.top + safe.height + 1
           );
         });
         setBleedWarning(outside);
@@ -152,6 +162,7 @@ export function FabricCanvas({
           selectable: true,
           evented: true,
         });
+        (image as { isDesignLayer?: boolean }).isDesignLayer = true;
         canvas.add(image);
         canvas.setActiveObject(image);
         applyLaser(laserRef.current);
@@ -172,6 +183,7 @@ export function FabricCanvas({
           selectable: true,
           evented: true,
         });
+        (text as { isDesignLayer?: boolean }).isDesignLayer = true;
         canvas.add(text);
         canvas.setActiveObject(text);
         text.enterEditing();
@@ -193,6 +205,7 @@ export function FabricCanvas({
       };
 
       const exportMockup = async () => {
+        canvas.discardActiveObject();
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         canvas.setDimensions({
           width: product.canvasWidth,
@@ -238,6 +251,21 @@ export function FabricCanvas({
         addText,
         applyTextDraft,
         applyLaser,
+        setPreviewMode: (preview) => {
+          canvas.discardActiveObject();
+          canvas.selection = !preview;
+          canvas.getObjects().forEach((obj) => {
+            if (!isDesign(obj) && !(obj as { isDesignLayer?: boolean }).isDesignLayer) return;
+            obj.set({
+              hasControls: !preview,
+              hasBorders: !preview,
+              selectable: !preview,
+              evented: !preview,
+            });
+            (obj as { isDesignLayer?: boolean }).isDesignLayer = true;
+          });
+          canvas.requestRenderAll();
+        },
         deleteSelected: () => {
           const obj = canvas.getActiveObject();
           if (obj && isDesign(obj)) {
@@ -294,13 +322,24 @@ export function FabricCanvas({
         alt=""
         className="pointer-events-none absolute inset-0 h-full w-full object-contain"
       />
+      {!previewMode && product.showSafeZone !== false ? (
+        <div
+          className="pointer-events-none absolute z-20 rounded-md border-2 border-dashed border-[#32B7B2]/80"
+          style={{
+            left: `${(product.safe_zone_bounds.left / product.canvasWidth) * 100}%`,
+            top: `${(product.safe_zone_bounds.top / product.canvasHeight) * 100}%`,
+            width: `${(product.safe_zone_bounds.width / product.canvasWidth) * 100}%`,
+            height: `${(product.safe_zone_bounds.height / product.canvasHeight) * 100}%`,
+          }}
+        />
+      ) : null}
       <canvas ref={hostRef} className="relative z-10" />
     </div>
   );
 }
 
-function isDesign(obj: { selectable?: boolean; evented?: boolean }) {
-  return obj.selectable !== false && obj.evented !== false;
+function isDesign(obj: { selectable?: boolean; evented?: boolean; isDesignLayer?: boolean }) {
+  return obj.isDesignLayer === true || (obj.selectable !== false && obj.evented !== false);
 }
 
 async function fileToImageDataUrl(file: File) {

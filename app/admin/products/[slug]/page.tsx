@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { removeProduct, updateProduct } from "@/actions/products";
+import { ProductForm } from "@/components/admin/product-form";
+import { getCatalogProduct } from "@/lib/local-db";
+
+export const dynamic = "force-dynamic";
+
+export default async function EditProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const product = await getCatalogProduct(slug);
+  if (!product) notFound();
+
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+      <Link href="/admin/products" className="text-sm text-boo-teal">
+        ← Products
+      </Link>
+      <div className="mb-6 mt-2 flex items-end justify-between gap-4">
+        <h1 className="font-heading text-4xl">{product.name}</h1>
+        <form action={removeProduct}>
+          <input type="hidden" name="slug" value={product.slug} />
+          <button className="text-sm text-destructive">Delete</button>
+        </form>
+      </div>
+      <ProductForm product={product} action={updateProduct} />
+    </div>
+  );
+}

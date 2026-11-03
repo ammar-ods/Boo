@@ -26,8 +26,8 @@ export function SiteFooter() {
         <div className="text-sm text-muted-foreground">
           <p>123 Maker Way, Giza, Egypt</p>
           <p>@boocustomcreations</p>
-          <Link href="/admin/inquiries" className="mt-3 inline-block text-boo-ink/50 hover:text-boo-teal">
-            Studio desk
+          <Link href="/admin/login" className="mt-3 inline-block text-boo-ink/50 hover:text-boo-teal">
+            Studio log in
           </Link>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { getProduct, type Product } from "@/lib/products";
+import type { Product } from "@/lib/products";
 
 export type UploadedAsset = {
   id: string;
@@ -22,14 +22,16 @@ type CustomizerState = {
   quantity: number;
   laserPreview: boolean;
   bleedWarning: boolean;
+  previewMode: boolean;
   selectedKind: "none" | "image" | "text";
   textDraft: TextDraft;
   assets: UploadedAsset[];
-  hydrateProduct: (slug: string) => void;
+  hydrateProduct: (product: Product) => void;
   setMaterial: (material: string) => void;
   setQuantity: (quantity: number) => void;
   setLaserPreview: (value: boolean) => void;
   setBleedWarning: (value: boolean) => void;
+  setPreviewMode: (value: boolean) => void;
   setSelectedKind: (kind: CustomizerState["selectedKind"]) => void;
   setTextDraft: (draft: Partial<TextDraft>) => void;
   addAsset: (asset: UploadedAsset) => void;
@@ -49,17 +51,18 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
   quantity: 1,
   laserPreview: false,
   bleedWarning: false,
+  previewMode: false,
   selectedKind: "none",
   textDraft: defaultText,
   assets: [],
-  hydrateProduct: (slug) => {
-    const product = getProduct(slug) ?? null;
+  hydrateProduct: (product) => {
     set({
       product,
-      material: product?.defaultMaterial ?? "",
+      material: product.defaultMaterial ?? "",
       quantity: 1,
-      laserPreview: Boolean(product?.is_laser_cut),
+      laserPreview: Boolean(product.is_laser_cut),
       bleedWarning: false,
+      previewMode: false,
       selectedKind: "none",
       textDraft: defaultText,
       assets: [],
@@ -70,6 +73,7 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
     set({ quantity: Math.max(1, Math.min(500, Math.round(quantity))) }),
   setLaserPreview: (laserPreview) => set({ laserPreview }),
   setBleedWarning: (bleedWarning) => set({ bleedWarning }),
+  setPreviewMode: (previewMode) => set({ previewMode }),
   setSelectedKind: (selectedKind) => set({ selectedKind }),
   setTextDraft: (draft) =>
     set((state) => ({ textDraft: { ...state.textDraft, ...draft } })),
@@ -83,6 +87,7 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
       quantity: 1,
       laserPreview: false,
       bleedWarning: false,
+      previewMode: false,
       selectedKind: "none",
       textDraft: defaultText,
       assets: [],
