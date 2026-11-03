@@ -2,13 +2,7 @@
 
 import { inquirySchema } from "@/lib/schemas/inquiry";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import {
-  nextReferenceCode,
-  saveOrder,
-  savePublicUpload,
-} from "@/lib/local-db";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 
 export type SubmitInquiryResult =
@@ -41,28 +35,61 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
     .filter((item): item is File => item instanceof File && item.size > 0);
 
   try {
-    const referenceCode = await nextReferenceCode();
+    const supabase = createAdminClient();
+
+    // Generate a unique reference code (e.g., BOO-1042)
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const referenceCode = `#BOO-${randomNum}`;
     const id = crypto.randomUUID();
     const stamp = Date.now();
-    const mockupPath = await savePublicUpload(
-      "orders",
-      `${referenceCode}-mockup.jpg`,
-      Buffer.from(await mockup.arrayBuffer()),
-    );
+
+    // 1. Upload Mockup to Supabase Storage ('uploads' bucket)
+    const mockupBuffer = Buffer.from(await mockup.arrayBuffer());
+    const mockupFileName = `orders/${referenceCode.replace('#', '')}-mockup.jpg`;
+    
+    const { error: mockupUploadError } = await supabase.storage
+      .from("uploads")
+      .upload(mockupFileName, mockupBuffer, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+
+    if (mockupUploadError) {
+      throw new Error(`Failed to upload mockup: ${mockupUploadError.message}`);
+    }
+
+    const { data: mockupPublicUrlData } = supabase.storage
+      .from("uploads")
+      .getPublicUrl(mockupFileName);
+    
+    const mockupPath = mockupPublicUrlData.publicUrl;
+
+    // 2. Upload Production Files to Supabase Storage
     const productionPaths: string[] = [];
     for (const file of production) {
       const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-      productionPaths.push(
-        await savePublicUpload(
-          "orders",
-          `${referenceCode}-${stamp}-${safeName}`,
-          Buffer.from(await file.arrayBuffer()),
-        ),
-      );
+      const prodFileName = `orders/${referenceCode.replace('#', '')}-${stamp}-${safeName}`;
+      
+      const { error: prodUploadError } = await supabase.storage
+        .from("uploads")
+        .upload(prodFileName, Buffer.from(await file.arrayBuffer()), {
+          contentType: file.type || "application/octet-stream",
+          upsert: true,
+        });
+
+      if (!prodUploadError) {
+        const { data: prodUrlData } = supabase.storage
+          .from("uploads")
+          .getPublicUrl(prodFileName);
+        productionPaths.push(prodUrlData.publicUrl);
+      }
     }
 
     const now = new Date().toISOString();
-    const record: InquiryRecord = {
+    const canvasJson = safeJson(formData.get("canvasJson"));
+
+    // 3. Insert Record into Supabase 'inquiries' Table
+    const { error: dbError } = await supabase.from("inquiries").insert({
       id,
       reference_code: referenceCode,
       product_slug: parsed.data.productSlug,
@@ -77,44 +104,20 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
       quoted_price: null,
       mockup_path: mockupPath,
       production_paths: productionPaths,
-      canvas_json: safeJson(formData.get("canvasJson")),
+      canvas_json: canvasJson,
       created_at: now,
       updated_at: now,
-      cleanup_requested_at: null,
-    };
+    });
 
-    await saveOrder(record);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createAdminClient();
-        await supabase.from("inquiries").insert({
-          id,
-          reference_code: referenceCode,
-          product_slug: record.product_slug,
-          product_name: record.product_name,
-          customer_name: record.customer_name,
-          customer_email: record.customer_email,
-          customer_phone: record.customer_phone,
-          material: record.material,
-          quantity: record.quantity,
-          notes: record.notes,
-          canvas_json: record.canvas_json,
-          status: "pending",
-          mockup_path: mockupPath,
-          production_paths: productionPaths,
-        });
-      } catch {
-        /* local copy is the source of truth */
-      }
+    if (dbError) {
+      throw new Error(`Failed to save inquiry to database: ${dbError.message}`);
     }
 
-    const display = referenceCode.startsWith("#") ? referenceCode : `#${referenceCode}`;
     return {
       ok: true,
-      referenceCode: display,
+      referenceCode,
       whatsappUrl: buildWhatsAppUrl({
-        referenceCode: display,
+        referenceCode,
         productName: parsed.data.productName,
         quantity: parsed.data.quantity,
       }),
@@ -122,7 +125,7 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Inquiry failed",
+      error: error instanceof Error ? error.message : "Inquiry submission failed",
     };
   }
 }
