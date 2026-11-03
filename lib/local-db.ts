@@ -1,17 +1,24 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import path from "path";
 import { SEED_PRODUCTS, type Product } from "@/lib/products";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 
+const isProduction = process.env.NODE_ENV === "production";
 const DATA_DIR = path.join(process.cwd(), "data");
 const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
 const CATALOG_FILE = path.join(DATA_DIR, "catalog.json");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
 async function ensureDirs() {
-  await mkdir(DATA_DIR, { recursive: true });
-  await mkdir(path.join(UPLOADS_DIR, "orders"), { recursive: true });
-  await mkdir(path.join(UPLOADS_DIR, "products"), { recursive: true });
+  if (isProduction) return; // Skip directory creation on Vercel read-only filesystem
+  try {
+    const { mkdir } = await import("fs/promises");
+    await mkdir(DATA_DIR, { recursive: true });
+    await mkdir(path.join(UPLOADS_DIR, "orders"), { recursive: true });
+    await mkdir(path.join(UPLOADS_DIR, "products"), { recursive: true });
+  } catch {
+    // Ignore file system errors in production
+  }
 }
 
 async function readJson<T>(file: string, fallback: T): Promise<T> {
@@ -24,15 +31,18 @@ async function readJson<T>(file: string, fallback: T): Promise<T> {
 }
 
 async function writeJson(file: string, value: unknown) {
-  await ensureDirs();
-  await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+  if (isProduction) return; // Cannot write to disk on Vercel serverless
+  try {
+    await ensureDirs();
+    await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+  } catch {
+    // Ignore write errors in production
+  }
 }
 
 export async function getCatalog(): Promise<Product[]> {
-  await ensureDirs();
   const stored = await readJson<Product[] | null>(CATALOG_FILE, null);
   if (!stored || stored.length === 0) {
-    await writeJson(CATALOG_FILE, SEED_PRODUCTS);
     return SEED_PRODUCTS;
   }
   return stored;
@@ -76,6 +86,7 @@ export async function getOrder(id: string) {
 }
 
 export async function saveOrder(order: InquiryRecord) {
+  if (isProduction) return order; // Supabase handles orders in production
   const orders = await listOrders();
   const index = orders.findIndex((item) => item.id === order.id);
   if (index >= 0) orders[index] = order;
@@ -99,9 +110,13 @@ export async function savePublicUpload(
   filename: string,
   bytes: Buffer,
 ) {
+  if (isProduction) {
+    throw new Error("Local file system uploads are disabled in production. Use Supabase Storage.");
+  }
   await ensureDirs();
   const relative = `/uploads/${folder}/${filename}`;
   const full = path.join(process.cwd(), "public", relative);
+  const { mkdir, writeFile } = await import("fs/promises");
   await mkdir(path.dirname(full), { recursive: true });
   await writeFile(full, bytes);
   return relative;
