@@ -19,13 +19,13 @@ export function SiteFooter() {
             made with love
           </p>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Giza apartment studio — apparel, mugs, laser-cut wood, acrylic medals,
-            and vinyl stickers.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+            tempor incididunt ut labore et dolore magna aliqua.
           </p>
         </div>
         <div className="text-sm text-muted-foreground">
-          <p>123 Maker Way, Giza, Egypt</p>
-          <p>@boocustomcreations</p>
+          <p>Lorem ipsum dolor sit amet</p>
+          <p>consectetur adipiscing elit</p>
           <Link href="/admin/login" className="mt-3 inline-block text-boo-ink/50 hover:text-boo-teal">
             Studio log in
           </Link>
