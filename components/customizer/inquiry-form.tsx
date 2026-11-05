@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { inquirySchema, type InquiryInput } from "@/lib/schemas/inquiry";
-import { submitInquiry } from "@/actions/submit-inquiry";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -84,15 +83,25 @@ export function InquiryForm({
         toast.error("Could not capture a preview.");
         return;
       }
-      data.set("mockup", mockups[0].blob, `${mockups[0].id}.jpg`);
+      data.set("mockup", new File([mockups[0].blob], `${mockups[0].id}.jpg`, { type: "image/jpeg" }));
       mockups.slice(1).forEach((item) => {
-        data.append("viewMockups", item.blob, `${item.id}.jpg`);
+        data.append(
+          "viewMockups",
+          new File([item.blob], `${item.id}.jpg`, { type: "image/jpeg" }),
+        );
       });
-      allRememberedFiles().forEach((file) => data.append("production", file));
+      allRememberedFiles().forEach((file) => {
+        if (file.size > 4_000_000) return;
+        data.append("production", file);
+      });
 
-      const result = await submitInquiry(data);
-      if (!result.ok) {
-        toast.error(result.error);
+      const response = await fetch("/api/inquiry", { method: "POST", body: data });
+      const result = (await response.json().catch(() => null)) as
+        | { ok: true; referenceCode: string }
+        | { ok: false; error?: string }
+        | null;
+      if (!response.ok || !result || !result.ok) {
+        toast.error(result && "error" in result && result.error ? result.error : "Could not send the inquiry.");
         return;
       }
 

@@ -42,21 +42,32 @@ export type Product = {
   views?: ProductView[];
 };
 
+const MUG_WRAP_BOUNDS = { left: 214, top: 228, width: 330, height: 360, radius: 48 };
+
 export function productViews(product: Product): ProductView[] {
-  if (product.views && product.views.length > 0) return product.views;
-  return [
-    {
-      id: "front",
-      label: product.category === "Drinkware" ? "Wrap" : "Front",
-      mockup: product.mockup,
-      safe_zone_bounds: product.safe_zone_bounds,
-      wrap: Boolean(product.wrapPreview) || product.category === "Drinkware",
-      wrapBounds:
-        product.category === "Drinkware"
-          ? { left: 214, top: 228, width: 330, height: 360, radius: 48 }
-          : undefined,
-    },
-  ];
+  const drinkware = product.category === "Drinkware" || Boolean(product.wrapPreview);
+  const raw =
+    product.views && product.views.length > 0
+      ? product.views
+      : [
+          {
+            id: "front",
+            label: drinkware ? "Wrap" : "Front",
+            mockup: product.mockup,
+            safe_zone_bounds: product.safe_zone_bounds,
+            wrap: drinkware,
+            wrapBounds: drinkware ? MUG_WRAP_BOUNDS : undefined,
+          },
+        ];
+
+  return raw.map((view) => {
+    const wrap = Boolean(view.wrap) || drinkware;
+    return {
+      ...view,
+      wrap,
+      wrapBounds: wrap ? view.wrapBounds ?? MUG_WRAP_BOUNDS : view.wrapBounds,
+    };
+  });
 }
 
 export const CATEGORIES: ProductCategory[] = [

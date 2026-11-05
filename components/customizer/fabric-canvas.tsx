@@ -101,7 +101,36 @@ export function FabricCanvas({
         }
         canvas.requestRenderAll();
       };
+      const applyWrapClip = () => {
+        const current = viewRef.current;
+        if (!current.wrap) {
+          canvas.clipPath = undefined;
+          canvas.requestRenderAll();
+          return;
+        }
+        const box = current.wrapBounds ?? {
+          left: 214,
+          top: 228,
+          width: 330,
+          height: 360,
+          radius: 48,
+        };
+        canvas.clipPath = new fabric.Rect({
+          left: box.left,
+          top: box.top,
+          width: box.width,
+          height: box.height,
+          rx: box.radius ?? 48,
+          ry: box.radius ?? 48,
+          absolutePositioned: true,
+          selectable: false,
+          evented: false,
+        });
+        canvas.requestRenderAll();
+      };
+
       fit();
+      applyWrapClip();
       observer = new ResizeObserver(fit);
       if (wrapRef.current) observer.observe(wrapRef.current);
 
@@ -276,7 +305,7 @@ export function FabricCanvas({
           dest.toBlob(
             (blob) => (blob ? resolve(blob) : reject(new Error("blob failed"))),
             "image/jpeg",
-            0.82,
+            0.55,
           );
         });
       };
@@ -318,6 +347,7 @@ export function FabricCanvas({
         },
         applyView: async (nextView, json) => {
           viewRef.current = nextView;
+          applyWrapClip();
           await loadJson(json);
         },
         deleteSelected: () => {
@@ -345,7 +375,14 @@ export function FabricCanvas({
           await loadJson(currentJson);
           return results;
         },
-        exportJson: () => JSON.stringify(canvas.toJSON()),
+        exportJson: () =>
+          JSON.stringify({
+            objects: canvas.getObjects().map((obj) => ({
+              type: obj.type,
+              left: obj.left,
+              top: obj.top,
+            })),
+          }),
         hasDesign: () => canvas.getObjects().some(isDesign),
       });
 
@@ -399,7 +436,10 @@ export function FabricCanvas({
         alt=""
         className="pointer-events-none absolute inset-0 h-full w-full object-contain"
       />
-      <div className="relative z-10 h-full w-full" style={view.wrap ? clipStyle : undefined}>
+      <div
+        className="absolute inset-0 z-10 overflow-hidden"
+        style={view.wrap ? clipStyle : undefined}
+      >
         <canvas ref={hostRef} />
       </div>
       {view.wrap && wrapBox ? (
