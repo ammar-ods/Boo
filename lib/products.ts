@@ -18,6 +18,8 @@ export type ProductView = {
   mockup: string;
   safe_zone_bounds: SafeZone;
   wrap?: boolean;
+  /** Cylinder / mug body used to clip artwork so it sits on the product. */
+  wrapBounds?: SafeZone & { radius?: number };
 };
 
 export type Product = {
@@ -49,6 +51,10 @@ export function productViews(product: Product): ProductView[] {
       mockup: product.mockup,
       safe_zone_bounds: product.safe_zone_bounds,
       wrap: Boolean(product.wrapPreview) || product.category === "Drinkware",
+      wrapBounds:
+        product.category === "Drinkware"
+          ? { left: 214, top: 228, width: 330, height: 360, radius: 48 }
+          : undefined,
     },
   ];
 }
@@ -143,8 +149,9 @@ export const SEED_PRODUCTS: Product[] = [
         id: "wrap",
         label: "360° wrap",
         mockup: "/products/ceramic-mug.svg",
-        safe_zone_bounds: { left: 230, top: 300, width: 298, height: 200 },
+        safe_zone_bounds: { left: 236, top: 292, width: 286, height: 210 },
         wrap: true,
+        wrapBounds: { left: 214, top: 228, width: 330, height: 360, radius: 48 },
       },
     ],
   },

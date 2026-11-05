@@ -63,13 +63,17 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
   assets: [],
   hydrateProduct: (product) => {
     const views = productViews(product);
+    const fallbackMaterial = product.defaultMaterial || product.materials[0] || "Standard";
     set((state) => {
+      const material = product.materials.includes(state.material)
+        ? state.material
+        : fallbackMaterial;
       if (state.product?.slug === product.slug) {
-        return { product };
+        return { product, material };
       }
       return {
         product,
-        material: product.defaultMaterial ?? "",
+        material: fallbackMaterial,
         quantity: 1,
         laserPreview: Boolean(product.is_laser_cut),
         bleedWarning: false,

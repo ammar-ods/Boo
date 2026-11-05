@@ -1,12 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { inquirySchema, type InquiryInput } from "@/lib/schemas/inquiry";
 import { submitInquiry } from "@/actions/submit-inquiry";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,19 +13,17 @@ import type { CanvasHandle } from "./fabric-canvas";
 import { allRememberedFiles } from "@/lib/upload-registry";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import type { Product } from "@/lib/products";
+import { productViews } from "@/lib/products";
 
 export function InquiryForm({
   product,
-  canvas,
+  canvases,
 }: {
   product: Product;
-  canvas: CanvasHandle | null;
+  canvases: Record<string, CanvasHandle | null>;
 }) {
-  const router = useRouter();
   const material = useCustomizerStore((s) => s.material);
   const quantity = useCustomizerStore((s) => s.quantity);
-  const activeViewId = useCustomizerStore((s) => s.activeViewId);
-  const saveViewDesign = useCustomizerStore((s) => s.saveViewDesign);
 
   const form = useForm<InquiryInput>({
     resolver: zodResolver(inquirySchema) as never,
@@ -36,57 +33,84 @@ export function InquiryForm({
       customerName: "",
       customerEmail: "",
       customerPhone: "",
-      material,
+      material: material || product.defaultMaterial || "Standard",
       quantity,
       notes: "",
     },
   });
 
+  useEffect(() => {
+    form.setValue("material", material || product.defaultMaterial || "Standard");
+    form.setValue("quantity", quantity);
+  }, [form, material, product.defaultMaterial, quantity]);
+
   async function onSubmit(values: InquiryInput) {
-    if (!canvas) {
+    const views = productViews(product);
+    const handles = views
+      .map((view) => canvases[view.id])
+      .filter((handle): handle is CanvasHandle => Boolean(handle));
+
+    if (handles.length === 0) {
       toast.error("The customizer is still loading. Try again in a moment.");
       return;
     }
 
-    saveViewDesign(activeViewId, canvas.exportJson());
-    const designs = { ...useCustomizerStore.getState().viewDesigns, [activeViewId]: canvas.exportJson() };
+    try {
+      const data = new FormData();
+      data.set("productSlug", product.slug);
+      data.set("productName", product.name);
+      data.set("customerName", values.customerName);
+      data.set("customerEmail", values.customerEmail ?? "");
+      data.set("customerPhone", values.customerPhone);
+      data.set("material", values.material || material || product.defaultMaterial || "Standard");
+      data.set("quantity", String(quantity || values.quantity || 1));
+      data.set("notes", values.notes ?? "");
+      data.set(
+        "canvasJson",
+        JSON.stringify({
+          views: Object.fromEntries(
+            views.map((view) => [view.id, canvases[view.id]?.exportJson() ?? null]),
+          ),
+        }),
+      );
 
-    const viewMockups = await canvas.exportViewMockups(designs);
-    const primary = viewMockups[0];
-    if (!primary) {
-      toast.error("Could not capture a preview.");
-      return;
+      const mockups: { id: string; blob: Blob }[] = [];
+      for (const view of views) {
+        const handle = canvases[view.id];
+        if (!handle) continue;
+        mockups.push({ id: view.id, blob: await handle.exportMockup() });
+      }
+      if (mockups.length === 0) {
+        toast.error("Could not capture a preview.");
+        return;
+      }
+      data.set("mockup", mockups[0].blob, `${mockups[0].id}.jpg`);
+      mockups.slice(1).forEach((item) => {
+        data.append("viewMockups", item.blob, `${item.id}.jpg`);
+      });
+      allRememberedFiles().forEach((file) => data.append("production", file));
+
+      const result = await submitInquiry(data);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      window.location.assign(
+        `/thanks?ref=${encodeURIComponent(result.referenceCode)}&product=${encodeURIComponent(product.name)}`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not send the inquiry.");
     }
-
-    const data = new FormData();
-    data.set("productSlug", product.slug);
-    data.set("productName", product.name);
-    data.set("customerName", values.customerName);
-    data.set("customerEmail", values.customerEmail ?? "");
-    data.set("customerPhone", values.customerPhone);
-    data.set("material", material);
-    data.set("quantity", String(quantity));
-    data.set("notes", values.notes ?? "");
-    data.set("canvasJson", JSON.stringify({ views: designs }));
-    data.set("mockup", primary.blob, `${primary.id}.jpg`);
-    viewMockups.slice(1).forEach((item) => {
-      data.append("viewMockups", item.blob, `${item.id}.jpg`);
-    });
-    allRememberedFiles().forEach((file) => data.append("production", file));
-
-    const result = await submitInquiry(data);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-
-    router.push(
-      `/thanks?ref=${encodeURIComponent(result.referenceCode)}&product=${encodeURIComponent(product.name)}`,
-    );
   }
 
   return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
+    <form
+      className="space-y-3"
+      onSubmit={form.handleSubmit(onSubmit, () => {
+        toast.error("Add your name and a WhatsApp number so the studio can reply.");
+      })}
+    >
       <input type="hidden" {...form.register("productSlug")} />
       <input type="hidden" {...form.register("productName")} />
       <div className="space-y-1.5">
@@ -123,14 +147,13 @@ export function InquiryForm({
           {...form.register("notes")}
         />
       </div>
-      <Button
+      <button
         type="submit"
-        size="lg"
-        className="h-11 w-full rounded-full bg-boo-pink font-heading text-base text-white hover:bg-boo-pink/90"
+        className="h-11 w-full rounded-full bg-boo-pink font-heading text-base text-white hover:bg-boo-pink/90 disabled:opacity-60"
         disabled={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? "Sending…" : "Send inquiry"}
-      </Button>
+      </button>
     </form>
   );
 }

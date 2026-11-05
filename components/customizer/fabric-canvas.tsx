@@ -38,7 +38,6 @@ export function FabricCanvas({
 }) {
   const hostRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const wrapPreviewRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<InstanceType<FabricMod["Canvas"]> | null>(null);
   const fabricRef = useRef<FabricMod | null>(null);
   const viewRef = useRef(view);
@@ -256,7 +255,7 @@ export function FabricCanvas({
         return overlay;
       };
 
-      const compositeMockup = async (mockupSrc: string, overlaySrc: string, wrap: boolean, safe: SafeZone) => {
+      const compositeMockup = async (mockupSrc: string, overlaySrc: string) => {
         const dest = document.createElement("canvas");
         dest.width = productRef.current.canvasWidth;
         dest.height = productRef.current.canvasHeight;
@@ -267,8 +266,12 @@ export function FabricCanvas({
         const productImage = await loadHtmlImage(mockupSrc);
         ctx.drawImage(productImage, 0, 0, dest.width, dest.height);
         const overlayImage = await loadHtmlImage(overlaySrc);
-        if (wrap) drawCylindricalWrap(ctx, overlayImage, safe);
-        else ctx.drawImage(overlayImage, 0, 0, dest.width, dest.height);
+        const wrapBox = viewRef.current.wrapBounds;
+        if (viewRef.current.wrap && wrapBox) {
+          drawArtworkOnCylinder(ctx, overlayImage, dest.width, dest.height, wrapBox);
+        } else {
+          ctx.drawImage(overlayImage, 0, 0, dest.width, dest.height);
+        }
         return await new Promise<Blob>((resolve, reject) => {
           dest.toBlob(
             (blob) => (blob ? resolve(blob) : reject(new Error("blob failed"))),
@@ -278,29 +281,9 @@ export function FabricCanvas({
         });
       };
 
-      const paintWrapPreview = async () => {
-        const previewCanvas = wrapPreviewRef.current;
-        const wrapBox = wrapRef.current;
-        if (!previewCanvas || !wrapBox || !viewRef.current.wrap) return;
-        const overlay = overlayDataUrl();
-        const size = wrapBox.clientWidth || productRef.current.canvasWidth;
-        previewCanvas.width = size;
-        previewCanvas.height = size;
-        const ctx = previewCanvas.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, size, size);
-        const overlayImage = await loadHtmlImage(overlay);
-        const scale = size / productRef.current.canvasWidth;
-        ctx.save();
-        ctx.scale(scale, scale);
-        drawCylindricalWrap(ctx, overlayImage, viewRef.current.safe_zone_bounds);
-        ctx.restore();
-      };
-
       const exportMockup = async () => {
-        const current = viewRef.current;
         const overlay = overlayDataUrl();
-        return compositeMockup(current.mockup, overlay, Boolean(current.wrap), current.safe_zone_bounds);
+        return compositeMockup(viewRef.current.mockup, overlay);
       };
 
       const loadJson = async (json?: string) => {
@@ -329,7 +312,6 @@ export function FabricCanvas({
         setPreviewMode: (preview) => {
           try {
             setObjectPreview(preview);
-            if (preview && viewRef.current.wrap) void paintWrapPreview();
           } catch {
             /* canvas may be mid-render */
           }
@@ -337,7 +319,6 @@ export function FabricCanvas({
         applyView: async (nextView, json) => {
           viewRef.current = nextView;
           await loadJson(json);
-          if (previewRef.current && nextView.wrap) await paintWrapPreview();
         },
         deleteSelected: () => {
           const obj = canvas.getActiveObject();
@@ -400,7 +381,12 @@ export function FabricCanvas({
     canvasRef.current?.requestRenderAll();
   }, [laserPreview]);
 
-  const wrap = Boolean(view.wrap) && previewMode;
+  const wrapBox = view.wrapBounds;
+  const clipStyle = wrapBox
+    ? {
+        clipPath: `inset(${(wrapBox.top / product.canvasHeight) * 100}% ${(1 - (wrapBox.left + wrapBox.width) / product.canvasWidth) * 100}% ${(1 - (wrapBox.top + wrapBox.height) / product.canvasHeight) * 100}% ${(wrapBox.left / product.canvasWidth) * 100}% round ${((wrapBox.radius ?? 40) / product.canvasWidth) * 100}%)`,
+      }
+    : undefined;
 
   return (
     <div
@@ -413,13 +399,28 @@ export function FabricCanvas({
         alt=""
         className="pointer-events-none absolute inset-0 h-full w-full object-contain"
       />
-      <div className={wrap ? "relative z-10 h-full w-full opacity-0" : "relative z-10 h-full w-full"}>
+      <div className="relative z-10 h-full w-full" style={view.wrap ? clipStyle : undefined}>
         <canvas ref={hostRef} />
       </div>
+      {view.wrap && wrapBox ? (
+        <div
+          className="pointer-events-none absolute z-20"
+          style={{
+            left: `${(wrapBox.left / product.canvasWidth) * 100}%`,
+            top: `${(wrapBox.top / product.canvasHeight) * 100}%`,
+            width: `${(wrapBox.width / product.canvasWidth) * 100}%`,
+            height: `${(wrapBox.height / product.canvasHeight) * 100}%`,
+            borderRadius: `${((wrapBox.radius ?? 40) / product.canvasWidth) * 100}% / ${((wrapBox.radius ?? 40) / product.canvasHeight) * 100}%`,
+            background:
+              "linear-gradient(90deg, rgba(40,28,18,0.28) 0%, rgba(40,28,18,0.06) 18%, rgba(255,255,255,0.16) 48%, rgba(40,28,18,0.06) 82%, rgba(40,28,18,0.32) 100%)",
+            mixBlendMode: "multiply",
+          }}
+        />
+      ) : null}
       <div
         className={
           !previewMode && product.showSafeZone !== false
-            ? "pointer-events-none absolute z-20 rounded-md border-2 border-dashed border-[#32B7B2]/80"
+            ? "pointer-events-none absolute z-30 rounded-md border-2 border-dashed border-[#32B7B2]/80"
             : "hidden"
         }
         style={{
@@ -428,14 +429,6 @@ export function FabricCanvas({
           width: `${(view.safe_zone_bounds.width / product.canvasWidth) * 100}%`,
           height: `${(view.safe_zone_bounds.height / product.canvasHeight) * 100}%`,
         }}
-      />
-      <canvas
-        ref={wrapPreviewRef}
-        className={
-          wrap
-            ? "pointer-events-none absolute inset-0 z-20 h-full w-full"
-            : "pointer-events-none absolute inset-0 z-20 hidden h-full w-full"
-        }
       />
     </div>
   );
@@ -448,32 +441,58 @@ function isDesign(obj: { selectable?: boolean; evented?: boolean; isDesignLayer?
 function loadHtmlImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new window.Image();
+    if (/^https?:/i.test(src)) img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () => reject(new Error(`Could not load ${src}`));
     img.src = src;
   });
 }
 
-function drawCylindricalWrap(
+function roundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function drawArtworkOnCylinder(
   ctx: CanvasRenderingContext2D,
   overlay: HTMLImageElement,
-  safe: SafeZone,
+  destWidth: number,
+  destHeight: number,
+  wrapBox: SafeZone & { radius?: number },
 ) {
-  const sliceCount = Math.max(120, Math.round(safe.width));
-  for (let i = 0; i < sliceCount; i++) {
-    const t = i / sliceCount;
-    const n = t * 2 - 1;
-    const curve = Math.sqrt(Math.max(0.52, 1 - n * n * 0.46));
-    const sx = safe.left + t * safe.width;
-    const sw = Math.max(1, overlay.width / sliceCount);
-    const dx = safe.left + t * safe.width;
-    const dw = safe.width / sliceCount + 0.75;
-    const dh = safe.height * curve;
-    const dy = safe.top + (safe.height - dh) / 2;
-    ctx.drawImage(overlay, sx, safe.top, sw, safe.height, dx, dy, dw, dh);
-    ctx.fillStyle = `rgba(30, 20, 10, ${0.22 * n * n})`;
-    ctx.fillRect(dx, dy, dw, dh);
-  }
+  ctx.save();
+  roundedRectPath(
+    ctx,
+    wrapBox.left,
+    wrapBox.top,
+    wrapBox.width,
+    wrapBox.height,
+    wrapBox.radius ?? 40,
+  );
+  ctx.clip();
+  ctx.drawImage(overlay, 0, 0, destWidth, destHeight);
+  const shade = ctx.createLinearGradient(wrapBox.left, 0, wrapBox.left + wrapBox.width, 0);
+  shade.addColorStop(0, "rgba(40, 28, 18, 0.32)");
+  shade.addColorStop(0.18, "rgba(40, 28, 18, 0.08)");
+  shade.addColorStop(0.48, "rgba(255, 255, 255, 0.14)");
+  shade.addColorStop(0.82, "rgba(40, 28, 18, 0.08)");
+  shade.addColorStop(1, "rgba(40, 28, 18, 0.34)");
+  ctx.fillStyle = shade;
+  ctx.fillRect(wrapBox.left, wrapBox.top, wrapBox.width, wrapBox.height);
+  ctx.restore();
 }
 
 async function fileToImageDataUrl(file: File) {

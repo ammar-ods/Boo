@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil } from "lucide-react";
-import { productViews, type Product } from "@/lib/products";
+import { productViews, type Product, type ProductView } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
 import { FabricCanvas, type CanvasHandle } from "./fabric-canvas";
@@ -17,10 +17,10 @@ export function CustomizerShell({ product }: { product: Product }) {
   const setPreviewMode = useCustomizerStore((s) => s.setPreviewMode);
   const activeViewId = useCustomizerStore((s) => s.activeViewId);
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
-  const saveViewDesign = useCustomizerStore((s) => s.saveViewDesign);
-  const [canvas, setCanvas] = useState<CanvasHandle | null>(null);
+  const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
   const views = productViews(product);
-  const currentView = views.find((view) => view.id === activeViewId) ?? views[0];
+  const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id] ?? null;
+  const wrapProduct = views.some((view) => view.wrap);
 
   useEffect(() => {
     hydrateProduct(product);
@@ -29,24 +29,14 @@ export function CustomizerShell({ product }: { product: Product }) {
     };
   }, [hydrateProduct, product]);
 
-  const onReady = useCallback((handle: CanvasHandle) => {
-    setCanvas(handle);
+  const onReady = useCallback((viewId: string, handle: CanvasHandle) => {
+    setCanvases((current) => ({ ...current, [viewId]: handle }));
   }, []);
 
   function togglePreview() {
     const next = !previewMode;
     setPreviewMode(next);
-    canvas?.setPreviewMode(next);
-  }
-
-  async function changeView(id: string) {
-    if (!currentView || id === currentView.id) return;
-    if (canvas) saveViewDesign(currentView.id, canvas.exportJson());
-    setActiveViewId(id);
-    const nextView = views.find((view) => view.id === id);
-    if (nextView && canvas) {
-      await canvas.applyView(nextView, useCustomizerStore.getState().viewDesigns[id]);
-    }
+    Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(next));
   }
 
   return (
@@ -67,39 +57,41 @@ export function CustomizerShell({ product }: { product: Product }) {
               {previewMode ? "Back to editor" : "Preview final product"}
             </button>
           </div>
-          {views.length > 1 ? (
-            <div className="flex flex-wrap gap-2">
-              {views.map((view) => (
-                <button
-                  key={view.id}
-                  type="button"
-                  onClick={() => void changeView(view.id)}
-                  className={`rounded-full px-3 py-1.5 font-heading text-sm ${
-                    view.id === currentView.id
-                      ? "bg-boo-teal text-white"
-                      : "bg-white ring-1 ring-foreground/10"
-                  }`}
-                >
-                  {view.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div
-            className={
-              bleedWarning && !previewMode ? "rounded-[1.7rem] p-1 ring-2 ring-red-400" : ""
-            }
-          >
-            <FabricCanvas product={product} view={currentView} onReady={onReady} />
+          <div className={`grid gap-4 ${views.length > 1 ? "sm:grid-cols-2" : ""}`}>
+            {views.map((view) => (
+              <div key={view.id} className="space-y-2">
+                {views.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveViewId(view.id)}
+                    className={`font-heading text-sm ${
+                      activeViewId === view.id ? "text-boo-teal" : "text-muted-foreground"
+                    }`}
+                  >
+                    {view.label}
+                    {activeViewId === view.id ? " · editing" : ""}
+                  </button>
+                ) : null}
+                <ProductViewCanvas
+                  product={product}
+                  view={view}
+                  register={onReady}
+                  highlight={bleedWarning && !previewMode && activeViewId === view.id}
+                  onFocus={() => setActiveViewId(view.id)}
+                />
+              </div>
+            ))}
           </div>
           <p className="text-xs text-muted-foreground">
             {previewMode
-              ? currentView.wrap
-                ? "Preview wraps your print around the mug body."
+              ? wrapProduct
+                ? "Artwork is clipped to the mug so it sits on the ceramic, with a light wrap shade."
                 : "This is the clean product preview — no guides or handles."
-              : currentView.wrap
-                ? "Place art in the wrap window. Preview bends it around the mug."
-                : "Dashed box is the safe print/etch zone. Switch sides to decorate front and back."}
+              : views.length > 1
+                ? "Front and back are both here. Tap a side to add art or text to it."
+                : wrapProduct
+                  ? "Place art on the mug face. It stays on the ceramic and shades like a wrap."
+                  : "Dashed box is the safe print/etch zone."}
           </p>
         </section>
 
@@ -107,8 +99,14 @@ export function CustomizerShell({ product }: { product: Product }) {
           <p className="font-script text-2xl text-boo-pink">customize it</p>
           <h1 className="font-heading text-3xl">{product.name}</h1>
           <p className="mb-5 mt-1 text-sm text-muted-foreground">{product.description}</p>
+          {views.length > 1 ? (
+            <p className="mb-4 rounded-2xl bg-secondary px-3 py-2 text-sm">
+              Adding to <span className="font-heading">{views.find((view) => view.id === activeViewId)?.label ?? "this side"}</span>
+              . The other side stays as you left it.
+            </p>
+          ) : null}
           <div className={previewMode ? "hidden" : ""}>
-            <ControlsPanel product={product} canvas={canvas} />
+            <ControlsPanel product={product} canvas={activeCanvas} />
           </div>
           {previewMode ? (
             <div className="rounded-2xl bg-secondary p-4 text-sm">
@@ -117,10 +115,37 @@ export function CustomizerShell({ product }: { product: Product }) {
           ) : null}
           <div className="mt-8 border-t border-border pt-5">
             <h2 className="mb-3 font-heading text-xl">Inquiry</h2>
-            <InquiryForm product={product} canvas={canvas} />
+            <InquiryForm product={product} canvases={canvases} />
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function ProductViewCanvas({
+  product,
+  view,
+  register,
+  highlight,
+  onFocus,
+}: {
+  product: Product;
+  view: ProductView;
+  register: (id: string, handle: CanvasHandle) => void;
+  highlight: boolean;
+  onFocus: () => void;
+}) {
+  const onReady = useCallback(
+    (handle: CanvasHandle) => register(view.id, handle),
+    [register, view.id],
+  );
+  return (
+    <div
+      className={highlight ? "rounded-[1.7rem] p-1 ring-2 ring-red-400" : ""}
+      onPointerDown={onFocus}
+    >
+      <FabricCanvas product={product} view={view} onReady={onReady} />
     </div>
   );
 }

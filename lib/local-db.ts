@@ -74,6 +74,7 @@ function parseViews(
         height: Number(view.safe_zone_bounds?.height ?? bounds.height ?? 400),
       },
       wrap: Boolean(view.wrap),
+      wrapBounds: view.wrapBounds,
     }));
   }
   if (overlay) {

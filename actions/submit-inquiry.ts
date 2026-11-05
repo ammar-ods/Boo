@@ -2,6 +2,8 @@
 
 import { inquirySchema } from "@/lib/schemas/inquiry";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { saveOrder } from "@/lib/local-db";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 
@@ -115,8 +117,8 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
       customer_name: parsed.data.customerName,
       customer_email: parsed.data.customerEmail || null,
       customer_phone: parsed.data.customerPhone,
-      material: parsed.data.material,
-      quantity: parsed.data.quantity,
+      material: parsed.data.material || "Standard",
+      quantity: parsed.data.quantity || 1,
       notes: parsed.data.notes || null,
       status: "pending",
       quoted_price: null,
@@ -126,8 +128,33 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
       created_at: now,
     });
 
+    const record: InquiryRecord = {
+      id,
+      reference_code: referenceCode,
+      product_slug: parsed.data.productSlug,
+      product_name: parsed.data.productName,
+      customer_name: parsed.data.customerName,
+      customer_email: parsed.data.customerEmail || null,
+      customer_phone: parsed.data.customerPhone,
+      material: parsed.data.material || "Standard",
+      quantity: parsed.data.quantity || 1,
+      notes: parsed.data.notes || null,
+      status: "pending",
+      quoted_price: null,
+      mockup_path: mockupPath,
+      production_paths: productionPaths,
+      canvas_json: canvasJson,
+      created_at: now,
+      updated_at: now,
+      cleanup_requested_at: null,
+    };
+
     if (dbError) {
       throw new Error(`Failed to save inquiry to database: ${dbError.message}`);
+    }
+
+    if (!isSupabaseConfigured()) {
+      await saveOrder(record);
     }
 
     return {
@@ -136,7 +163,7 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
       whatsappUrl: buildWhatsAppUrl({
         referenceCode,
         productName: parsed.data.productName,
-        quantity: parsed.data.quantity,
+        quantity: parsed.data.quantity || 1,
       }),
     };
   } catch (error) {
