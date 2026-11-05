@@ -42,18 +42,30 @@ export default async function InquiryDetailPage({
         <div className="space-y-4">
           <h2 className="font-heading text-xl">Submitted preview</h2>
           {previewImages.length ? (
-            previewImages.map((file) => (
-              <div key={file} className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={file} alt="Order preview" className="h-auto w-full bg-[#f6f3ee]" />
-                <div className="flex items-center justify-between px-4 py-2 text-sm">
-                  <span className="truncate text-muted-foreground">{file.split("/").pop()}</span>
-                  <a className="font-heading text-boo-teal" href={file} target="_blank" rel="noreferrer">
-                    Open file
-                  </a>
-                </div>
-              </div>
-            ))
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {previewImages.map((file) => (
+                <article
+                  key={file}
+                  className="overflow-hidden rounded-2xl bg-white ring-1 ring-foreground/10"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={file} alt="Order preview" className="h-28 w-full bg-[#f6f3ee] object-cover" />
+                  <div className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs">
+                    <a
+                      className="font-heading text-boo-teal"
+                      href={file}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View
+                    </a>
+                    <a className="font-heading text-boo-orange" href={file} download>
+                      Download
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
           ) : (
             <div className="rounded-[1.4rem] bg-white p-10 text-sm text-muted-foreground ring-1 ring-foreground/10">
               No mockup preview is stored on this order yet.
@@ -62,12 +74,21 @@ export default async function InquiryDetailPage({
 
           <div>
             <h2 className="mb-2 font-heading text-xl">Customer uploads</h2>
-            <ul className="space-y-2 text-sm">
+            <ul className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
               {otherFiles.map((file) => (
-                <li key={file}>
-                  <a className="text-boo-teal underline" href={file} target="_blank" rel="noreferrer">
-                    Download {file.split("/").pop()}
-                  </a>
+                <li
+                  key={file}
+                  className="rounded-2xl bg-white px-3 py-3 ring-1 ring-foreground/10"
+                >
+                  <p className="truncate text-xs text-muted-foreground">{file.split("/").pop()}</p>
+                  <div className="mt-2 flex gap-3 text-xs">
+                    <a className="font-heading text-boo-teal" href={file} target="_blank" rel="noreferrer">
+                      View
+                    </a>
+                    <a className="font-heading text-boo-orange" href={file} download>
+                      Download
+                    </a>
+                  </div>
                 </li>
               ))}
               {previewImages.length === 0 && otherFiles.length === 0 ? (

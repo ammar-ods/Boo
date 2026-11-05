@@ -60,5 +60,5 @@ export async function updateInquiryStatus(formData: FormData) {
   }
 
   await saveOrder(next);
-  redirect(`/admin/inquiries/${id}`);
+  redirect(`/admin/inquiries/${id}?saved=1`);
 }

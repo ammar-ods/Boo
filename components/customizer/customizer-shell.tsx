@@ -9,6 +9,7 @@ import { clearRememberedFiles } from "@/lib/upload-registry";
 import { FabricCanvas, type CanvasHandle } from "./fabric-canvas";
 import { ControlsPanel } from "./controls-panel";
 import { InquiryForm } from "./inquiry-form";
+import { MugTurntable } from "./mug-turntable";
 
 export function CustomizerShell({ product }: { product: Product }) {
   const hydrateProduct = useCustomizerStore((s) => s.hydrateProduct);
@@ -18,6 +19,7 @@ export function CustomizerShell({ product }: { product: Product }) {
   const activeViewId = useCustomizerStore((s) => s.activeViewId);
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
   const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
+  const [wrapTexture, setWrapTexture] = useState<string | null>(null);
   const views = productViews(product);
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id] ?? null;
   const wrapProduct = views.some((view) => view.wrap);
@@ -31,6 +33,10 @@ export function CustomizerShell({ product }: { product: Product }) {
 
   const onReady = useCallback((viewId: string, handle: CanvasHandle) => {
     setCanvases((current) => ({ ...current, [viewId]: handle }));
+  }, []);
+
+  const onWrapDesign = useCallback((overlay: string | null) => {
+    setWrapTexture(overlay);
   }, []);
 
   function togglePreview() {
@@ -57,40 +63,62 @@ export function CustomizerShell({ product }: { product: Product }) {
               {previewMode ? "Back to editor" : "Preview final product"}
             </button>
           </div>
-          <div className={`grid gap-4 ${views.length > 1 ? "sm:grid-cols-2" : ""}`}>
-            {views.map((view) => (
-              <div key={view.id} className="space-y-2">
-                {views.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveViewId(view.id)}
-                    className={`font-heading text-sm ${
-                      activeViewId === view.id ? "text-boo-teal" : "text-muted-foreground"
-                    }`}
-                  >
-                    {view.label}
-                    {activeViewId === view.id ? " · editing" : ""}
-                  </button>
-                ) : null}
-                <ProductViewCanvas
-                  product={product}
-                  view={view}
-                  register={onReady}
-                  highlight={bleedWarning && !previewMode && activeViewId === view.id}
-                  onFocus={() => setActiveViewId(view.id)}
-                />
+          {wrapProduct ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {views.map((view) => (
+                <div key={view.id} className="space-y-2">
+                  <p className="font-heading text-sm text-boo-teal">Print wrap</p>
+                  <ProductViewCanvas
+                    product={product}
+                    view={view}
+                    register={onReady}
+                    highlight={bleedWarning && !previewMode && activeViewId === view.id}
+                    onFocus={() => setActiveViewId(view.id)}
+                    onDesignChange={onWrapDesign}
+                  />
+                </div>
+              ))}
+              <div className="space-y-2">
+                <p className="font-heading text-sm text-muted-foreground">3D mug · drag to spin</p>
+                <MugTurntable textureUrl={wrapTexture} />
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className={`grid gap-4 ${views.length > 1 ? "sm:grid-cols-2" : ""}`}>
+              {views.map((view) => (
+                <div key={view.id} className="space-y-2">
+                  {views.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveViewId(view.id)}
+                      className={`font-heading text-sm ${
+                        activeViewId === view.id ? "text-boo-teal" : "text-muted-foreground"
+                      }`}
+                    >
+                      {view.label}
+                      {activeViewId === view.id ? " · editing" : ""}
+                    </button>
+                  ) : null}
+                  <ProductViewCanvas
+                    product={product}
+                    view={view}
+                    register={onReady}
+                    highlight={bleedWarning && !previewMode && activeViewId === view.id}
+                    onFocus={() => setActiveViewId(view.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             {previewMode
               ? wrapProduct
-                ? "Artwork is clipped to the mug so it sits on the ceramic, with a light wrap shade."
+                ? "The wrap is mapped onto a lightweight 3D mug — drag it to rotate. No extra libraries needed."
                 : "This is the clean product preview — no guides or handles."
               : views.length > 1
                 ? "Front and back are both here. Tap a side to add art or text to it."
                 : wrapProduct
-                  ? "Place art on the mug face. It stays on the ceramic and shades like a wrap."
+                  ? "Place art on the unwrapped print. The mug on the right updates as you go — drag to spin."
                   : "Dashed box is the safe print/etch zone."}
           </p>
         </section>
@@ -129,12 +157,14 @@ function ProductViewCanvas({
   register,
   highlight,
   onFocus,
+  onDesignChange,
 }: {
   product: Product;
   view: ProductView;
   register: (id: string, handle: CanvasHandle) => void;
   highlight: boolean;
   onFocus: () => void;
+  onDesignChange?: (overlay: string | null) => void;
 }) {
   const onReady = useCallback(
     (handle: CanvasHandle) => register(view.id, handle),
@@ -145,7 +175,12 @@ function ProductViewCanvas({
       className={highlight ? "rounded-[1.7rem] p-1 ring-2 ring-red-400" : ""}
       onPointerDown={onFocus}
     >
-      <FabricCanvas product={product} view={view} onReady={onReady} />
+      <FabricCanvas
+        product={product}
+        view={view}
+        onReady={onReady}
+        onDesignChange={onDesignChange}
+      />
     </div>
   );
 }

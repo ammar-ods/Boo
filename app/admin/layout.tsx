@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAdmin } from "@/actions/admin";
 import { BooLogo } from "@/components/brand/boo-logo";
+import { SavedToast } from "@/components/admin/saved-toast";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -39,6 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
       {children}
+      <SavedToast />
     </div>
   );
 }

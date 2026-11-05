@@ -43,6 +43,12 @@ export type Product = {
 };
 
 const MUG_WRAP_BOUNDS = { left: 214, top: 228, width: 330, height: 360, radius: 48 };
+export const MUG_WRAP_FLAT = {
+  mockup: "/products/mug-wrap-flat.svg",
+  productMockup: "/products/ceramic-mug.svg",
+  safe_zone_bounds: { left: 70, top: 210, width: 660, height: 300 },
+  wrapBounds: MUG_WRAP_BOUNDS,
+};
 
 export function productViews(product: Product): ProductView[] {
   const drinkware = product.category === "Drinkware" || Boolean(product.wrapPreview);
@@ -62,10 +68,14 @@ export function productViews(product: Product): ProductView[] {
 
   return raw.map((view) => {
     const wrap = Boolean(view.wrap) || drinkware;
+    if (!wrap) return { ...view, wrap: false };
     return {
       ...view,
-      wrap,
-      wrapBounds: wrap ? view.wrapBounds ?? MUG_WRAP_BOUNDS : view.wrapBounds,
+      wrap: true,
+      label: view.label || "Wrap",
+      mockup: MUG_WRAP_FLAT.mockup,
+      safe_zone_bounds: MUG_WRAP_FLAT.safe_zone_bounds,
+      wrapBounds: view.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds,
     };
   });
 }
@@ -145,24 +155,24 @@ export const SEED_PRODUCTS: Product[] = [
     category: "Drinkware",
     tagline: "Wrap-print sipware.",
     description:
-      "11oz ceramic mug. Place art in the wrap window — anything past the red warning edge can clip at the handle.",
+      "11oz ceramic mug. Design the unwrapped print, then drag the 3D mug to spin it.",
     is_laser_cut: false,
     materials: ["Gloss white", "Matte black", "Teal glaze"],
     defaultMaterial: "Gloss white",
     canvasWidth: 800,
     canvasHeight: 800,
     safe_zone_bounds: { left: 210, top: 250, width: 300, height: 220 },
-    mockup: "/products/ceramic-mug.svg",
+    mockup: "/products/mug-wrap-flat.svg",
     accent: "orange",
     wrapPreview: true,
     views: [
       {
         id: "wrap",
         label: "360° wrap",
-        mockup: "/products/ceramic-mug.svg",
-        safe_zone_bounds: { left: 236, top: 292, width: 286, height: 210 },
+        mockup: "/products/mug-wrap-flat.svg",
+        safe_zone_bounds: MUG_WRAP_FLAT.safe_zone_bounds,
         wrap: true,
-        wrapBounds: { left: 214, top: 228, width: 330, height: 360, radius: 48 },
+        wrapBounds: MUG_WRAP_FLAT.wrapBounds,
       },
     ],
   },

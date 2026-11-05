@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Product, ProductView, SafeZone } from "@/lib/products";
-import { productViews } from "@/lib/products";
+import { MUG_WRAP_FLAT, productViews } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 
 type FabricMod = typeof import("fabric");
@@ -22,6 +22,7 @@ export type CanvasHandle = {
   applyView: (view: ProductView, json?: string) => Promise<void>;
   deleteSelected: () => void;
   exportMockup: () => Promise<Blob>;
+  exportOverlay: () => string | null;
   exportViewMockups: (designs: Record<string, string>) => Promise<ViewMockup[]>;
   exportJson: () => string;
   hasDesign: () => boolean;
@@ -31,10 +32,12 @@ export function FabricCanvas({
   product,
   view,
   onReady,
+  onDesignChange,
 }: {
   product: Product;
   view: ProductView;
   onReady: (handle: CanvasHandle) => void;
+  onDesignChange?: (overlay: string | null) => void;
 }) {
   const hostRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -58,10 +61,13 @@ export function FabricCanvas({
   laserRef.current = laserPreview;
   const previewRef = useRef(previewMode);
   previewRef.current = previewMode;
+  const onDesignChangeRef = useRef(onDesignChange);
+  onDesignChangeRef.current = onDesignChange;
 
   useEffect(() => {
     let disposed = false;
     let observer: ResizeObserver | undefined;
+    let notifyTimer: number | undefined;
 
     async function boot() {
       const fabric = await import("fabric");
@@ -105,53 +111,14 @@ export function FabricCanvas({
         applyMugMask();
         canvas.requestRenderAll();
       };
-      const wrapBoxFor = () =>
-        viewRef.current.wrapBounds ?? {
-          left: 214,
-          top: 228,
-          width: 330,
-          height: 360,
-          radius: 48,
-        };
       const applyMugMask = () => {
         const el = canvas.wrapperEl;
         if (!el) return;
-        if (!viewRef.current.wrap) {
-          el.style.maskImage = "";
-          el.style.webkitMaskImage = "";
-          return;
-        }
-        const box = wrapBoxFor();
-        const size = productRef.current.canvasWidth;
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><rect x="${box.left}" y="${box.top}" width="${box.width}" height="${box.height}" rx="${box.radius ?? 48}" fill="white"/></svg>`;
-        const mask = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
-        el.style.maskImage = mask;
-        el.style.webkitMaskImage = mask;
-        el.style.maskSize = "100% 100%";
-        el.style.webkitMaskSize = "100% 100%";
-        el.style.maskRepeat = "no-repeat";
-        el.style.webkitMaskRepeat = "no-repeat";
+        el.style.maskImage = "";
+        el.style.webkitMaskImage = "";
       };
       const applyWrapClip = () => {
-        const current = viewRef.current;
-        if (!current.wrap) {
-          canvas.clipPath = undefined;
-          applyMugMask();
-          canvas.requestRenderAll();
-          return;
-        }
-        const box = wrapBoxFor();
-        canvas.clipPath = new fabric.Rect({
-          left: box.left,
-          top: box.top,
-          width: box.width,
-          height: box.height,
-          rx: box.radius ?? 48,
-          ry: box.radius ?? 48,
-          absolutePositioned: true,
-          selectable: false,
-          evented: false,
-        });
+        canvas.clipPath = undefined;
         applyMugMask();
         canvas.requestRenderAll();
       };
@@ -202,7 +169,20 @@ export function FabricCanvas({
         }
       };
 
-      canvas.on("object:modified", checkBleed);
+      const notifyDesign = () => {
+        window.clearTimeout(notifyTimer);
+        notifyTimer = window.setTimeout(() => {
+          onDesignChangeRef.current?.(exportOverlay());
+        }, 160);
+      };
+
+      canvas.on("object:modified", () => {
+        checkBleed();
+        notifyDesign();
+      });
+      canvas.on("object:added", notifyDesign);
+      canvas.on("object:removed", notifyDesign);
+      canvas.on("text:changed", notifyDesign);
       canvas.on("object:moving", checkBleed);
       canvas.on("object:scaling", checkBleed);
       canvas.on("object:rotating", checkBleed);
@@ -299,16 +279,32 @@ export function FabricCanvas({
         canvas.requestRenderAll();
       };
 
-      const overlayDataUrl = () => {
+      const captureNative = () => {
         canvas.discardActiveObject();
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         canvas.setDimensions({
           width: productRef.current.canvasWidth,
           height: productRef.current.canvasHeight,
         });
-        const overlay = canvas.toDataURL({ format: "png", multiplier: 1 });
+        const el = canvas.toCanvasElement(1);
         fit();
-        return overlay;
+        return el;
+      };
+
+      const overlayDataUrl = () => captureNative().toDataURL("image/png");
+
+      const exportOverlay = () => {
+        if (!canvas.getObjects().some(isDesign)) return null;
+        const el = captureNative();
+        if (!viewRef.current.wrap) return el.toDataURL("image/png");
+        const safe = viewRef.current.safe_zone_bounds;
+        const crop = document.createElement("canvas");
+        crop.width = Math.max(1, Math.round(safe.width));
+        crop.height = Math.max(1, Math.round(safe.height));
+        const ctx = crop.getContext("2d");
+        if (!ctx) return el.toDataURL("image/png");
+        ctx.drawImage(el, -safe.left, -safe.top);
+        return crop.toDataURL("image/png");
       };
 
       const compositeMockup = async (mockupSrc: string, overlaySrc: string) => {
@@ -322,9 +318,9 @@ export function FabricCanvas({
         const productImage = await loadHtmlImage(mockupSrc);
         ctx.drawImage(productImage, 0, 0, dest.width, dest.height);
         const overlayImage = await loadHtmlImage(overlaySrc);
-        const wrapBox = viewRef.current.wrapBounds;
-        if (viewRef.current.wrap && wrapBox) {
-          drawArtworkOnCylinder(ctx, overlayImage, dest.width, dest.height, wrapBox);
+        const wrapBox = viewRef.current.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds;
+        if (viewRef.current.wrap) {
+          drawArtworkOnCylinder(ctx, overlayImage, wrapBox);
         } else {
           ctx.drawImage(overlayImage, 0, 0, dest.width, dest.height);
         }
@@ -338,6 +334,26 @@ export function FabricCanvas({
       };
 
       const exportMockup = async () => {
+        if (viewRef.current.wrap) {
+          const wrapTexture = exportOverlay();
+          if (!wrapTexture) {
+            const productImage = await loadHtmlImage(MUG_WRAP_FLAT.productMockup);
+            const dest = document.createElement("canvas");
+            dest.width = productRef.current.canvasWidth;
+            dest.height = productRef.current.canvasHeight;
+            const ctx = dest.getContext("2d");
+            if (!ctx) throw new Error("Could not export mockup");
+            ctx.drawImage(productImage, 0, 0, dest.width, dest.height);
+            return await new Promise<Blob>((resolve, reject) => {
+              dest.toBlob(
+                (blob) => (blob ? resolve(blob) : reject(new Error("blob failed"))),
+                "image/jpeg",
+                0.55,
+              );
+            });
+          }
+          return compositeMockup(MUG_WRAP_FLAT.productMockup, wrapTexture);
+        }
         const overlay = overlayDataUrl();
         return compositeMockup(viewRef.current.mockup, overlay);
       };
@@ -385,6 +401,7 @@ export function FabricCanvas({
           }
         },
         exportMockup,
+        exportOverlay,
         exportViewMockups: async (designs) => {
           const currentJson = JSON.stringify(canvas.toJSON());
           const currentView = viewRef.current;
@@ -420,6 +437,7 @@ export function FabricCanvas({
 
     return () => {
       disposed = true;
+      window.clearTimeout(notifyTimer);
       observer?.disconnect();
       canvasRef.current?.dispose();
       canvasRef.current = null;
@@ -445,8 +463,6 @@ export function FabricCanvas({
     canvasRef.current?.requestRenderAll();
   }, [laserPreview]);
 
-  const wrapBox = view.wrapBounds;
-
   return (
     <div
       ref={wrapRef}
@@ -461,19 +477,6 @@ export function FabricCanvas({
       <div className="absolute inset-0 z-10">
         <canvas ref={hostRef} />
       </div>
-      {view.wrap && wrapBox ? (
-        <div
-          className="pointer-events-none absolute z-20"
-          style={{
-            left: `${(wrapBox.left / product.canvasWidth) * 100}%`,
-            top: `${(wrapBox.top / product.canvasHeight) * 100}%`,
-            width: `${(wrapBox.width / product.canvasWidth) * 100}%`,
-            height: `${(wrapBox.height / product.canvasHeight) * 100}%`,
-            borderRadius: `${wrapBox.radius ?? 48}px`,
-            boxShadow: "inset 18px 0 28px rgba(40,28,18,0.22), inset -18px 0 28px rgba(40,28,18,0.22), inset 0 0 40px rgba(255,255,255,0.12)",
-          }}
-        />
-      ) : null}
       <div
         className={
           !previewMode && product.showSafeZone !== false
@@ -526,8 +529,6 @@ function roundedRectPath(
 function drawArtworkOnCylinder(
   ctx: CanvasRenderingContext2D,
   overlay: HTMLImageElement,
-  destWidth: number,
-  destHeight: number,
   wrapBox: SafeZone & { radius?: number },
 ) {
   ctx.save();
@@ -540,15 +541,20 @@ function drawArtworkOnCylinder(
     wrapBox.radius ?? 40,
   );
   ctx.clip();
-  ctx.drawImage(overlay, 0, 0, destWidth, destHeight);
-  const shade = ctx.createLinearGradient(wrapBox.left, 0, wrapBox.left + wrapBox.width, 0);
-  shade.addColorStop(0, "rgba(40, 28, 18, 0.32)");
-  shade.addColorStop(0.18, "rgba(40, 28, 18, 0.08)");
-  shade.addColorStop(0.48, "rgba(255, 255, 255, 0.14)");
-  shade.addColorStop(0.82, "rgba(40, 28, 18, 0.08)");
-  shade.addColorStop(1, "rgba(40, 28, 18, 0.34)");
-  ctx.fillStyle = shade;
-  ctx.fillRect(wrapBox.left, wrapBox.top, wrapBox.width, wrapBox.height);
+  const slices = Math.max(80, Math.round(wrapBox.width));
+  for (let i = 0; i < slices; i++) {
+    const t = i / slices;
+    const nx = t * 2 - 1;
+    const cos = Math.sqrt(Math.max(0, 1 - nx * nx));
+    if (cos <= 0.02) continue;
+    const theta = Math.atan2(nx, cos);
+    const u = ((theta / (Math.PI * 2) + 0.5) % 1 + 1) % 1;
+    const x = wrapBox.left + t * wrapBox.width;
+    const sx = u * Math.max(1, overlay.width - 1);
+    ctx.drawImage(overlay, sx, 0, 1, overlay.height, x, wrapBox.top, wrapBox.width / slices + 0.6, wrapBox.height);
+    ctx.fillStyle = `rgba(40,28,18,${0.22 * (1 - cos)})`;
+    ctx.fillRect(x, wrapBox.top, wrapBox.width / slices + 0.6, wrapBox.height);
+  }
   ctx.restore();
 }
 

@@ -126,7 +126,7 @@ export async function createProduct(formData: FormData) {
     }
     const saved = await upsertProduct(product);
     revalidateProductPages(saved.slug);
-    redirect(`/admin/products/${saved.slug}`);
+    redirect(`/admin/products/${saved.slug}?saved=1`);
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     const message = error instanceof Error ? error.message : "Could not create product";
@@ -147,7 +147,7 @@ export async function updateProduct(formData: FormData) {
       await upsertProduct(product);
     }
     revalidateProductPages(product.slug);
-    redirect(`/admin/products/${product.slug}`);
+    redirect(`/admin/products/${product.slug}?saved=1`);
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     const slug = String(formData.get("originalSlug") || "new");

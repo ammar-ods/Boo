@@ -352,7 +352,15 @@ export async function listOrders(): Promise<InquiryRecord[]> {
       .from("inquiries")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (canUseSeedFallback(error)) {
+        const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+        return orders.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+      }
+      throw new Error(error.message);
+    }
     return (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
   }
   const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
@@ -367,7 +375,15 @@ export async function getOrder(id: string) {
   if (useSupabase()) {
     const supabase = createAdminClient();
     const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
-    if (byId.error) throw new Error(byId.error.message);
+    if (byId.error) {
+      if (canUseSeedFallback(byId.error)) {
+        const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+        return orders.find(
+          (order) => order.id === key || order.reference_code === ref || order.reference_code === key,
+        );
+      }
+      throw new Error(byId.error.message);
+    }
     if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
     const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
     if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
