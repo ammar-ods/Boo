@@ -5,9 +5,11 @@ import { Label } from "@/components/ui/label";
 export function ProductForm({
   product,
   action,
+  error,
 }: {
   product?: Product;
   action: (formData: FormData) => void | Promise<void>;
+  error?: string;
 }) {
   const safe = product?.safe_zone_bounds ?? {
     left: 220,
@@ -19,6 +21,11 @@ export function ProductForm({
   return (
     <form action={action} className="grid gap-6 lg:grid-cols-[1fr_320px]">
       {product ? <input type="hidden" name="originalSlug" value={product.slug} /> : null}
+      {error ? (
+        <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 lg:col-span-2">
+          {error}
+        </div>
+      ) : null}
       <div className="space-y-4 rounded-[1.4rem] bg-white p-5 ring-1 ring-foreground/10">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Name" name="name" defaultValue={product?.name} required />

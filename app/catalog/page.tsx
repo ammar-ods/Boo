@@ -2,6 +2,7 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 import { getLiveCatalog } from "@/lib/local-db";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function CatalogPage() {
   const products = await getLiveCatalog();

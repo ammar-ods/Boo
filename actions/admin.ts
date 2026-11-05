@@ -8,9 +8,7 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-auth";
 import { inquiryStatusSchema } from "@/lib/schemas/inquiry";
-import { getOrder, saveOrder } from "@/lib/local-db";
-import { unlink } from "fs/promises";
-import path from "path";
+import { deleteStoredFile, getOrder, saveOrder } from "@/lib/local-db";
 
 export async function loginAdmin(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -50,14 +48,11 @@ export async function updateInquiryStatus(formData: FormData) {
   };
 
   if (status === "fulfilled" || status === "cancelled") {
-    const files = [current.mockup_path, ...(current.production_paths ?? [])].filter(Boolean);
+    const files = [current.mockup_path, ...(current.production_paths ?? [])].filter(
+      (file): file is string => Boolean(file),
+    );
     for (const file of files) {
-      if (!file?.startsWith("/uploads/")) continue;
-      try {
-        await unlink(path.join(process.cwd(), "public", file));
-      } catch {
-        /* already gone */
-      }
+      await deleteStoredFile(file);
     }
     next.mockup_path = null;
     next.production_paths = [];

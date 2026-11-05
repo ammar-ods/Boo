@@ -4,6 +4,7 @@ import { BooLogo } from "@/components/brand/boo-logo";
 import { getLiveCatalog } from "@/lib/local-db";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const STEPS = [
   {

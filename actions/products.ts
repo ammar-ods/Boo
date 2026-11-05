@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   CATEGORIES,
@@ -9,7 +10,6 @@ import {
 } from "@/lib/products";
 import {
   deleteProduct,
-  getCatalog,
   getCatalogProduct,
   savePublicUpload,
   upsertProduct,
@@ -42,6 +42,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
       "products",
       `${slug}-${Date.now()}.${ext}`,
       Buffer.from(await file.arrayBuffer()),
+      file.type || undefined,
     );
   }
 
@@ -67,33 +68,68 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
 }
 
 export async function createProduct(formData: FormData) {
-  const product = await productFromForm(formData);
-  const existing = await getCatalogProduct(product.slug);
-  if (existing) {
-    redirect(`/admin/products/${existing.slug}?error=exists`);
+  try {
+    const product = await productFromForm(formData);
+    const existing = await getCatalogProduct(product.slug);
+    if (existing) {
+      redirect(
+        `/admin/products/new?error=${encodeURIComponent("That slug already exists. Pick another name.")}`,
+      );
+    }
+    const saved = await upsertProduct(product);
+    revalidateProductPages(saved.slug);
+    redirect(`/admin/products/${saved.slug}`);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    const message = error instanceof Error ? error.message : "Could not create product";
+    redirect(`/admin/products/new?error=${encodeURIComponent(message)}`);
   }
-  await upsertProduct(product);
-  redirect(`/admin/products/${product.slug}`);
 }
 
 export async function updateProduct(formData: FormData) {
-  const originalSlug = String(formData.get("originalSlug") || "");
-  const current = await getCatalogProduct(originalSlug);
-  const product = await productFromForm(formData, current);
-  if (originalSlug && originalSlug !== product.slug) {
-    const catalog = await getCatalog();
-    const withoutOld = catalog.filter((item) => item.slug !== originalSlug);
-    withoutOld.push(product);
-    const { saveCatalog } = await import("@/lib/local-db");
-    await saveCatalog(withoutOld);
-  } else {
-    await upsertProduct(product);
+  try {
+    const originalSlug = String(formData.get("originalSlug") || "");
+    const current = await getCatalogProduct(originalSlug);
+    const product = await productFromForm(formData, current);
+    if (originalSlug && originalSlug !== product.slug) {
+      await upsertProduct(product);
+      await deleteProduct(originalSlug);
+      revalidateProductPages(originalSlug);
+    } else {
+      await upsertProduct(product);
+    }
+    revalidateProductPages(product.slug);
+    redirect(`/admin/products/${product.slug}`);
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    const slug = String(formData.get("originalSlug") || "new");
+    const message = error instanceof Error ? error.message : "Could not update product";
+    redirect(`/admin/products/${slug}?error=${encodeURIComponent(message)}`);
   }
-  redirect(`/admin/products/${product.slug}`);
+}
+
+function isNextRedirect(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
+  );
 }
 
 export async function removeProduct(formData: FormData) {
   const slug = String(formData.get("slug") || "");
-  if (slug) await deleteProduct(slug);
+  if (slug) {
+    await deleteProduct(slug);
+    revalidateProductPages(slug);
+  }
   redirect("/admin/products");
+}
+
+function revalidateProductPages(slug: string) {
+  revalidatePath("/admin/products");
+  revalidatePath(`/admin/products/${slug}`);
+  revalidatePath("/");
+  revalidatePath("/catalog");
+  revalidatePath(`/customize/${slug}`);
 }

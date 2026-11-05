@@ -100,3 +100,57 @@ on storage.objects
 for all
 using (bucket_id = 'inquiry-assets' and auth.role() = 'service_role')
 with check (bucket_id = 'inquiry-assets' and auth.role() = 'service_role');
+
+create table if not exists public.products (
+  slug text primary key,
+  name text not null,
+  category text not null,
+  tagline text,
+  description text,
+  is_laser_cut boolean not null default false,
+  materials text[] not null default '{}',
+  default_material text,
+  canvas_width integer not null default 800,
+  canvas_height integer not null default 800,
+  safe_zone_bounds jsonb not null default '{"left":200,"top":200,"width":400,"height":400}'::jsonb,
+  mockup text not null,
+  accent text not null default 'teal',
+  show_safe_zone boolean not null default true,
+  archived boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists products_category_idx on public.products (category);
+
+alter table public.products enable row level security;
+
+drop policy if exists "service role products" on public.products;
+create policy "service role products"
+on public.products
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+drop policy if exists "public read products" on public.products;
+create policy "public read products"
+on public.products
+for select
+using (true);
+
+insert into storage.buckets (id, name, public)
+values ('uploads', 'uploads', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "public read uploads" on storage.objects;
+create policy "public read uploads"
+on storage.objects
+for select
+using (bucket_id = 'uploads');
+
+drop policy if exists "service role write uploads" on storage.objects;
+create policy "service role write uploads"
+on storage.objects
+for all
+using (bucket_id = 'uploads' and auth.role() = 'service_role')
+with check (bucket_id = 'uploads' and auth.role() = 'service_role');

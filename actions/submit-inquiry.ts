@@ -106,7 +106,6 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
       production_paths: productionPaths,
       canvas_json: canvasJson,
       created_at: now,
-      updated_at: now,
     });
 
     if (dbError) {

@@ -2,12 +2,28 @@ import Link from "next/link";
 import { getCatalog } from "@/lib/local-db";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; created?: string }>;
+}) {
   const products = await getCatalog();
+  const { error, created } = await searchParams;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      {error ? (
+        <p className="mb-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          {decodeURIComponent(error)}
+        </p>
+      ) : null}
+      {created ? (
+        <p className="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Saved {decodeURIComponent(created)}.
+        </p>
+      ) : null}
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <p className="font-script text-2xl text-boo-orange">catalog</p>
