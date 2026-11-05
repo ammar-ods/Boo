@@ -83,7 +83,15 @@ export function InquiryForm({
         toast.error("Could not capture a preview.");
         return;
       }
-      data.set("mockup", new File([mockups[0].blob], `${mockups[0].id}.jpg`, { type: "image/jpeg" }));
+      const wrap = views.some((view) => view.wrap);
+      data.set(
+        "mockup",
+        new File(
+          [mockups[0].blob],
+          wrap ? "unfolded-wrap.jpg" : `${mockups[0].id}.jpg`,
+          { type: "image/jpeg" },
+        ),
+      );
       mockups.slice(1).forEach((item) => {
         data.append(
           "viewMockups",

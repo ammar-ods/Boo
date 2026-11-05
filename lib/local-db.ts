@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { unstable_noStore as noStore } from "next/cache";
-import { productViews, SEED_PRODUCTS, type Product, type ProductView } from "@/lib/products";
+import { MUG_WRAP_FLAT, productViews, SEED_PRODUCTS, type Product, type ProductView } from "@/lib/products";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -124,7 +124,13 @@ function rowToProduct(row: Record<string, unknown>): Product {
   const seed = SEED_PRODUCTS.find((item) => item.slug === slug);
   if ((!views || views.length === 0) && seed?.views) {
     views = seed.views.map((view, index) =>
-      index === 0 ? { ...view, mockup, wrap: wrapPreview || view.wrap } : view,
+      index === 0
+        ? {
+            ...view,
+            mockup: wrapPreview ? MUG_WRAP_FLAT.mockup : mockup,
+            wrap: wrapPreview || view.wrap,
+          }
+        : view,
     );
   }
 

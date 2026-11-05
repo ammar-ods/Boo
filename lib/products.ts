@@ -60,14 +60,6 @@ export function mugPhotoUrl(product: Product) {
   return src;
 }
 
-function wrapEditorMockup(product: Product, view: ProductView) {
-  const custom = product.wrapTemplate || view.mockup;
-  if (!custom || custom.includes("ceramic-mug") || custom.includes("mug-wrap-flat")) {
-    return MUG_WRAP_FLAT.mockup;
-  }
-  return custom;
-}
-
 export function productViews(product: Product): ProductView[] {
   const drinkware = product.category === "Drinkware" || Boolean(product.wrapPreview);
   const raw =
@@ -87,16 +79,12 @@ export function productViews(product: Product): ProductView[] {
   return raw.map((view) => {
     const wrap = Boolean(view.wrap) || drinkware;
     if (!wrap) return { ...view, wrap: false };
-    const mockup = wrapEditorMockup(product, view);
-    const usingBuiltIn = mockup === MUG_WRAP_FLAT.mockup;
     return {
       ...view,
       wrap: true,
       label: view.label || "Wrap",
-      mockup,
-      safe_zone_bounds: usingBuiltIn
-        ? MUG_WRAP_FLAT.safe_zone_bounds
-        : view.safe_zone_bounds,
+      mockup: MUG_WRAP_FLAT.mockup,
+      safe_zone_bounds: MUG_WRAP_FLAT.safe_zone_bounds,
       wrapBounds: view.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds,
     };
   });

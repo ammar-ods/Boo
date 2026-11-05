@@ -17,7 +17,7 @@ import {
 import { CANVAS_FONTS } from "@/lib/fonts";
 import type { Product } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
-import { rememberFile } from "@/lib/upload-registry";
+import { forgetFile, rememberFile } from "@/lib/upload-registry";
 import type { CanvasHandle } from "./fabric-canvas";
 import { toast } from "sonner";
 
@@ -39,6 +39,8 @@ export function ControlsPanel({
   const setLaserPreview = useCustomizerStore((s) => s.setLaserPreview);
   const setTextDraft = useCustomizerStore((s) => s.setTextDraft);
   const addAsset = useCustomizerStore((s) => s.addAsset);
+  const removeAsset = useCustomizerStore((s) => s.removeAsset);
+  const assets = useCustomizerStore((s) => s.assets);
 
   const onDrop = useCallback(
     async (files: File[]) => {
@@ -94,6 +96,36 @@ export function ControlsPanel({
             Freeform placement — scale, rotate, and move anywhere.
           </p>
         </div>
+        {assets.length ? (
+          <ul className="space-y-2">
+            {assets.map((asset) => (
+              <li
+                key={asset.id}
+                className="flex items-center gap-3 rounded-2xl bg-secondary/70 px-3 py-2"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={asset.previewUrl}
+                  alt=""
+                  className="size-10 rounded-lg bg-white object-cover"
+                />
+                <span className="min-w-0 flex-1 truncate text-sm">{asset.name}</span>
+                <button
+                  type="button"
+                  className="shrink-0 font-heading text-sm text-boo-pink"
+                  onClick={() => {
+                    canvas?.removeAsset(asset.id);
+                    forgetFile(asset.id);
+                    URL.revokeObjectURL(asset.previewUrl);
+                    removeAsset(asset.id);
+                  }}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       <section className="space-y-3">

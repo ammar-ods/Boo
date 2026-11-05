@@ -13,13 +13,13 @@ function SavedToastInner() {
   useEffect(() => {
     if (!saved) return;
     setVisible(true);
-    const hide = window.setTimeout(() => setVisible(false), 2800);
+    const hide = window.setTimeout(() => setVisible(false), 1400);
     const clean = window.setTimeout(() => {
       const next = new URLSearchParams(window.location.search);
       next.delete("saved");
       const query = next.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-    }, 3000);
+    }, 1550);
     return () => {
       window.clearTimeout(hide);
       window.clearTimeout(clean);
@@ -29,10 +29,10 @@ function SavedToastInner() {
   if (!visible) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-6 right-6 z-[80]">
+    <div className="pointer-events-none fixed inset-0 z-[80] grid place-items-center">
       <div
         role="status"
-        className="saved-toast flex items-center gap-2 rounded-full bg-boo-teal px-5 py-3 font-heading text-white shadow-lg ring-1 ring-white/30"
+        className="saved-toast flex items-center gap-2 rounded-full bg-boo-teal px-7 py-4 font-heading text-xl text-white shadow-xl ring-1 ring-white/30"
       >
         <span className="grid size-6 place-items-center rounded-full bg-white/20 text-sm">✓</span>
         Saved

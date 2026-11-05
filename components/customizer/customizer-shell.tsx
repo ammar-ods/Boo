@@ -122,7 +122,7 @@ export function CustomizerShell({ product }: { product: Product }) {
               : views.length > 1
                 ? "Front and back are both here. Tap a side to add art or text to it."
                 : wrapProduct
-                  ? "Place art on the unwrapped print. The mug on the right updates as you go — drag to spin."
+                  ? "Left is the print wrap (seam to seam). The photo on the right stays still — spin to move your art around it."
                   : "Dashed box is the safe print/etch zone."}
           </p>
         </section>

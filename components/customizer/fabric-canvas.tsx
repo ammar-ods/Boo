@@ -21,6 +21,7 @@ export type CanvasHandle = {
   setPreviewMode: (preview: boolean) => void;
   applyView: (view: ProductView, json?: string) => Promise<void>;
   deleteSelected: () => void;
+  removeAsset: (id: string) => void;
   exportMockup: () => Promise<Blob>;
   exportOverlay: () => string | null;
   exportViewMockups: (designs: Record<string, string>) => Promise<ViewMockup[]>;
@@ -77,6 +78,7 @@ export function FabricCanvas({
       fabric.FabricObject.customProperties = [
         ...(fabric.FabricObject.customProperties ?? []),
         "isDesignLayer",
+        "designAssetId",
       ];
       fabric.FabricObject.ownDefaults.cornerColor = "#32B7B2";
       fabric.FabricObject.ownDefaults.cornerStyle = "circle";
@@ -205,7 +207,7 @@ export function FabricCanvas({
         canvas.requestRenderAll();
       };
 
-      const addImageFromFile = async (file: File) => {
+      const addImageFromFile = async (file: File, id?: string) => {
         const dataUrl = await fileToImageDataUrl(file);
         const image = await fabric.FabricImage.fromURL(dataUrl);
         const safe = viewRef.current.safe_zone_bounds;
@@ -221,7 +223,8 @@ export function FabricCanvas({
           selectable: true,
           evented: true,
         });
-        (image as { isDesignLayer?: boolean }).isDesignLayer = true;
+        (image as { isDesignLayer?: boolean; designAssetId?: string }).isDesignLayer = true;
+        if (id) (image as { designAssetId?: string }).designAssetId = id;
         canvas.add(image);
         canvas.setActiveObject(image);
         applyLaser(laserRef.current);
@@ -331,7 +334,7 @@ export function FabricCanvas({
       const exportMockup = async () => {
         const overlay = overlayDataUrl();
         if (viewRef.current.wrap) {
-          return compositeMockup(viewRef.current.mockup || MUG_WRAP_FLAT.mockup, overlay);
+          return compositeMockup(MUG_WRAP_FLAT.mockup, overlay);
         }
         return compositeMockup(viewRef.current.mockup, overlay);
       };
@@ -376,7 +379,17 @@ export function FabricCanvas({
           if (obj && isDesign(obj)) {
             canvas.remove(obj);
             checkBleed();
+            notifyDesign();
           }
+        },
+        removeAsset: (id) => {
+          canvas.getObjects().forEach((obj) => {
+            if ((obj as { designAssetId?: string }).designAssetId === id) {
+              canvas.remove(obj);
+            }
+          });
+          checkBleed();
+          notifyDesign();
         },
         exportMockup,
         exportOverlay,

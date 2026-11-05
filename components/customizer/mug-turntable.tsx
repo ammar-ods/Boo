@@ -38,15 +38,22 @@ export function MugTurntable({
       const dx = (w - dw) / 2;
       const dy = (h - dh) / 2;
       ctx.drawImage(mug, dx, dy, dw, dh);
-
-      const unit = dw / 800;
-      const printBox = {
-        left: dx + box.left * unit,
-        top: dy + box.top * unit,
-        width: box.width * unit,
-        height: box.height * unit,
-        radius: (box.radius ?? 48) * unit,
-      };
+      const builtIn = /ceramic-mug/i.test(mugPhotoUrl);
+      const printBox = builtIn
+        ? {
+            left: dx + box.left * (dw / 800),
+            top: dy + box.top * (dh / 800),
+            width: box.width * (dw / 800),
+            height: box.height * (dh / 800),
+            radius: (box.radius ?? 48) * (dw / 800),
+          }
+        : {
+            left: dx + dw * 0.355,
+            top: dy + dh * 0.14,
+            width: dw * 0.29,
+            height: dh * 0.62,
+            radius: dw * 0.07,
+          };
       drawWrapOnMug(ctx, textureRef.current, printBox, angleRef.current);
     } else {
       drawFallbackMug(ctx, w, h, textureRef.current, angleRef.current);
