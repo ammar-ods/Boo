@@ -1,17 +1,9 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { listOrders } from "@/lib/local-db";
 import type { InquiryStatus } from "@/lib/schemas/inquiry";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const STATUSES: Array<InquiryStatus | "all"> = [
   "all",
@@ -38,7 +30,7 @@ export default async function InquiriesPage({
           <p className="font-script text-2xl text-boo-teal">inbox</p>
           <h1 className="font-heading text-4xl">Orders</h1>
           <p className="text-sm text-muted-foreground">
-            Every inquiry is saved on this website, even without Supabase.
+            Tap an order to open the mockup, uploads, and customer details.
           </p>
         </div>
         <p className="font-heading text-boo-ink">{all.length} total</p>
@@ -60,51 +52,47 @@ export default async function InquiriesPage({
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ref</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Quote</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>
-                  <Link className="font-heading text-boo-teal" href={`/admin/inquiries/${row.id}`}>
-                    #{row.reference_code.replace("#", "")}
-                  </Link>
-                </TableCell>
-                <TableCell>{row.product_name}</TableCell>
-                <TableCell>
-                  <div>{row.customer_name}</div>
-                  <div className="text-xs text-muted-foreground">{row.customer_phone}</div>
-                </TableCell>
-                <TableCell>{row.quantity}</TableCell>
-                <TableCell>
-                  <Badge variant={row.status === "pending" ? "secondary" : "default"}>
-                    {row.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {row.quoted_price != null ? `${row.quoted_price}` : "—"}
-                </TableCell>
-              </TableRow>
-            ))}
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                  No orders in this filter yet. Customizer inquiries land here automatically.
-                </TableCell>
-              </TableRow>
-            ) : null}
-          </TableBody>
-        </Table>
+      <div className="grid gap-4">
+        {rows.map((row) => (
+          <Link
+            key={row.id}
+            href={`/admin/inquiries/${row.id}`}
+            className="flex gap-4 overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10 transition hover:-translate-y-0.5 hover:ring-boo-teal"
+          >
+            <div className="h-28 w-28 shrink-0 bg-[#f6f3ee]">
+              {row.mockup_path ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={row.mockup_path} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                  No preview
+                </div>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-4 py-4 pr-4">
+              <div className="min-w-0">
+                <p className="font-heading text-lg text-boo-teal">
+                  #{row.reference_code.replace("#", "")}
+                </p>
+                <p className="truncate font-heading text-xl">{row.product_name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {row.customer_name} · {row.customer_phone} · qty {row.quantity}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-heading">
+                  {row.status}
+                </span>
+                <p className="mt-2 text-sm font-heading text-boo-ink">Open →</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+        {rows.length === 0 ? (
+          <div className="rounded-[1.4rem] bg-white py-10 text-center text-muted-foreground ring-1 ring-foreground/10">
+            No orders in this filter yet. Customizer inquiries land here automatically.
+          </div>
+        ) : null}
       </div>
     </div>
   );

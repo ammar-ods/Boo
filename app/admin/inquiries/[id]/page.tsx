@@ -5,6 +5,12 @@ import { Label } from "@/components/ui/label";
 import { getOrder } from "@/lib/local-db";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const dynamicParams = true;
+
+function looksLikeImage(url: string) {
+  return /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(url) || url.includes("/storage/v1/object/");
+}
 
 export default async function InquiryDetailPage({
   params,
@@ -15,9 +21,11 @@ export default async function InquiryDetailPage({
   const inquiry = await getOrder(id);
   if (!inquiry) notFound();
 
-  const production = (inquiry.production_paths ?? []).filter(
-    (path) => path !== inquiry.mockup_path,
+  const extras = (inquiry.production_paths ?? []).filter((path) => path !== inquiry.mockup_path);
+  const previewImages = [inquiry.mockup_path, ...extras].filter(
+    (path): path is string => typeof path === "string" && looksLikeImage(path),
   );
+  const otherFiles = extras.filter((path) => !looksLikeImage(path));
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
@@ -27,43 +35,45 @@ export default async function InquiryDetailPage({
       <h1 className="mt-3 font-heading text-4xl">#{inquiry.reference_code.replace("#", "")}</h1>
       <p className="text-muted-foreground">
         {inquiry.product_name} · {inquiry.customer_name} ·{" "}
-        {new Date(inquiry.created_at).toLocaleString()}
+        {inquiry.created_at ? new Date(inquiry.created_at).toLocaleString() : ""}
       </p>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-4">
-          <div className="space-y-3">
-            {inquiry.mockup_path ? (
-              <div className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
+          <h2 className="font-heading text-xl">Submitted preview</h2>
+          {previewImages.length ? (
+            previewImages.map((file) => (
+              <div key={file} className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={inquiry.mockup_path} alt="Mockup" className="h-auto w-full" />
-              </div>
-            ) : (
-              <div className="rounded-[1.4rem] bg-white p-10 text-sm text-muted-foreground ring-1 ring-foreground/10">
-                Mockup files were cleaned up after fulfillment or cancellation.
-              </div>
-            )}
-            {production
-              .filter((file) => /\.(jpg|jpeg|png|webp)$/i.test(file))
-              .map((file) => (
-                <div key={file} className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={file} alt="Additional side" className="h-auto w-full" />
+                <img src={file} alt="Order preview" className="h-auto w-full bg-[#f6f3ee]" />
+                <div className="flex items-center justify-between px-4 py-2 text-sm">
+                  <span className="truncate text-muted-foreground">{file.split("/").pop()}</span>
+                  <a className="font-heading text-boo-teal" href={file} target="_blank" rel="noreferrer">
+                    Open file
+                  </a>
                 </div>
-              ))}
-          </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[1.4rem] bg-white p-10 text-sm text-muted-foreground ring-1 ring-foreground/10">
+              No mockup preview is stored on this order yet.
+            </div>
+          )}
+
           <div>
-            <h2 className="mb-2 font-heading text-xl">Production files</h2>
+            <h2 className="mb-2 font-heading text-xl">Customer uploads</h2>
             <ul className="space-y-2 text-sm">
-              {production.map((file) => (
+              {otherFiles.map((file) => (
                 <li key={file}>
-                  <a className="text-boo-teal underline" href={file} target="_blank">
+                  <a className="text-boo-teal underline" href={file} target="_blank" rel="noreferrer">
                     Download {file.split("/").pop()}
                   </a>
                 </li>
               ))}
-              {production.length === 0 ? (
-                <li className="text-muted-foreground">No high-res uploads on file.</li>
+              {previewImages.length === 0 && otherFiles.length === 0 ? (
+                <li className="text-muted-foreground">No files were attached to this inquiry.</li>
+              ) : otherFiles.length === 0 ? (
+                <li className="text-muted-foreground">Artwork is in the preview images above.</li>
               ) : null}
             </ul>
           </div>
@@ -83,12 +93,12 @@ export default async function InquiryDetailPage({
               {inquiry.customer_email || "—"}
             </p>
             <p>
-              <span className="text-muted-foreground">Material:</span> {inquiry.material}
+              <span className="text-muted-foreground">Material:</span> {inquiry.material || "—"}
             </p>
             <p>
               <span className="text-muted-foreground">Quantity:</span> {inquiry.quantity}
             </p>
-            <p className="mt-3">{inquiry.notes || "No notes"}</p>
+            <p className="mt-3 whitespace-pre-wrap">{inquiry.notes || "No notes"}</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="quoted_price">Quoted price (EGP)</Label>
@@ -116,7 +126,7 @@ export default async function InquiryDetailPage({
             </select>
           </div>
           <p className="text-xs text-muted-foreground">
-            Fulfilled or cancelled removes the large production files from local storage.
+            Fulfilled or cancelled removes stored mockup files from storage.
           </p>
           <button
             type="submit"

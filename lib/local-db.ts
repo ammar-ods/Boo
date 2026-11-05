@@ -318,13 +318,30 @@ export async function deleteProduct(slug: string) {
   await saveCatalog(catalog.filter((item) => item.slug !== slug));
 }
 
+export function asFileList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+      }
+    } catch {
+      return [value];
+    }
+  }
+  return [];
+}
+
 function normalizeInquiry(row: Record<string, unknown>): InquiryRecord {
-  const paths = row.production_paths;
   return {
     ...(row as unknown as InquiryRecord),
-    production_paths: Array.isArray(paths)
-      ? paths.filter((path): path is string => typeof path === "string")
-      : [],
+    id: String(row.id ?? ""),
+    reference_code: String(row.reference_code ?? ""),
+    mockup_path: row.mockup_path ? String(row.mockup_path) : null,
+    production_paths: asFileList(row.production_paths),
   };
 }
 
@@ -345,13 +362,22 @@ export async function listOrders(): Promise<InquiryRecord[]> {
 }
 
 export async function getOrder(id: string) {
+  const key = decodeURIComponent(id).trim();
+  const ref = key.startsWith("#") ? key : `#${key.replace(/^#/, "")}`;
   if (useSupabase()) {
     const supabase = createAdminClient();
-    const { data, error } = await supabase.from("inquiries").select("*").eq("id", id).maybeSingle();
-    if (error) throw new Error(error.message);
-    return data ? normalizeInquiry(data as Record<string, unknown>) : undefined;
+    const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
+    if (byId.error) throw new Error(byId.error.message);
+    if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
+    const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
+    if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
+    const byBare = await supabase.from("inquiries").select("*").eq("reference_code", key).maybeSingle();
+    return byBare.data ? normalizeInquiry(byBare.data as Record<string, unknown>) : undefined;
   }
-  return (await listOrders()).find((order) => order.id === id);
+  const orders = await listOrders();
+  return orders.find(
+    (order) => order.id === key || order.reference_code === ref || order.reference_code === key,
+  );
 }
 
 export async function saveOrder(order: InquiryRecord) {

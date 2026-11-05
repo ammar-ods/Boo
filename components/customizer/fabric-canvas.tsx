@@ -96,25 +96,51 @@ export function FabricCanvas({
         canvas.setDimensions({ width, height: width });
         canvas.setZoom(zoom);
         if (canvas.wrapperEl) {
-          canvas.wrapperEl.style.width = `${width}px`;
-          canvas.wrapperEl.style.height = `${width}px`;
+          canvas.wrapperEl.style.position = "absolute";
+          canvas.wrapperEl.style.left = "0";
+          canvas.wrapperEl.style.top = "0";
+          canvas.wrapperEl.style.width = "100%";
+          canvas.wrapperEl.style.height = "100%";
         }
+        applyMugMask();
         canvas.requestRenderAll();
       };
-      const applyWrapClip = () => {
-        const current = viewRef.current;
-        if (!current.wrap) {
-          canvas.clipPath = undefined;
-          canvas.requestRenderAll();
-          return;
-        }
-        const box = current.wrapBounds ?? {
+      const wrapBoxFor = () =>
+        viewRef.current.wrapBounds ?? {
           left: 214,
           top: 228,
           width: 330,
           height: 360,
           radius: 48,
         };
+      const applyMugMask = () => {
+        const el = canvas.wrapperEl;
+        if (!el) return;
+        if (!viewRef.current.wrap) {
+          el.style.maskImage = "";
+          el.style.webkitMaskImage = "";
+          return;
+        }
+        const box = wrapBoxFor();
+        const size = productRef.current.canvasWidth;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><rect x="${box.left}" y="${box.top}" width="${box.width}" height="${box.height}" rx="${box.radius ?? 48}" fill="white"/></svg>`;
+        const mask = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+        el.style.maskImage = mask;
+        el.style.webkitMaskImage = mask;
+        el.style.maskSize = "100% 100%";
+        el.style.webkitMaskSize = "100% 100%";
+        el.style.maskRepeat = "no-repeat";
+        el.style.webkitMaskRepeat = "no-repeat";
+      };
+      const applyWrapClip = () => {
+        const current = viewRef.current;
+        if (!current.wrap) {
+          canvas.clipPath = undefined;
+          applyMugMask();
+          canvas.requestRenderAll();
+          return;
+        }
+        const box = wrapBoxFor();
         canvas.clipPath = new fabric.Rect({
           left: box.left,
           top: box.top,
@@ -126,11 +152,12 @@ export function FabricCanvas({
           selectable: false,
           evented: false,
         });
+        applyMugMask();
         canvas.requestRenderAll();
       };
 
-      fit();
       applyWrapClip();
+      fit();
       observer = new ResizeObserver(fit);
       if (wrapRef.current) observer.observe(wrapRef.current);
 
@@ -419,11 +446,6 @@ export function FabricCanvas({
   }, [laserPreview]);
 
   const wrapBox = view.wrapBounds;
-  const clipStyle = wrapBox
-    ? {
-        clipPath: `inset(${(wrapBox.top / product.canvasHeight) * 100}% ${(1 - (wrapBox.left + wrapBox.width) / product.canvasWidth) * 100}% ${(1 - (wrapBox.top + wrapBox.height) / product.canvasHeight) * 100}% ${(wrapBox.left / product.canvasWidth) * 100}% round ${((wrapBox.radius ?? 40) / product.canvasWidth) * 100}%)`,
-      }
-    : undefined;
 
   return (
     <div
@@ -434,12 +456,9 @@ export function FabricCanvas({
       <img
         src={view.mockup}
         alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
       />
-      <div
-        className="absolute inset-0 z-10 overflow-hidden"
-        style={view.wrap ? clipStyle : undefined}
-      >
+      <div className="absolute inset-0 z-10">
         <canvas ref={hostRef} />
       </div>
       {view.wrap && wrapBox ? (
@@ -450,10 +469,8 @@ export function FabricCanvas({
             top: `${(wrapBox.top / product.canvasHeight) * 100}%`,
             width: `${(wrapBox.width / product.canvasWidth) * 100}%`,
             height: `${(wrapBox.height / product.canvasHeight) * 100}%`,
-            borderRadius: `${((wrapBox.radius ?? 40) / product.canvasWidth) * 100}% / ${((wrapBox.radius ?? 40) / product.canvasHeight) * 100}%`,
-            background:
-              "linear-gradient(90deg, rgba(40,28,18,0.28) 0%, rgba(40,28,18,0.06) 18%, rgba(255,255,255,0.16) 48%, rgba(40,28,18,0.06) 82%, rgba(40,28,18,0.32) 100%)",
-            mixBlendMode: "multiply",
+            borderRadius: `${wrapBox.radius ?? 48}px`,
+            boxShadow: "inset 18px 0 28px rgba(40,28,18,0.22), inset -18px 0 28px rgba(40,28,18,0.22), inset 0 0 40px rgba(255,255,255,0.12)",
           }}
         />
       ) : null}
