@@ -23,16 +23,16 @@ const STEPS = [
 
 const FAQS = [
   {
-    q: "Do I pay on the site?",
-    a: "No. This is a quote-and-make studio. You send an inquiry, we review the files, then reply with a price on WhatsApp.",
+    q: "Lorem ipsum dolor sit amet?",
+    a: "Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   },
   {
-    q: "What files work best?",
-    a: "PNG or SVG with a transparent background for prints. High-contrast black artwork for laser wood and acrylic.",
+    q: "Ut enim ad minim veniam?",
+    a: "Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
   },
   {
-    q: "Where are you based?",
-    a: "Giza apartment studio. Pickup in Giza, or we can arrange shipping after the quote.",
+    q: "Duis aute irure dolor?",
+    a: "In reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
   },
 ];
 
@@ -116,12 +116,12 @@ export default async function HomePage() {
       <section id="about" className="border-y border-border bg-white">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2">
           <div>
-            <h2 className="font-heading text-4xl">A tiny studio with a loud sparkle.</h2>
+            <h2 className="font-heading text-4xl">Lorem ipsum dolor sit amet.</h2>
             <p className="mt-4 text-muted-foreground">
-              BOO Custom Creations is a Giza-based fabrication desk for one-off gifts,
-              merch drops, and keepsake signage. Upload a file, place it freely on the
-              product, preview the finished look, and send an inquiry — we quote and
-              produce from the mockup.
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+              tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+              quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+              consequat.
             </p>
             <div className="mt-8 space-y-4">
               {FAQS.map((item) => (
@@ -133,10 +133,10 @@ export default async function HomePage() {
             </div>
           </div>
           <div id="contact" className="rounded-[1.6rem] bg-boo-teal p-8 text-white">
-            <h3 className="font-heading text-3xl">Say hello</h3>
-            <p className="mt-3 text-white/90">123 Maker Way, Giza, Egypt</p>
-            <p>@boocustomcreations</p>
-            <p className="mt-6 font-script text-3xl">Your creative business, made with love.</p>
+            <h3 className="font-heading text-3xl">Lorem ipsum</h3>
+            <p className="mt-3 text-white/90">Lorem ipsum dolor sit amet</p>
+            <p>consectetur adipiscing elit</p>
+            <p className="mt-6 font-script text-3xl">Sed do eiusmod tempor incididunt.</p>
             <Link
               href="/admin/login"
               className="mt-8 inline-flex rounded-full bg-white px-4 py-2 font-heading text-boo-ink"
