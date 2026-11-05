@@ -12,6 +12,14 @@ export type SafeZone = {
   height: number;
 };
 
+export type ProductView = {
+  id: string;
+  label: string;
+  mockup: string;
+  safe_zone_bounds: SafeZone;
+  wrap?: boolean;
+};
+
 export type Product = {
   slug: string;
   name: string;
@@ -28,7 +36,22 @@ export type Product = {
   accent: "pink" | "orange" | "teal";
   showSafeZone?: boolean;
   archived?: boolean;
+  wrapPreview?: boolean;
+  views?: ProductView[];
 };
+
+export function productViews(product: Product): ProductView[] {
+  if (product.views && product.views.length > 0) return product.views;
+  return [
+    {
+      id: "front",
+      label: product.category === "Drinkware" ? "Wrap" : "Front",
+      mockup: product.mockup,
+      safe_zone_bounds: product.safe_zone_bounds,
+      wrap: Boolean(product.wrapPreview) || product.category === "Drinkware",
+    },
+  ];
+}
 
 export const CATEGORIES: ProductCategory[] = [
   "Apparel",
@@ -54,6 +77,20 @@ export const SEED_PRODUCTS: Product[] = [
     safe_zone_bounds: { left: 275, top: 210, width: 250, height: 290 },
     mockup: "/products/classic-tee.svg",
     accent: "teal",
+    views: [
+      {
+        id: "front",
+        label: "Front",
+        mockup: "/products/classic-tee.svg",
+        safe_zone_bounds: { left: 275, top: 210, width: 250, height: 290 },
+      },
+      {
+        id: "back",
+        label: "Back",
+        mockup: "/products/classic-tee-back.svg",
+        safe_zone_bounds: { left: 275, top: 200, width: 250, height: 310 },
+      },
+    ],
   },
   {
     slug: "studio-hoodie",
@@ -70,6 +107,20 @@ export const SEED_PRODUCTS: Product[] = [
     safe_zone_bounds: { left: 270, top: 230, width: 260, height: 250 },
     mockup: "/products/studio-hoodie.svg",
     accent: "pink",
+    views: [
+      {
+        id: "front",
+        label: "Front",
+        mockup: "/products/studio-hoodie.svg",
+        safe_zone_bounds: { left: 270, top: 230, width: 260, height: 250 },
+      },
+      {
+        id: "back",
+        label: "Back",
+        mockup: "/products/studio-hoodie-back.svg",
+        safe_zone_bounds: { left: 270, top: 210, width: 260, height: 280 },
+      },
+    ],
   },
   {
     slug: "ceramic-mug",
@@ -86,6 +137,16 @@ export const SEED_PRODUCTS: Product[] = [
     safe_zone_bounds: { left: 210, top: 250, width: 300, height: 220 },
     mockup: "/products/ceramic-mug.svg",
     accent: "orange",
+    wrapPreview: true,
+    views: [
+      {
+        id: "wrap",
+        label: "360° wrap",
+        mockup: "/products/ceramic-mug.svg",
+        safe_zone_bounds: { left: 230, top: 300, width: 298, height: 200 },
+        wrap: true,
+      },
+    ],
   },
   {
     slug: "wood-plaque",

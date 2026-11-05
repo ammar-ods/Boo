@@ -1,5 +1,8 @@
-import type { Product } from "@/lib/products";
-import { CATEGORIES } from "@/lib/products";
+"use client";
+
+import { useState } from "react";
+import type { Product, ProductView } from "@/lib/products";
+import { CATEGORIES, productViews } from "@/lib/products";
 import { Label } from "@/components/ui/label";
 
 export function ProductForm({
@@ -11,12 +14,15 @@ export function ProductForm({
   action: (formData: FormData) => void | Promise<void>;
   error?: string;
 }) {
-  const safe = product?.safe_zone_bounds ?? {
+  const initialViews = product ? productViews(product) : [];
+  const primary = initialViews[0];
+  const safe = primary?.safe_zone_bounds ?? product?.safe_zone_bounds ?? {
     left: 220,
     top: 200,
     width: 360,
     height: 360,
   };
+  const [extraViews, setExtraViews] = useState<ProductView[]>(initialViews.slice(1));
 
   return (
     <form action={action} className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -75,12 +81,80 @@ export function ProductForm({
           defaultValue={product?.materials.join(", ")}
         />
         <div className="space-y-1.5">
-          <Label htmlFor="mockup">Product preview image</Label>
+          <Label htmlFor="primary_label">First side label</Label>
+          <input
+            id="primary_label"
+            name="primary_label"
+            defaultValue={primary?.label ?? "Front"}
+            className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="mockup">First side image (front / wrap)</Label>
           <input id="mockup" name="mockup" type="file" accept="image/*,.svg" />
           {product?.mockup ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={product.mockup} alt="" className="mt-2 h-40 rounded-xl object-cover" />
           ) : null}
+        </div>
+
+        <div className="space-y-3 rounded-2xl bg-secondary/60 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-heading text-lg">More sides</h3>
+              <p className="text-xs text-muted-foreground">
+                Add a back print, extra angle, or another mockup. Each side gets its own
+                customizer tab and is included in the inquiry.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded-full bg-boo-ink px-3 py-1.5 text-sm text-white"
+              onClick={() =>
+                setExtraViews((current) => [
+                  ...current,
+                  {
+                    id: `side-${current.length + 2}`,
+                    label: current.length === 0 ? "Back" : `Side ${current.length + 2}`,
+                    mockup: "",
+                    safe_zone_bounds: safe,
+                  },
+                ])
+              }
+            >
+              Add side
+            </button>
+          </div>
+          {extraViews.map((view, index) => (
+            <div key={view.id} className="space-y-2 rounded-xl bg-white p-3 ring-1 ring-foreground/10">
+              <input type="hidden" name="extra_id" value={view.id} />
+              <input type="hidden" name="extra_existing" value={view.mockup} />
+              <div className="flex items-center justify-between">
+                <Field label="Label" name="extra_label" defaultValue={view.label} />
+                <button
+                  type="button"
+                  className="ml-3 text-xs text-destructive"
+                  onClick={() => setExtraViews((current) => current.filter((_, i) => i !== index))}
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Image</Label>
+                <input name="extra_mockup" type="file" accept="image/*,.svg" />
+                {view.mockup ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={view.mockup} alt="" className="mt-2 h-28 rounded-xl object-cover" />
+                ) : null}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                <Field label="Left" name="extra_left" type="number" defaultValue={view.safe_zone_bounds.left} />
+                <Field label="Top" name="extra_top" type="number" defaultValue={view.safe_zone_bounds.top} />
+                <Field label="Width" name="extra_width" type="number" defaultValue={view.safe_zone_bounds.width} />
+                <Field label="Height" name="extra_height" type="number" defaultValue={view.safe_zone_bounds.height} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -88,7 +162,7 @@ export function ProductForm({
         <h2 className="font-heading text-xl">Print / etch border</h2>
         <p className="text-xs text-muted-foreground">
           Coordinates are on an 800×800 canvas. This dashed box is what customers see while
-          placing artwork.
+          placing artwork on the first side.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Left" name="safe_left" type="number" defaultValue={safe.left} />
@@ -107,6 +181,14 @@ export function ProductForm({
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_laser_cut" defaultChecked={product?.is_laser_cut} />
           Laser / engraving product
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="wrapPreview"
+            defaultChecked={Boolean(product?.wrapPreview) || product?.category === "Drinkware"}
+          />
+          Wrap artwork around a mug / cylinder in preview
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="archived" defaultChecked={product?.archived} />

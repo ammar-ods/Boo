@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -17,17 +18,18 @@ import type { Product } from "@/lib/products";
 export function InquiryForm({
   product,
   canvas,
-  onSuccess,
 }: {
   product: Product;
   canvas: CanvasHandle | null;
-  onSuccess: (payload: { referenceCode: string; whatsappUrl: string }) => void;
 }) {
+  const router = useRouter();
   const material = useCustomizerStore((s) => s.material);
   const quantity = useCustomizerStore((s) => s.quantity);
+  const activeViewId = useCustomizerStore((s) => s.activeViewId);
+  const saveViewDesign = useCustomizerStore((s) => s.saveViewDesign);
 
   const form = useForm<InquiryInput>({
-      resolver: zodResolver(inquirySchema) as never,
+    resolver: zodResolver(inquirySchema) as never,
     defaultValues: {
       productSlug: product.slug,
       productName: product.name,
@@ -41,12 +43,21 @@ export function InquiryForm({
   });
 
   async function onSubmit(values: InquiryInput) {
-    if (!canvas?.hasDesign()) {
-      toast.error("Add artwork or text before sending an inquiry.");
+    if (!canvas) {
+      toast.error("The customizer is still loading. Try again in a moment.");
       return;
     }
 
-    const mockup = await canvas.exportMockup();
+    saveViewDesign(activeViewId, canvas.exportJson());
+    const designs = { ...useCustomizerStore.getState().viewDesigns, [activeViewId]: canvas.exportJson() };
+
+    const viewMockups = await canvas.exportViewMockups(designs);
+    const primary = viewMockups[0];
+    if (!primary) {
+      toast.error("Could not capture a preview.");
+      return;
+    }
+
     const data = new FormData();
     data.set("productSlug", product.slug);
     data.set("productName", product.name);
@@ -56,8 +67,11 @@ export function InquiryForm({
     data.set("material", material);
     data.set("quantity", String(quantity));
     data.set("notes", values.notes ?? "");
-    data.set("canvasJson", canvas.exportJson());
-    data.set("mockup", mockup, "mockup.jpg");
+    data.set("canvasJson", JSON.stringify({ views: designs }));
+    data.set("mockup", primary.blob, `${primary.id}.jpg`);
+    viewMockups.slice(1).forEach((item) => {
+      data.append("viewMockups", item.blob, `${item.id}.jpg`);
+    });
     allRememberedFiles().forEach((file) => data.append("production", file));
 
     const result = await submitInquiry(data);
@@ -66,11 +80,9 @@ export function InquiryForm({
       return;
     }
 
-    onSuccess({
-      referenceCode: result.referenceCode,
-      whatsappUrl: result.whatsappUrl,
-    });
-    window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
+    router.push(
+      `/thanks?ref=${encodeURIComponent(result.referenceCode)}&product=${encodeURIComponent(product.name)}`,
+    );
   }
 
   return (
@@ -117,7 +129,7 @@ export function InquiryForm({
         className="h-11 w-full rounded-full bg-boo-pink font-heading text-base text-white hover:bg-boo-pink/90"
         disabled={form.formState.isSubmitting}
       >
-        {form.formState.isSubmitting ? "Sending…" : "Send inquiry + WhatsApp"}
+        {form.formState.isSubmitting ? "Sending…" : "Send inquiry"}
       </Button>
     </form>
   );

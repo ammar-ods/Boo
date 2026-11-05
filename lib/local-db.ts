@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { unstable_noStore as noStore } from "next/cache";
-import { SEED_PRODUCTS, type Product } from "@/lib/products";
+import { productViews, SEED_PRODUCTS, type Product, type ProductView } from "@/lib/products";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -52,7 +52,59 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   canvasHeight?: number;
   accent?: Product["accent"];
   showSafeZone?: boolean;
+  wrapPreview?: boolean;
+  views?: ProductView[];
 };
+
+function parseViews(
+  bounds: SafeZonePayload,
+  mockup: string,
+  overlay: string | null,
+  wrapPreview: boolean,
+): ProductView[] | undefined {
+  if (Array.isArray(bounds.views) && bounds.views.length > 0) {
+    return bounds.views.map((view, index) => ({
+      id: String(view.id || `view-${index + 1}`),
+      label: String(view.label || `Side ${index + 1}`),
+      mockup: String(view.mockup || mockup),
+      safe_zone_bounds: {
+        left: Number(view.safe_zone_bounds?.left ?? bounds.left ?? 200),
+        top: Number(view.safe_zone_bounds?.top ?? bounds.top ?? 200),
+        width: Number(view.safe_zone_bounds?.width ?? bounds.width ?? 400),
+        height: Number(view.safe_zone_bounds?.height ?? bounds.height ?? 400),
+      },
+      wrap: Boolean(view.wrap),
+    }));
+  }
+  if (overlay) {
+    return [
+      {
+        id: "front",
+        label: "Front",
+        mockup,
+        safe_zone_bounds: {
+          left: Number(bounds.left ?? 200),
+          top: Number(bounds.top ?? 200),
+          width: Number(bounds.width ?? 400),
+          height: Number(bounds.height ?? 400),
+        },
+        wrap: wrapPreview,
+      },
+      {
+        id: "back",
+        label: "Back",
+        mockup: overlay,
+        safe_zone_bounds: {
+          left: Number(bounds.left ?? 200),
+          top: Number(bounds.top ?? 200),
+          width: Number(bounds.width ?? 400),
+          height: Number(bounds.height ?? 400),
+        },
+      },
+    ];
+  }
+  return undefined;
+}
 
 function rowToProduct(row: Record<string, unknown>): Product {
   const bounds = (row.safe_zone_bounds ?? {}) as SafeZonePayload;
@@ -61,9 +113,20 @@ function rowToProduct(row: Record<string, unknown>): Product {
     : Array.isArray(bounds.materials)
       ? bounds.materials
       : [];
+  const mockup = String(row.base_image_url ?? row.mockup ?? "");
+  const overlay = row.overlay_image_url ? String(row.overlay_image_url) : null;
+  const wrapPreview = Boolean(bounds.wrapPreview);
+  const slug = String(row.slug);
+  let views = parseViews(bounds, mockup, overlay, wrapPreview);
+  const seed = SEED_PRODUCTS.find((item) => item.slug === slug);
+  if ((!views || views.length === 0) && seed?.views) {
+    views = seed.views.map((view, index) =>
+      index === 0 ? { ...view, mockup, wrap: wrapPreview || view.wrap } : view,
+    );
+  }
 
   return {
-    slug: String(row.slug),
+    slug,
     name: String(row.title ?? row.name ?? ""),
     category: row.category as Product["category"],
     tagline: String(row.tagline ?? bounds.tagline ?? ""),
@@ -79,15 +142,17 @@ function rowToProduct(row: Record<string, unknown>): Product {
       width: Number(bounds.width ?? 400),
       height: Number(bounds.height ?? 400),
     },
-    mockup: String(row.base_image_url ?? row.mockup ?? ""),
+    mockup,
     accent: (row.accent as Product["accent"]) || bounds.accent || "teal",
     showSafeZone: row.show_safe_zone !== false && bounds.showSafeZone !== false,
     archived: Boolean(row.archived) || row.is_active === false,
+    wrapPreview,
+    views,
   };
 }
 
 function productToRow(product: Product) {
-  // Matches the live Supabase table: title, base_image_url, is_active (not name/mockup/archived).
+  const views = productViews(product);
   const safe_zone_bounds: SafeZonePayload = {
     ...product.safe_zone_bounds,
     tagline: product.tagline,
@@ -97,6 +162,8 @@ function productToRow(product: Product) {
     canvasHeight: product.canvasHeight,
     accent: product.accent,
     showSafeZone: product.showSafeZone !== false,
+    wrapPreview: Boolean(product.wrapPreview),
+    views,
   };
 
   return {
@@ -104,8 +171,8 @@ function productToRow(product: Product) {
     title: product.name,
     category: product.category,
     description: product.description,
-    base_image_url: product.mockup,
-    overlay_image_url: null,
+    base_image_url: views[0]?.mockup || product.mockup,
+    overlay_image_url: views[1]?.mockup || null,
     safe_zone_bounds,
     is_laser_cut: product.is_laser_cut,
     is_active: !product.archived,
@@ -119,6 +186,11 @@ function tableMissing(error: { message?: string; code?: string } | null) {
     /could not find the table/i.test(message) ||
     /relation .* does not exist/i.test(message)
   );
+}
+
+function canUseSeedFallback(error: { message?: string; code?: string } | null) {
+  const message = error?.message ?? "";
+  return tableMissing(error) || /invalid api key/i.test(message) || /jwt/i.test(message);
 }
 
 async function seedRemoteCatalog() {
@@ -145,7 +217,7 @@ export async function getCatalog(): Promise<Product[]> {
       .select("*")
       .order("created_at", { ascending: true });
     if (error) {
-      if (tableMissing(error)) return SEED_PRODUCTS;
+      if (canUseSeedFallback(error)) return SEED_PRODUCTS;
       throw new Error(error.message);
     }
     if (!data || data.length === 0) {
@@ -181,7 +253,7 @@ export async function getCatalogProduct(slug: string) {
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("products").select("*").eq("slug", slug).maybeSingle();
     if (error) {
-      if (tableMissing(error)) {
+      if (canUseSeedFallback(error)) {
         return SEED_PRODUCTS.find((product) => product.slug === slug);
       }
       throw new Error(error.message);

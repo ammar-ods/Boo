@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { Product } from "@/lib/products";
+import { productViews, type Product } from "@/lib/products";
 
 export type UploadedAsset = {
   id: string;
@@ -23,6 +23,8 @@ type CustomizerState = {
   laserPreview: boolean;
   bleedWarning: boolean;
   previewMode: boolean;
+  activeViewId: string;
+  viewDesigns: Record<string, string>;
   selectedKind: "none" | "image" | "text";
   textDraft: TextDraft;
   assets: UploadedAsset[];
@@ -32,6 +34,8 @@ type CustomizerState = {
   setLaserPreview: (value: boolean) => void;
   setBleedWarning: (value: boolean) => void;
   setPreviewMode: (value: boolean) => void;
+  setActiveViewId: (id: string) => void;
+  saveViewDesign: (id: string, json: string) => void;
   setSelectedKind: (kind: CustomizerState["selectedKind"]) => void;
   setTextDraft: (draft: Partial<TextDraft>) => void;
   addAsset: (asset: UploadedAsset) => void;
@@ -52,20 +56,30 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
   laserPreview: false,
   bleedWarning: false,
   previewMode: false,
+  activeViewId: "front",
+  viewDesigns: {},
   selectedKind: "none",
   textDraft: defaultText,
   assets: [],
   hydrateProduct: (product) => {
-    set({
-      product,
-      material: product.defaultMaterial ?? "",
-      quantity: 1,
-      laserPreview: Boolean(product.is_laser_cut),
-      bleedWarning: false,
-      previewMode: false,
-      selectedKind: "none",
-      textDraft: defaultText,
-      assets: [],
+    const views = productViews(product);
+    set((state) => {
+      if (state.product?.slug === product.slug) {
+        return { product };
+      }
+      return {
+        product,
+        material: product.defaultMaterial ?? "",
+        quantity: 1,
+        laserPreview: Boolean(product.is_laser_cut),
+        bleedWarning: false,
+        previewMode: false,
+        activeViewId: views[0]?.id ?? "front",
+        viewDesigns: {},
+        selectedKind: "none",
+        textDraft: defaultText,
+        assets: [],
+      };
     });
   },
   setMaterial: (material) => set({ material }),
@@ -74,6 +88,9 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
   setLaserPreview: (laserPreview) => set({ laserPreview }),
   setBleedWarning: (bleedWarning) => set({ bleedWarning }),
   setPreviewMode: (previewMode) => set({ previewMode }),
+  setActiveViewId: (activeViewId) => set({ activeViewId }),
+  saveViewDesign: (id, json) =>
+    set((state) => ({ viewDesigns: { ...state.viewDesigns, [id]: json } })),
   setSelectedKind: (selectedKind) => set({ selectedKind }),
   setTextDraft: (draft) =>
     set((state) => ({ textDraft: { ...state.textDraft, ...draft } })),
@@ -88,6 +105,8 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
       laserPreview: false,
       bleedWarning: false,
       previewMode: false,
+      activeViewId: "front",
+      viewDesigns: {},
       selectedKind: "none",
       textDraft: defaultText,
       assets: [],

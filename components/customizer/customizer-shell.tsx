@@ -3,24 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil } from "lucide-react";
-import type { Product } from "@/lib/products";
+import { productViews, type Product } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
 import { FabricCanvas, type CanvasHandle } from "./fabric-canvas";
 import { ControlsPanel } from "./controls-panel";
 import { InquiryForm } from "./inquiry-form";
-import { SuccessModal } from "./success-modal";
 
 export function CustomizerShell({ product }: { product: Product }) {
   const hydrateProduct = useCustomizerStore((s) => s.hydrateProduct);
   const bleedWarning = useCustomizerStore((s) => s.bleedWarning);
   const previewMode = useCustomizerStore((s) => s.previewMode);
   const setPreviewMode = useCustomizerStore((s) => s.setPreviewMode);
+  const activeViewId = useCustomizerStore((s) => s.activeViewId);
+  const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
+  const saveViewDesign = useCustomizerStore((s) => s.saveViewDesign);
   const [canvas, setCanvas] = useState<CanvasHandle | null>(null);
-  const [success, setSuccess] = useState<{
-    referenceCode: string;
-    whatsappUrl: string;
-  } | null>(null);
+  const views = productViews(product);
+  const currentView = views.find((view) => view.id === activeViewId) ?? views[0];
 
   useEffect(() => {
     hydrateProduct(product);
@@ -37,6 +37,16 @@ export function CustomizerShell({ product }: { product: Product }) {
     const next = !previewMode;
     setPreviewMode(next);
     canvas?.setPreviewMode(next);
+  }
+
+  async function changeView(id: string) {
+    if (!currentView || id === currentView.id) return;
+    if (canvas) saveViewDesign(currentView.id, canvas.exportJson());
+    setActiveViewId(id);
+    const nextView = views.find((view) => view.id === id);
+    if (nextView && canvas) {
+      await canvas.applyView(nextView, useCustomizerStore.getState().viewDesigns[id]);
+    }
   }
 
   return (
@@ -57,17 +67,39 @@ export function CustomizerShell({ product }: { product: Product }) {
               {previewMode ? "Back to editor" : "Preview final product"}
             </button>
           </div>
+          {views.length > 1 ? (
+            <div className="flex flex-wrap gap-2">
+              {views.map((view) => (
+                <button
+                  key={view.id}
+                  type="button"
+                  onClick={() => void changeView(view.id)}
+                  className={`rounded-full px-3 py-1.5 font-heading text-sm ${
+                    view.id === currentView.id
+                      ? "bg-boo-teal text-white"
+                      : "bg-white ring-1 ring-foreground/10"
+                  }`}
+                >
+                  {view.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div
             className={
               bleedWarning && !previewMode ? "rounded-[1.7rem] p-1 ring-2 ring-red-400" : ""
             }
           >
-            <FabricCanvas product={product} onReady={onReady} />
+            <FabricCanvas product={product} view={currentView} onReady={onReady} />
           </div>
           <p className="text-xs text-muted-foreground">
             {previewMode
-              ? "This is the clean product preview — no guides or handles."
-              : "Dashed box is the safe print/etch zone. Preview hides it so you can see the finished piece."}
+              ? currentView.wrap
+                ? "Preview wraps your print around the mug body."
+                : "This is the clean product preview — no guides or handles."
+              : currentView.wrap
+                ? "Place art in the wrap window. Preview bends it around the mug."
+                : "Dashed box is the safe print/etch zone. Switch sides to decorate front and back."}
           </p>
         </section>
 
@@ -75,38 +107,20 @@ export function CustomizerShell({ product }: { product: Product }) {
           <p className="font-script text-2xl text-boo-pink">customize it</p>
           <h1 className="font-heading text-3xl">{product.name}</h1>
           <p className="mb-5 mt-1 text-sm text-muted-foreground">{product.description}</p>
+          <div className={previewMode ? "hidden" : ""}>
+            <ControlsPanel product={product} canvas={canvas} />
+          </div>
           {previewMode ? (
             <div className="rounded-2xl bg-secondary p-4 text-sm">
-              Happy with the look? Send an inquiry and we’ll quote it on WhatsApp.
+              Happy with the look? Send an inquiry and we’ll quote it from the studio desk.
             </div>
-          ) : (
-            <ControlsPanel product={product} canvas={canvas} />
-          )}
+          ) : null}
           <div className="mt-8 border-t border-border pt-5">
             <h2 className="mb-3 font-heading text-xl">Inquiry</h2>
-            <InquiryForm
-              product={product}
-              canvas={canvas}
-              onSuccess={(payload) => {
-                setSuccess({
-                  referenceCode: payload.referenceCode.startsWith("#")
-                    ? payload.referenceCode
-                    : `#${payload.referenceCode}`,
-                  whatsappUrl: payload.whatsappUrl,
-                });
-              }}
-            />
+            <InquiryForm product={product} canvas={canvas} />
           </div>
         </aside>
       </div>
-      <SuccessModal
-        open={Boolean(success)}
-        onOpenChange={(open) => {
-          if (!open) setSuccess(null);
-        }}
-        referenceCode={success?.referenceCode ?? ""}
-        whatsappUrl={success?.whatsappUrl ?? ""}
-      />
     </div>
   );
 }

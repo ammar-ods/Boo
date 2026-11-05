@@ -32,15 +32,25 @@ export default async function InquiryDetailPage({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
+          <div className="space-y-3">
             {inquiry.mockup_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={inquiry.mockup_path} alt="Mockup" className="h-auto w-full" />
+              <div className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={inquiry.mockup_path} alt="Mockup" className="h-auto w-full" />
+              </div>
             ) : (
-              <div className="p-10 text-sm text-muted-foreground">
+              <div className="rounded-[1.4rem] bg-white p-10 text-sm text-muted-foreground ring-1 ring-foreground/10">
                 Mockup files were cleaned up after fulfillment or cancellation.
               </div>
             )}
+            {production
+              .filter((file) => /\.(jpg|jpeg|png|webp)$/i.test(file))
+              .map((file) => (
+                <div key={file} className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={file} alt="Additional side" className="h-auto w-full" />
+                </div>
+              ))}
           </div>
           <div>
             <h2 className="mb-2 font-heading text-xl">Production files</h2>

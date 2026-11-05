@@ -25,10 +25,14 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid inquiry" };
   }
 
-  const mockup = formData.get("mockup");
+    const mockup = formData.get("mockup");
   if (!(mockup instanceof File) || mockup.size === 0) {
     return { ok: false, error: "Mockup thumbnail is missing." };
   }
+
+  const extraViews = formData
+    .getAll("viewMockups")
+    .filter((item): item is File => item instanceof File && item.size > 0);
 
   const production = formData
     .getAll("production")
@@ -66,6 +70,20 @@ export async function submitInquiry(formData: FormData): Promise<SubmitInquiryRe
 
     // 2. Upload Production Files to Supabase Storage
     const productionPaths: string[] = [];
+    for (const file of extraViews) {
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const viewFileName = `orders/${referenceCode.replace("#", "")}-view-${safeName}`;
+      const { error: viewUploadError } = await supabase.storage
+        .from("uploads")
+        .upload(viewFileName, Buffer.from(await file.arrayBuffer()), {
+          contentType: file.type || "image/jpeg",
+          upsert: true,
+        });
+      if (!viewUploadError) {
+        const { data: viewUrlData } = supabase.storage.from("uploads").getPublicUrl(viewFileName);
+        productionPaths.push(viewUrlData.publicUrl);
+      }
+    }
     for (const file of production) {
       const safeName = file.name.replace(/[^\w.\-]+/g, "_");
       const prodFileName = `orders/${referenceCode.replace('#', '')}-${stamp}-${safeName}`;

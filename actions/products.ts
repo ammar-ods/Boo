@@ -7,6 +7,7 @@ import {
   slugify,
   type Product,
   type ProductCategory,
+  type ProductView,
 } from "@/lib/products";
 import {
   deleteProduct,
@@ -37,13 +38,48 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   const file = formData.get("mockup");
   let mockup = existing?.mockup || "/products/classic-tee.svg";
   if (file instanceof File && file.size > 0) {
-    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-    mockup = await savePublicUpload(
-      "products",
-      `${slug}-${Date.now()}.${ext}`,
-      Buffer.from(await file.arrayBuffer()),
-      file.type || undefined,
-    );
+    mockup = await uploadViewFile(slug, file);
+  }
+
+  const wrapPreview = formData.get("wrapPreview") === "on";
+  const safe = parseSafe(formData);
+  const views: ProductView[] = [
+    {
+      id: "front",
+      label: String(formData.get("primary_label") || (category === "Drinkware" ? "Wrap" : "Front")),
+      mockup,
+      safe_zone_bounds: safe,
+      wrap: wrapPreview,
+    },
+  ];
+
+  const extraIds = formData.getAll("extra_id").map(String);
+  const extraLabels = formData.getAll("extra_label").map(String);
+  const extraExisting = formData.getAll("extra_existing").map(String);
+  const extraFiles = formData.getAll("extra_mockup");
+  const extraLeft = formData.getAll("extra_left").map(Number);
+  const extraTop = formData.getAll("extra_top").map(Number);
+  const extraWidth = formData.getAll("extra_width").map(Number);
+  const extraHeight = formData.getAll("extra_height").map(Number);
+
+  for (let index = 0; index < extraLabels.length; index += 1) {
+    const extraFile = extraFiles[index];
+    let extraMockup = extraExisting[index] || "";
+    if (extraFile instanceof File && extraFile.size > 0) {
+      extraMockup = await uploadViewFile(slug, extraFile);
+    }
+    if (!extraMockup) continue;
+    views.push({
+      id: extraIds[index] || `side-${index + 2}`,
+      label: extraLabels[index] || `Side ${index + 2}`,
+      mockup: extraMockup,
+      safe_zone_bounds: {
+        left: extraLeft[index] || safe.left,
+        top: extraTop[index] || safe.top,
+        width: extraWidth[index] || safe.width,
+        height: extraHeight[index] || safe.height,
+      },
+    });
   }
 
   return {
@@ -57,14 +93,26 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     defaultMaterial: materials[0] || "Standard",
     canvasWidth: 800,
     canvasHeight: 800,
-    safe_zone_bounds: parseSafe(formData),
+    safe_zone_bounds: safe,
     mockup,
     accent: (["pink", "orange", "teal"].includes(String(formData.get("accent")))
       ? formData.get("accent")
       : "teal") as Product["accent"],
     showSafeZone: formData.get("showSafeZone") === "on",
     archived: formData.get("archived") === "on",
+    wrapPreview,
+    views,
   };
+}
+
+async function uploadViewFile(slug: string, file: File) {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  return savePublicUpload(
+    "products",
+    `${slug}-${Date.now()}-${Math.round(Math.random() * 999)}.${ext}`,
+    Buffer.from(await file.arrayBuffer()),
+    file.type || undefined,
+  );
 }
 
 export async function createProduct(formData: FormData) {
