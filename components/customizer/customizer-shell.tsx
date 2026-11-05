@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil } from "lucide-react";
-import { productViews, type Product, type ProductView } from "@/lib/products";
+import { MUG_WRAP_FLAT, mugPhotoUrl, productViews, type Product, type ProductView } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
 import { FabricCanvas, type CanvasHandle } from "./fabric-canvas";
@@ -80,7 +80,11 @@ export function CustomizerShell({ product }: { product: Product }) {
               ))}
               <div className="space-y-2">
                 <p className="font-heading text-sm text-muted-foreground">3D mug · drag to spin</p>
-                <MugTurntable textureUrl={wrapTexture} />
+                <MugTurntable
+                  textureUrl={wrapTexture}
+                  mugPhotoUrl={mugPhotoUrl(product)}
+                  wrapBounds={views.find((view) => view.wrap)?.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds}
+                />
               </div>
             </div>
           ) : (

@@ -41,15 +41,24 @@ export default async function InquiryDetailPage({
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-4">
           <h2 className="font-heading text-xl">Submitted preview</h2>
+          <p className="text-sm text-muted-foreground">
+            For mugs, the large card is the unfolded wrap — seam to seam — so you can see print placement.
+          </p>
           {previewImages.length ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {previewImages.map((file) => (
+              {previewImages.map((file, index) => (
                 <article
                   key={file}
-                  className="overflow-hidden rounded-2xl bg-white ring-1 ring-foreground/10"
+                  className={`overflow-hidden rounded-2xl bg-white ring-1 ring-foreground/10 ${
+                    index === 0 ? "col-span-2 sm:col-span-2" : ""
+                  }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={file} alt="Order preview" className="h-28 w-full bg-[#f6f3ee] object-cover" />
+                  <img
+                    src={file}
+                    alt={index === 0 ? "Unfolded print layout" : "Order preview"}
+                    className={`w-full bg-[#f6f3ee] object-contain ${index === 0 ? "h-56" : "h-28"}`}
+                  />
                   <div className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs">
                     <a
                       className="font-heading text-boo-teal"

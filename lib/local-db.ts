@@ -53,6 +53,8 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   accent?: Product["accent"];
   showSafeZone?: boolean;
   wrapPreview?: boolean;
+  mugPhoto?: string;
+  wrapTemplate?: string;
   views?: ProductView[];
 };
 
@@ -148,12 +150,15 @@ function rowToProduct(row: Record<string, unknown>): Product {
     showSafeZone: row.show_safe_zone !== false && bounds.showSafeZone !== false,
     archived: Boolean(row.archived) || row.is_active === false,
     wrapPreview,
+    mugPhoto: bounds.mugPhoto ? String(bounds.mugPhoto) : wrapPreview ? mockup : undefined,
+    wrapTemplate: bounds.wrapTemplate ? String(bounds.wrapTemplate) : undefined,
     views,
   };
 }
 
 function productToRow(product: Product) {
-  const views = productViews(product);
+  const views = product.views?.length ? product.views : productViews(product);
+  const catalogImage = product.mugPhoto || product.mockup;
   const safe_zone_bounds: SafeZonePayload = {
     ...product.safe_zone_bounds,
     tagline: product.tagline,
@@ -164,6 +169,8 @@ function productToRow(product: Product) {
     accent: product.accent,
     showSafeZone: product.showSafeZone !== false,
     wrapPreview: Boolean(product.wrapPreview),
+    mugPhoto: product.mugPhoto,
+    wrapTemplate: product.wrapTemplate,
     views,
   };
 
@@ -172,7 +179,7 @@ function productToRow(product: Product) {
     title: product.name,
     category: product.category,
     description: product.description,
-    base_image_url: views[0]?.mockup || product.mockup,
+    base_image_url: catalogImage,
     overlay_image_url: views[1]?.mockup || null,
     safe_zone_bounds,
     is_laser_cut: product.is_laser_cut,

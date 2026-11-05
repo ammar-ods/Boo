@@ -97,6 +97,32 @@ export function ProductForm({
             <img src={product.mockup} alt="" className="mt-2 h-40 rounded-xl object-cover" />
           ) : null}
         </div>
+        <div className="space-y-3 rounded-2xl bg-[#efe8de] p-4">
+          <p className="font-heading text-base">Mug wrap</p>
+          <p className="text-xs text-muted-foreground">
+            Used when “wrap around a mug” is on. The mug photo is the rotatable 3D preview.
+            Orders get the unfolded print layout, not the side view.
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="mug_photo">3D mug photo</Label>
+            <input id="mug_photo" name="mug_photo" type="file" accept="image/*,.svg" />
+            {product?.mugPhoto || product?.mockup ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={product?.mugPhoto || product?.mockup}
+                alt=""
+                className="mt-2 h-32 rounded-xl bg-white object-contain"
+              />
+            ) : null}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="wrap_template">Unfolded print layout (optional)</Label>
+            <input id="wrap_template" name="wrap_template" type="file" accept="image/*,.svg" />
+            <p className="text-xs text-muted-foreground">
+              Leave empty to keep the built-in cylinder unwrap (seam → front → seam).
+            </p>
+          </div>
+        </div>
 
         <div className="space-y-3 rounded-2xl bg-secondary/60 p-4">
           <div className="flex items-center justify-between gap-3">

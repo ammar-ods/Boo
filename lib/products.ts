@@ -39,6 +39,10 @@ export type Product = {
   showSafeZone?: boolean;
   archived?: boolean;
   wrapPreview?: boolean;
+  /** Photo of the physical mug used in the rotatable 3D preview and catalog card. */
+  mugPhoto?: string;
+  /** Optional custom unwrapped print template. Defaults to the built-in wrap layout. */
+  wrapTemplate?: string;
   views?: ProductView[];
 };
 
@@ -49,6 +53,20 @@ export const MUG_WRAP_FLAT = {
   safe_zone_bounds: { left: 70, top: 210, width: 660, height: 300 },
   wrapBounds: MUG_WRAP_BOUNDS,
 };
+
+export function mugPhotoUrl(product: Product) {
+  const src = product.mugPhoto || product.mockup || "";
+  if (!src || src.includes("mug-wrap-flat")) return MUG_WRAP_FLAT.productMockup;
+  return src;
+}
+
+function wrapEditorMockup(product: Product, view: ProductView) {
+  const custom = product.wrapTemplate || view.mockup;
+  if (!custom || custom.includes("ceramic-mug") || custom.includes("mug-wrap-flat")) {
+    return MUG_WRAP_FLAT.mockup;
+  }
+  return custom;
+}
 
 export function productViews(product: Product): ProductView[] {
   const drinkware = product.category === "Drinkware" || Boolean(product.wrapPreview);
@@ -69,12 +87,16 @@ export function productViews(product: Product): ProductView[] {
   return raw.map((view) => {
     const wrap = Boolean(view.wrap) || drinkware;
     if (!wrap) return { ...view, wrap: false };
+    const mockup = wrapEditorMockup(product, view);
+    const usingBuiltIn = mockup === MUG_WRAP_FLAT.mockup;
     return {
       ...view,
       wrap: true,
       label: view.label || "Wrap",
-      mockup: MUG_WRAP_FLAT.mockup,
-      safe_zone_bounds: MUG_WRAP_FLAT.safe_zone_bounds,
+      mockup,
+      safe_zone_bounds: usingBuiltIn
+        ? MUG_WRAP_FLAT.safe_zone_bounds
+        : view.safe_zone_bounds,
       wrapBounds: view.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds,
     };
   });
@@ -162,7 +184,9 @@ export const SEED_PRODUCTS: Product[] = [
     canvasWidth: 800,
     canvasHeight: 800,
     safe_zone_bounds: { left: 210, top: 250, width: 300, height: 220 },
-    mockup: "/products/mug-wrap-flat.svg",
+    mockup: "/products/ceramic-mug.svg",
+    mugPhoto: "/products/ceramic-mug.svg",
+    wrapTemplate: "/products/mug-wrap-flat.svg",
     accent: "orange",
     wrapPreview: true,
     views: [

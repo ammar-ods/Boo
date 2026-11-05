@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Product, ProductView, SafeZone } from "@/lib/products";
+import type { Product, ProductView } from "@/lib/products";
 import { MUG_WRAP_FLAT, productViews } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 
@@ -318,12 +318,7 @@ export function FabricCanvas({
         const productImage = await loadHtmlImage(mockupSrc);
         ctx.drawImage(productImage, 0, 0, dest.width, dest.height);
         const overlayImage = await loadHtmlImage(overlaySrc);
-        const wrapBox = viewRef.current.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds;
-        if (viewRef.current.wrap) {
-          drawArtworkOnCylinder(ctx, overlayImage, wrapBox);
-        } else {
-          ctx.drawImage(overlayImage, 0, 0, dest.width, dest.height);
-        }
+        ctx.drawImage(overlayImage, 0, 0, dest.width, dest.height);
         return await new Promise<Blob>((resolve, reject) => {
           dest.toBlob(
             (blob) => (blob ? resolve(blob) : reject(new Error("blob failed"))),
@@ -334,27 +329,10 @@ export function FabricCanvas({
       };
 
       const exportMockup = async () => {
-        if (viewRef.current.wrap) {
-          const wrapTexture = exportOverlay();
-          if (!wrapTexture) {
-            const productImage = await loadHtmlImage(MUG_WRAP_FLAT.productMockup);
-            const dest = document.createElement("canvas");
-            dest.width = productRef.current.canvasWidth;
-            dest.height = productRef.current.canvasHeight;
-            const ctx = dest.getContext("2d");
-            if (!ctx) throw new Error("Could not export mockup");
-            ctx.drawImage(productImage, 0, 0, dest.width, dest.height);
-            return await new Promise<Blob>((resolve, reject) => {
-              dest.toBlob(
-                (blob) => (blob ? resolve(blob) : reject(new Error("blob failed"))),
-                "image/jpeg",
-                0.55,
-              );
-            });
-          }
-          return compositeMockup(MUG_WRAP_FLAT.productMockup, wrapTexture);
-        }
         const overlay = overlayDataUrl();
+        if (viewRef.current.wrap) {
+          return compositeMockup(viewRef.current.mockup || MUG_WRAP_FLAT.mockup, overlay);
+        }
         return compositeMockup(viewRef.current.mockup, overlay);
       };
 
@@ -506,56 +484,6 @@ function loadHtmlImage(src: string) {
     img.onerror = () => reject(new Error(`Could not load ${src}`));
     img.src = src;
   });
-}
-
-function roundedRectPath(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-) {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
-  ctx.closePath();
-}
-
-function drawArtworkOnCylinder(
-  ctx: CanvasRenderingContext2D,
-  overlay: HTMLImageElement,
-  wrapBox: SafeZone & { radius?: number },
-) {
-  ctx.save();
-  roundedRectPath(
-    ctx,
-    wrapBox.left,
-    wrapBox.top,
-    wrapBox.width,
-    wrapBox.height,
-    wrapBox.radius ?? 40,
-  );
-  ctx.clip();
-  const slices = Math.max(80, Math.round(wrapBox.width));
-  for (let i = 0; i < slices; i++) {
-    const t = i / slices;
-    const nx = t * 2 - 1;
-    const cos = Math.sqrt(Math.max(0, 1 - nx * nx));
-    if (cos <= 0.02) continue;
-    const theta = Math.atan2(nx, cos);
-    const u = ((theta / (Math.PI * 2) + 0.5) % 1 + 1) % 1;
-    const x = wrapBox.left + t * wrapBox.width;
-    const sx = u * Math.max(1, overlay.width - 1);
-    ctx.drawImage(overlay, sx, 0, 1, overlay.height, x, wrapBox.top, wrapBox.width / slices + 0.6, wrapBox.height);
-    ctx.fillStyle = `rgba(40,28,18,${0.22 * (1 - cos)})`;
-    ctx.fillRect(x, wrapBox.top, wrapBox.width / slices + 0.6, wrapBox.height);
-  }
-  ctx.restore();
 }
 
 async function fileToImageDataUrl(file: File) {

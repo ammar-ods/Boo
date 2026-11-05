@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   CATEGORIES,
+  MUG_WRAP_FLAT,
   slugify,
   type Product,
   type ProductCategory,
@@ -35,20 +36,39 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     .map((item) => item.trim())
     .filter(Boolean);
   const category = String(formData.get("category")) as ProductCategory;
+  const wrapPreview = formData.get("wrapPreview") === "on" || category === "Drinkware";
   const file = formData.get("mockup");
   let mockup = existing?.mockup || "/products/classic-tee.svg";
   if (file instanceof File && file.size > 0) {
     mockup = await uploadViewFile(slug, file);
   }
 
-  const wrapPreview = formData.get("wrapPreview") === "on";
+  let mugPhoto = existing?.mugPhoto;
+  const mugFile = formData.get("mug_photo");
+  if (mugFile instanceof File && mugFile.size > 0) {
+    mugPhoto = await uploadViewFile(slug, mugFile);
+  } else if (wrapPreview && !mugPhoto) {
+    mugPhoto =
+      mockup.includes("mug-wrap-flat") ? MUG_WRAP_FLAT.productMockup : mockup || MUG_WRAP_FLAT.productMockup;
+  }
+
+  let wrapTemplate = existing?.wrapTemplate;
+  const wrapFile = formData.get("wrap_template");
+  if (wrapFile instanceof File && wrapFile.size > 0) {
+    wrapTemplate = await uploadViewFile(slug, wrapFile);
+  } else if (wrapPreview && !wrapTemplate) {
+    wrapTemplate = MUG_WRAP_FLAT.mockup;
+  }
+
+  if (wrapPreview && mugPhoto) mockup = mugPhoto;
+
   const safe = parseSafe(formData);
   const views: ProductView[] = [
     {
       id: "front",
-      label: String(formData.get("primary_label") || (category === "Drinkware" ? "Wrap" : "Front")),
-      mockup,
-      safe_zone_bounds: safe,
+      label: String(formData.get("primary_label") || (wrapPreview ? "Wrap" : "Front")),
+      mockup: wrapPreview ? wrapTemplate || MUG_WRAP_FLAT.mockup : mockup,
+      safe_zone_bounds: wrapPreview ? MUG_WRAP_FLAT.safe_zone_bounds : safe,
       wrap: wrapPreview,
     },
   ];
@@ -101,6 +121,8 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     showSafeZone: formData.get("showSafeZone") === "on",
     archived: formData.get("archived") === "on",
     wrapPreview,
+    mugPhoto,
+    wrapTemplate,
     views,
   };
 }
