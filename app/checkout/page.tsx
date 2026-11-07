@@ -36,6 +36,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           color: item.color,
           priceEgp: item.priceEgp,
+          image: item.image,
         })),
       }),
     });

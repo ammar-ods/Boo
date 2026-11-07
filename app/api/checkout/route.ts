@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { saveOrder, nextReferenceCode } from "@/lib/local-db";
+import { getCatalogProduct, saveOrder, nextReferenceCode } from "@/lib/local-db";
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       email?: string;
       address?: string;
       notes?: string;
-      items?: { slug: string; name: string; quantity: number; color: string; priceEgp: number }[];
+      items?: { slug: string; name: string; quantity: number; color: string; priceEgp: number; image?: string }[];
     };
     const items = Array.isArray(body.items) ? body.items : [];
     if (!body.name?.trim() || !body.phone?.trim() || items.length === 0) {
@@ -21,20 +21,26 @@ export async function POST(request: Request) {
       .join(", ");
     const total = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
     const now = new Date().toISOString();
+    const first = items[0];
+    const catalogItem = first?.slug ? await getCatalogProduct(first.slug) : undefined;
+    const mockup =
+      first?.image ||
+      catalogItem?.mockup ||
+      "/products/white-tee-front.jpg";
     const order = await saveOrder({
       id: crypto.randomUUID(),
       reference_code,
-      product_slug: items[0]?.slug ?? "cart",
+      product_slug: first?.slug ?? "cart",
       product_name: summary,
       customer_name: body.name.trim(),
       customer_email: body.email?.trim() || null,
       customer_phone: body.phone.trim(),
-      material: items[0]?.color ?? null,
+      material: first?.color ?? null,
       quantity: items.reduce((sum, item) => sum + item.quantity, 0),
       notes: [body.address, body.notes, `Total ${total} EGP`].filter(Boolean).join("\n"),
       status: "pending",
       quoted_price: total,
-      mockup_path: null,
+      mockup_path: mockup,
       production_paths: [],
       canvas_json: { items },
       created_at: now,

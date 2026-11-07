@@ -114,9 +114,10 @@ function SectionMedia({
   bleed?: boolean;
   rounded?: boolean;
 }) {
+  const inset = bleed && rounded;
   return (
     <div
-      className={`${bleed ? "w-full" : ""} ${rounded ? "overflow-hidden rounded-[28px]" : ""}`}
+      className={`mx-auto ${inset ? "px-4 sm:px-6" : ""}`}
       style={{
         width: bleed ? "100%" : `${Math.min(100, Math.max(20, widthPct))}%`,
         maxWidth: "100%",
@@ -126,7 +127,9 @@ function SectionMedia({
       <img
         src={src}
         alt=""
-        className={`h-auto w-full object-contain object-top ${rounded ? "rounded-[28px]" : ""}`}
+        className={`mx-auto block h-auto max-w-full object-contain object-top ${
+          rounded ? "rounded-[28px]" : ""
+        }`}
         style={{ maxHeight: Math.max(80, height) }}
       />
     </div>
@@ -236,7 +239,7 @@ function SectionView({
   if (placement === "cover" && showImage) {
     return (
       <section
-        className={`reveal relative overflow-hidden ${rounded ? "rounded-[28px]" : ""}`}
+        className={`reveal relative overflow-hidden ${rounded ? "mx-4 rounded-[28px] sm:mx-6" : ""}`}
         style={{ color: surface.color, minHeight: height, animationDelay: `${index * 80}ms` }}
       >
         <div className="absolute inset-0">

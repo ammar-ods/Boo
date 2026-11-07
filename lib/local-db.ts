@@ -433,7 +433,7 @@ function orderToRow(order: InquiryRecord) {
     notes: order.notes,
     status: order.status,
     quoted_price: order.quoted_price,
-    mockup_path: order.mockup_path,
+    mockup_path: order.mockup_path || "",
     production_paths: order.production_paths ?? [],
     canvas_json: order.canvas_json ?? null,
     created_at: order.created_at,
