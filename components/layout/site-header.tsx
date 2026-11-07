@@ -3,66 +3,57 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Search, X } from "lucide-react";
+import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
+import { useI18n, type Currency } from "@/lib/i18n";
+import { cartCount, useCart } from "@/lib/cart";
 
-const LINKS = [
-  { href: "/catalog?collection=creator-kits", label: "Creator Kits" },
-  { href: "/catalog?collection=studio-gear", label: "Studio Gear" },
-  { href: "/catalog?collection=gifts", label: "Curated Gifts" },
-  { href: "/catalog?collection=staff-picks", label: "Staff Picks" },
-  { href: "/catalog?collection=under-50", label: "Drops Under $50" },
-];
-
-const CURRENCIES = ["USD $", "EUR €", "GBP £", "EGP ج.م"];
+const CURRENCIES: Currency[] = ["EGP", "USD", "EUR", "GBP"];
 
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t, locale, setLocale, currency, setCurrency } = useI18n();
+  const items = useCart((s) => s.items);
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [currency, setCurrency] = useState("USD $");
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("boo-currency");
-    if (stored) setCurrency(stored);
-  }, []);
+    setCount(cartCount(items));
+  }, [items]);
 
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setSearchOpen(true);
-      }
-      if (event.key === "Escape") setSearchOpen(false);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  const links = [
+    { href: "/catalog", label: t("shop") },
+    { href: "/bundles", label: t("bundles") },
+    { href: "/contact", label: t("contact") },
+  ];
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) return null;
 
   return (
     <header className="sticky top-0 z-40">
-      <div className="bg-oxford text-[11px] tracking-[0.16em] text-white/85">
+      <div className="bg-oxford text-[11px] tracking-[0.12em] text-white/85">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
-          <p>Free shipping over $75 · Micro-batch atelier</p>
-          <select
-            value={currency}
-            onChange={(event) => {
-              setCurrency(event.target.value);
-              window.localStorage.setItem("boo-currency", event.target.value);
-            }}
-            className="bg-transparent text-white/90 outline-none"
-            aria-label="Currency"
-          >
-            {CURRENCIES.map((item) => (
-              <option key={item} value={item} className="text-oxford">
-                {item}
-              </option>
-            ))}
-          </select>
+          <p>{t("freeShip")}</p>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
+              {locale === "ar" ? "EN" : "عربي"}
+            </button>
+            <select
+              value={currency}
+              onChange={(event) => setCurrency(event.target.value as Currency)}
+              className="bg-transparent text-white/90 outline-none"
+              aria-label="Currency"
+            >
+              {CURRENCIES.map((item) => (
+                <option key={item} value={item} className="text-oxford">
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       <div className="border-b border-oxford/8 bg-cream">
@@ -70,38 +61,38 @@ export function SiteHeader() {
           <Link href="/" className="shrink-0">
             <BooLogo />
           </Link>
-          <nav className="hidden items-center gap-7 text-[15px] font-medium text-oxford lg:flex">
-            {LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="transition-colors hover:text-oxford/55">
+          <nav className="hidden items-center gap-7 text-[15px] font-medium text-oxford md:flex">
+            {links.map((link) => (
+              <Link key={link.href} href={link.href} className="hover:text-oxford/55">
                 {link.label}
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               className="grid size-10 place-items-center rounded-full text-oxford"
-              aria-label="Search"
+              aria-label={t("search")}
             >
               <Search className="size-[18px]" />
             </button>
-            <Link href="/catalog" className="btn-press btn-press-sm hidden sm:inline-flex">
-              Shop drops
+            <Link href="/cart" className="relative grid size-10 place-items-center rounded-full text-oxford" aria-label={t("cart")}>
+              <ShoppingBag className="size-[18px]" />
+              {count > 0 ? (
+                <span className="absolute end-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-oxford text-[10px] text-white">
+                  {count}
+                </span>
+              ) : null}
             </Link>
-            <button
-              type="button"
-              className="rounded-full p-2 lg:hidden"
-              onClick={() => setOpen((value) => !value)}
-              aria-label="Menu"
-            >
+            <button type="button" className="rounded-full p-2 md:hidden" onClick={() => setOpen((v) => !v)} aria-label="Menu">
               {open ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           </div>
         </div>
         {open ? (
-          <div className="flex flex-col gap-2 border-t border-oxford/8 px-4 py-3 text-sm lg:hidden">
-            {LINKS.map((link) => (
+          <div className="flex flex-col gap-2 border-t border-oxford/8 px-4 py-3 text-sm md:hidden">
+            {links.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
                 {link.label}
               </Link>
@@ -125,7 +116,7 @@ export function SiteHeader() {
                 autoFocus
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search kits, gear, gifts…"
+                placeholder={t("search")}
                 className="h-10 w-full bg-transparent outline-none"
               />
               <button type="button" className="text-sm text-muted-foreground" onClick={() => setSearchOpen(false)}>

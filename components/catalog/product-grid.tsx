@@ -6,11 +6,10 @@ import { CATEGORIES, type Product, type ProductCategory } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
 const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
-  "creator-kits": ["Apparel", "Drinkware"],
-  "studio-gear": ["Laser Cut Wood", "Acrylic"],
-  gifts: ["Stickers", "Apparel"],
+  apparel: ["Apparel"],
+  drinkware: ["Drinkware"],
+  wood: ["Laser Cut Wood"],
   "staff-picks": "staff",
-  "under-50": ["Stickers", "Drinkware"],
 };
 
 export function ProductGrid({

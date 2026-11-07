@@ -5,6 +5,8 @@ import { MUG_WRAP_FLAT, productViews, SEED_PRODUCTS, type Product, type ProductV
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { DEFAULT_SITE, type SiteSection } from "@/lib/site";
+import { SEED_BUNDLES, type Bundle } from "@/lib/bundles";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
@@ -120,8 +122,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
   const overlay = row.overlay_image_url ? String(row.overlay_image_url) : null;
   const wrapPreview = Boolean(bounds.wrapPreview);
   const slug = String(row.slug);
-  let views = parseViews(bounds, mockup, overlay, wrapPreview);
   const seed = SEED_PRODUCTS.find((item) => item.slug === slug);
+  let views = parseViews(bounds, mockup, overlay, wrapPreview);
   if ((!views || views.length === 0) && seed?.views) {
     views = seed.views.map((view, index) =>
       index === 0
@@ -136,12 +138,16 @@ function rowToProduct(row: Record<string, unknown>): Product {
 
   return {
     slug,
-    name: String(row.title ?? row.name ?? ""),
-    category: row.category as Product["category"],
-    tagline: String(row.tagline ?? bounds.tagline ?? ""),
-    description: String(row.description ?? ""),
+    name: String(row.title ?? row.name ?? seed?.name ?? ""),
+    nameAr: String(row.name_ar ?? row.nameAr ?? seed?.nameAr ?? row.title ?? ""),
+    category: (row.category as Product["category"]) || seed?.category || "Apparel",
+    tagline: String(row.tagline ?? bounds.tagline ?? seed?.tagline ?? ""),
+    taglineAr: String(row.tagline_ar ?? row.taglineAr ?? seed?.taglineAr ?? ""),
+    description: String(row.description ?? seed?.description ?? ""),
+    descriptionAr: String(row.description_ar ?? row.descriptionAr ?? seed?.descriptionAr ?? ""),
     is_laser_cut: Boolean(row.is_laser_cut),
-    materials: materials.length ? materials : ["Standard"],
+    materials: materials.length ? materials : seed?.materials ?? ["Standard"],
+    colors: Array.isArray(row.colors) ? (row.colors as string[]) : seed?.colors ?? materials,
     defaultMaterial: String(row.default_material ?? bounds.defaultMaterial ?? materials[0] ?? "Standard"),
     canvasWidth: Number(row.canvas_width ?? bounds.canvasWidth ?? 800),
     canvasHeight: Number(row.canvas_height ?? bounds.canvasHeight ?? 800),
@@ -159,6 +165,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
     mugPhoto: bounds.mugPhoto ? String(bounds.mugPhoto) : wrapPreview ? mockup : undefined,
     wrapTemplate: bounds.wrapTemplate ? String(bounds.wrapTemplate) : undefined,
     views,
+    priceEgp: Number(row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
+    customizable: row.customizable !== false,
   };
 }
 
@@ -183,8 +191,12 @@ function productToRow(product: Product) {
   return {
     slug: product.slug,
     title: product.name,
+    name_ar: product.nameAr,
     category: product.category,
     description: product.description,
+    description_ar: product.descriptionAr,
+    colors: product.colors,
+    price_egp: product.priceEgp,
     base_image_url: catalogImage,
     overlay_image_url: views[1]?.mockup || null,
     safe_zone_bounds,
@@ -253,12 +265,31 @@ export async function getCatalog(): Promise<Product[]> {
   }
 
   const stored = await readJson<Product[] | null>(CATALOG_FILE, null);
-  if (!stored || stored.length === 0) return SEED_PRODUCTS;
+  const stale =
+    !stored ||
+    stored.length === 0 ||
+    (stored.some((item) => item.slug === "classic-tee") && !stored.some((item) => item.slug === "white-tee"));
+  if (stale) {
+    await writeJson(CATALOG_FILE, SEED_PRODUCTS);
+    return SEED_PRODUCTS;
+  }
   return stored;
 }
 
+const RETIRED_SLUGS = new Set([
+  "classic-tee",
+  "studio-hoodie",
+  "ceramic-mug",
+  "wood-plaque",
+  "wood-keychain",
+  "acrylic-medal",
+  "acrylic-standee",
+  "vinyl-sticker-sheet",
+  "die-cut-sticker",
+]);
+
 export async function getLiveCatalog() {
-  return (await getCatalog()).filter((product) => !product.archived);
+  return (await getCatalog()).filter((product) => !product.archived && !RETIRED_SLUGS.has(product.slug));
 }
 
 export async function getCatalogProduct(slug: string) {
@@ -411,11 +442,25 @@ export async function getOrder(id: string) {
 
 export async function saveOrder(order: InquiryRecord) {
   if (useSupabase()) {
-    requireServiceRole();
-    const supabase = createAdminClient();
-    const { error } = await supabase.from("inquiries").upsert(order);
-    if (error) throw new Error(error.message);
-    return order;
+    try {
+      requireServiceRole();
+      const supabase = createAdminClient();
+      const { error } = await supabase.from("inquiries").upsert(order);
+      if (error) {
+        if (canUseSeedFallback(error)) {
+          /* fall through to local file */
+        } else {
+          throw new Error(error.message);
+        }
+      } else {
+        return order;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
+      }
+    }
   }
   const orders = await listOrders();
   const index = orders.findIndex((item) => item.id === order.id);
@@ -521,4 +566,29 @@ export async function deleteStoredFile(fileUrl: string) {
 
 export function uploadsDir() {
   return UPLOADS_DIR;
+}
+
+const SITE_FILE = path.join(DATA_DIR, "site.json");
+const BUNDLES_FILE = path.join(DATA_DIR, "bundles.json");
+
+export async function getSite() {
+  noStore();
+  const stored = await readJson<{ sections: SiteSection[] } | null>(SITE_FILE, null);
+  if (!stored?.sections?.length) return DEFAULT_SITE;
+  return stored;
+}
+
+export async function saveSite(site: { sections: SiteSection[] }) {
+  await writeJson(SITE_FILE, site);
+  return site;
+}
+
+export async function getBundles() {
+  noStore();
+  const stored = await readJson<Bundle[] | null>(BUNDLES_FILE, null);
+  if (!stored?.length) {
+    await writeJson(BUNDLES_FILE, SEED_BUNDLES);
+    return SEED_BUNDLES;
+  }
+  return stored;
 }

@@ -36,9 +36,9 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     .map((item) => item.trim())
     .filter(Boolean);
   const category = String(formData.get("category")) as ProductCategory;
-  const wrapPreview = formData.get("wrapPreview") === "on" || category === "Drinkware";
+  const wrapPreview = formData.get("wrapPreview") === "on";
   const file = formData.get("mockup");
-  let mockup = existing?.mockup || "/products/classic-tee.svg";
+  let mockup = existing?.mockup || "/products/white-tee-front.jpg";
   if (file instanceof File && file.size > 0) {
     mockup = await uploadViewFile(slug, file);
   }
@@ -105,12 +105,18 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   return {
     slug,
     name,
+    nameAr: String(formData.get("nameAr") || existing?.nameAr || name),
     category: CATEGORIES.includes(category) ? category : "Apparel",
     tagline: String(formData.get("tagline") || "Custom studio piece."),
+    taglineAr: String(formData.get("taglineAr") || existing?.taglineAr || ""),
     description: String(formData.get("description") || ""),
+    descriptionAr: String(formData.get("descriptionAr") || existing?.descriptionAr || ""),
     is_laser_cut: formData.get("is_laser_cut") === "on",
     materials: materials.length ? materials : ["Standard"],
+    colors: materials.length ? materials : existing?.colors ?? ["White"],
     defaultMaterial: materials[0] || "Standard",
+    priceEgp: Number(formData.get("priceEgp") || existing?.priceEgp || 100),
+    customizable: formData.get("customizable") !== "off",
     canvasWidth: 800,
     canvasHeight: 800,
     safe_zone_bounds: safe,
@@ -202,4 +208,5 @@ function revalidateProductPages(slug: string) {
   revalidatePath("/");
   revalidatePath("/catalog");
   revalidatePath(`/customize/${slug}`);
+  revalidatePath(`/product/${slug}`);
 }
