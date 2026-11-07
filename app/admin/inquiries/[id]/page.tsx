@@ -9,7 +9,13 @@ export const revalidate = 0;
 export const dynamicParams = true;
 
 function looksLikeImage(url: string) {
-  return /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(url) || url.includes("/storage/v1/object/");
+  return (
+    /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(url) ||
+    url.includes("/storage/v1/object/") ||
+    url.startsWith("/uploads/") ||
+    url.startsWith("/products/") ||
+    url.startsWith("data:image")
+  );
 }
 
 export default async function InquiryDetailPage({
@@ -22,9 +28,17 @@ export default async function InquiryDetailPage({
   if (!inquiry) notFound();
 
   const extras = (inquiry.production_paths ?? []).filter((path) => path !== inquiry.mockup_path);
-  const previewImages = [inquiry.mockup_path, ...extras].filter(
-    (path): path is string => typeof path === "string" && looksLikeImage(path),
-  );
+  const payload = (inquiry.canvas_json ?? {}) as {
+    views?: { id?: string; label?: string; url?: string }[];
+    uploads?: { name?: string; url?: string }[];
+  };
+  const labeledViews = (payload.views ?? []).filter((item) => item.url);
+  const previewImages = (
+    labeledViews.length
+      ? labeledViews.map((item) => item.url as string)
+      : [inquiry.mockup_path, ...extras]
+  ).filter((path): path is string => typeof path === "string" && looksLikeImage(path));
+  const uploadFiles = (payload.uploads ?? []).filter((item) => item.url);
   const otherFiles = extras.filter((path) => !looksLikeImage(path));
 
   return (
@@ -56,9 +70,12 @@ export default async function InquiryDetailPage({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={file}
-                    alt={index === 0 ? "Unfolded print layout" : "Order preview"}
+                    alt={labeledViews[index]?.label || (index === 0 ? "Front preview" : "Order preview")}
                     className={`w-full bg-[#f6f3ee] object-contain ${index === 0 ? "h-56" : "h-28"}`}
                   />
+                  {labeledViews[index]?.label ? (
+                    <p className="px-2.5 pt-2 text-xs font-semibold">{labeledViews[index]?.label}</p>
+                  ) : null}
                   <div className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs">
                     <a
                       className="font-heading text-boo-teal"
@@ -84,6 +101,25 @@ export default async function InquiryDetailPage({
           <div>
             <h2 className="mb-2 font-heading text-xl">Customer uploads</h2>
             <ul className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+              {uploadFiles.map((file) => (
+                <li key={file.url} className="overflow-hidden rounded-2xl bg-white ring-1 ring-foreground/10">
+                  {looksLikeImage(file.url || "") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={file.url} alt={file.name || ""} className="h-28 w-full bg-[#f6f3ee] object-contain" />
+                  ) : null}
+                  <div className="px-3 py-2">
+                    <p className="truncate text-xs text-muted-foreground">{file.name || file.url?.split("/").pop()}</p>
+                    <div className="mt-2 flex gap-3 text-xs">
+                      <a className="font-heading text-boo-teal" href={file.url} target="_blank" rel="noreferrer">
+                        View
+                      </a>
+                      <a className="font-heading text-boo-orange" href={file.url} download>
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                </li>
+              ))}
               {otherFiles.map((file) => (
                 <li
                   key={file}
@@ -100,9 +136,9 @@ export default async function InquiryDetailPage({
                   </div>
                 </li>
               ))}
-              {previewImages.length === 0 && otherFiles.length === 0 ? (
+              {previewImages.length === 0 && otherFiles.length === 0 && uploadFiles.length === 0 ? (
                 <li className="text-muted-foreground">No files were attached to this inquiry.</li>
-              ) : otherFiles.length === 0 ? (
+              ) : otherFiles.length === 0 && uploadFiles.length === 0 ? (
                 <li className="text-muted-foreground">Artwork is in the preview images above.</li>
               ) : null}
             </ul>
