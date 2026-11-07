@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +13,7 @@ import { pick, SECTION_TYPES, type ImagePlacement, type Localized, type SiteSect
 
 export function SiteCanvas({ products }: { products: Product[] }) {
   const { editing, site, selectedId, setSelectedId, patchSection, moveSection, removeSection } = useEdit();
-  const { t, formatPrice, locale } = useI18n();
+  const { locale } = useI18n();
   const visible = editing ? site.sections : site.sections.filter((section) => section.visible);
 
   return (
@@ -78,8 +77,6 @@ export function SiteCanvas({ products }: { products: Product[] }) {
           <SectionView
             section={section}
             products={products}
-            t={t}
-            formatPrice={formatPrice}
             locale={locale}
             index={visible.indexOf(section)}
           />
@@ -106,22 +103,21 @@ function SectionMedia({
   widthPct: number;
   bleed?: boolean;
 }) {
-  const img = src.startsWith("data:") || src.startsWith("http") ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" className="h-full w-full object-cover" />
-  ) : (
-    <Image src={src} alt="" fill className="object-cover" />
-  );
   return (
     <div
-      className={`relative overflow-hidden ${bleed ? "" : "rounded-[28px]"}`}
+      className={bleed ? "w-full" : "overflow-hidden rounded-[28px]"}
       style={{
-        height,
         width: bleed ? "100%" : `${Math.min(100, Math.max(20, widthPct))}%`,
-        maxWidth: bleed ? "none" : "100%",
+        maxWidth: "100%",
       }}
     >
-      {img}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        className="h-auto w-full object-contain object-top"
+        style={{ maxHeight: Math.max(80, height) }}
+      />
     </div>
   );
 }
@@ -129,15 +125,11 @@ function SectionMedia({
 function SectionView({
   section,
   products,
-  t,
-  formatPrice,
   locale,
   index = 0,
 }: {
   section: SiteSection;
   products: Product[];
-  t: (key: string) => string;
-  formatPrice: (n: number) => string;
   locale: string;
   index?: number;
 }) {
@@ -220,7 +212,7 @@ function SectionView({
         <div className="absolute inset-0">
           {image.startsWith("data:") || image.startsWith("http") || image.startsWith("/") ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt="" className="h-full w-full object-cover" />
+            <img src={image} alt="" className="h-full w-full object-cover object-top" />
           ) : null}
         </div>
         <div className="absolute inset-0 bg-oxford/35" />
@@ -266,22 +258,6 @@ function SectionView({
           </div>
         ) : null}
         {actions}
-        {section.type === "hero" ? (
-          <dl className="mx-auto mt-10 grid max-w-lg grid-cols-3 gap-4 text-sm">
-            <div>
-              <dt className="text-2xl font-semibold">{formatPrice(100)}</dt>
-              <dd className="mt-1 opacity-70">{t("price")}</dd>
-            </div>
-            <div>
-              <dt className="text-2xl font-semibold">3</dt>
-              <dd className="mt-1 opacity-70">{t("pieces")}</dd>
-            </div>
-            <div>
-              <dt className="text-2xl font-semibold">EGP</dt>
-              <dd className="mt-1 opacity-70">{locale === "ar" ? "افتراضي" : "default"}</dd>
-            </div>
-          </dl>
-        ) : null}
       </div>
     </section>
   );
@@ -295,7 +271,7 @@ function SectionInspector({
   products: Product[];
 }) {
   const { patchSection, setSelectedId, save, saving, dirty } = useEdit();
-  const { t, formatPrice, locale } = useI18n();
+  const { locale } = useI18n();
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") setSelectedId(null);
@@ -343,8 +319,6 @@ function SectionInspector({
               <SectionView
                 section={section}
                 products={products}
-                t={t}
-                formatPrice={formatPrice}
                 locale={locale}
               />
             </div>
@@ -474,7 +448,7 @@ function SectionInspector({
           onChange={(imageWidth) => patchSection(section.id, { style: { imageWidth } })}
         />
         <NumberField
-          label="Image height"
+          label="Max image height"
           value={section.style.imageHeight ?? 280}
           onChange={(imageHeight) => patchSection(section.id, { style: { imageHeight } })}
         />
@@ -632,7 +606,7 @@ function ImageUpload({
       {value ? (
         <div className="mb-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="" className="h-24 w-full rounded-xl object-cover" />
+          <img src={value} alt="" className="max-h-28 w-full rounded-xl object-contain object-top" />
           {onClear ? (
             <button type="button" className="mt-1 text-xs font-semibold text-red-700" onClick={onClear}>
               Remove this image

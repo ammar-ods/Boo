@@ -95,7 +95,7 @@ export function StudioChromePanel() {
                 <option value="">{locale === "ar" ? "+ أضف قسم" : "+ Add section"}</option>
                 {SECTION_TYPES.map((item) => (
                   <option key={item.type} value={item.type}>
-                    {item.labelAr} · {item.label}
+                    {item.label}
                   </option>
                 ))}
               </select>
