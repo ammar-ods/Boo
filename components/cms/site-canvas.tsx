@@ -9,7 +9,16 @@ import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import type { Product } from "@/lib/products";
-import { pick, SECTION_TYPES, type ImagePlacement, type Localized, type SiteSection } from "@/lib/site";
+import { AutoScroller } from "@/components/cms/auto-scroller";
+import {
+  pick,
+  SECTION_TYPES,
+  sectionSurface,
+  type GalleryItem,
+  type ImagePlacement,
+  type Localized,
+  type SiteSection,
+} from "@/lib/site";
 
 export function SiteCanvas({ products }: { products: Product[] }) {
   const { editing, site, selectedId, setSelectedId, patchSection, moveSection, removeSection } = useEdit();
@@ -97,15 +106,17 @@ function SectionMedia({
   height,
   widthPct,
   bleed,
+  rounded,
 }: {
   src: string;
   height: number;
   widthPct: number;
   bleed?: boolean;
+  rounded?: boolean;
 }) {
   return (
     <div
-      className={bleed ? "w-full" : "overflow-hidden rounded-[28px]"}
+      className={`${bleed ? "w-full" : ""} ${rounded ? "overflow-hidden rounded-[28px]" : ""}`}
       style={{
         width: bleed ? "100%" : `${Math.min(100, Math.max(20, widthPct))}%`,
         maxWidth: "100%",
@@ -115,7 +126,7 @@ function SectionMedia({
       <img
         src={src}
         alt=""
-        className="h-auto w-full object-contain object-top"
+        className={`h-auto w-full object-contain object-top ${rounded ? "rounded-[28px]" : ""}`}
         style={{ maxHeight: Math.max(80, height) }}
       />
     </div>
@@ -133,9 +144,10 @@ function SectionView({
   locale: string;
   index?: number;
 }) {
+  const surface = sectionSurface(section.style);
   const style = {
-    background: section.style.background,
-    color: section.style.color,
+    background: surface.background,
+    color: surface.color,
     paddingTop: section.style.paddingY ?? 48,
     paddingBottom: section.style.paddingY ?? 48,
     textAlign: (section.style.align ?? "center") as "center" | "start",
@@ -147,6 +159,8 @@ function SectionView({
   const showImage = placement !== "hidden" && Boolean(image);
   const widthPct = section.style.imageWidth ?? (placement === "bleed" || placement === "cover" ? 100 : 70);
   const height = section.style.imageHeight ?? 280;
+  const rounded =
+    section.style.imageRounded ?? (placement === "below" || placement === "start" || placement === "end");
   const showPrimary =
     section.style.showPrimaryCta !== false && Boolean(pick(section.content.ctaLabel, locale));
   const showSecondary =
@@ -185,10 +199,23 @@ function SectionView({
     </div>
   ) : null;
 
+  if (section.type === "marquee") {
+    return (
+      <section className="reveal" style={{ ...style, animationDelay: `${index * 80}ms` }}>
+        {text("title", "mb-4 px-4 font-heading sm:px-6", "h2")}
+        <AutoScroller
+          items={section.content.gallery ?? []}
+          height={height}
+          rounded={section.style.imageRounded !== false}
+        />
+      </section>
+    );
+  }
+
   if (section.type === "collections") {
     return (
       <div className="reveal" style={{ ...style, animationDelay: `${index * 80}ms` }}>
-        {text("title", "px-4 font-heading text-oxford sm:px-6", "h2")}
+        {text("title", "px-4 font-heading sm:px-6", "h2")}
         <DisciplineCarousel />
       </div>
     );
@@ -197,7 +224,7 @@ function SectionView({
   if (section.type === "products") {
     return (
       <section id="creations" className="reveal mx-auto max-w-6xl px-4 sm:px-6" style={{ ...style, animationDelay: `${index * 80}ms` }}>
-        {text("title", "font-heading text-oxford", "h2")}
+        {text("title", "font-heading", "h2")}
         {text("body", "mt-2 text-muted-foreground")}
         <div className="mt-8">
           <ProductGrid products={products} compact />
@@ -208,7 +235,10 @@ function SectionView({
 
   if (placement === "cover" && showImage) {
     return (
-      <section className="reveal relative overflow-hidden" style={{ color: section.style.color, minHeight: height, animationDelay: `${index * 80}ms` }}>
+      <section
+        className={`reveal relative overflow-hidden ${rounded ? "rounded-[28px]" : ""}`}
+        style={{ color: surface.color, minHeight: height, animationDelay: `${index * 80}ms` }}
+      >
         <div className="absolute inset-0">
           {image.startsWith("data:") || image.startsWith("http") || image.startsWith("/") ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -226,7 +256,7 @@ function SectionView({
 
   if ((placement === "start" || placement === "end") && showImage) {
     const imageCol = (
-      <SectionMedia src={image} height={height} widthPct={100} />
+      <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} />
     );
     return (
       <section className="reveal px-4 sm:px-6" style={{ ...style, animationDelay: `${index * 80}ms` }}>
@@ -248,13 +278,13 @@ function SectionView({
       style={{ ...style, animationDelay: `${index * 80}ms` }}
     >
       {placement === "bleed" && showImage ? (
-        <SectionMedia src={image} height={height} widthPct={100} bleed />
+        <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} />
       ) : null}
       <div className={`mx-auto max-w-6xl ${placement === "bleed" && showImage ? "px-4 sm:px-6" : ""} ${section.style.align === "center" ? "text-center" : ""}`}>
         {copy}
         {placement === "below" && showImage ? (
           <div className={`mt-6 ${section.style.align === "center" ? "flex justify-center" : ""}`}>
-            <SectionMedia src={image} height={height} widthPct={widthPct} />
+            <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} />
           </div>
         ) : null}
         {actions}
@@ -452,6 +482,20 @@ function SectionInspector({
           value={section.style.imageHeight ?? 280}
           onChange={(imageHeight) => patchSection(section.id, { style: { imageHeight } })}
         />
+        <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-cream px-3 text-sm">
+          <span>Rounded corners</span>
+          <input
+            type="checkbox"
+            className="size-5"
+            checked={
+              section.style.imageRounded ??
+              (section.style.imagePlacement === "below" ||
+                section.style.imagePlacement === "start" ||
+                section.style.imagePlacement === "end")
+            }
+            onChange={(event) => patchSection(section.id, { style: { imageRounded: event.target.checked } })}
+          />
+        </label>
         <ImageUpload
           label="Arabic image"
           value={section.content.image?.ar}
@@ -495,6 +539,12 @@ function SectionInspector({
           Remove all images
         </button>
       </div>
+      {section.type === "marquee" ? (
+        <GalleryEditor
+          items={section.content.gallery ?? []}
+          onChange={(gallery) => patchSection(section.id, { content: { gallery } })}
+        />
+      ) : null}
           </div>
         </div>
       </div>
@@ -585,6 +635,42 @@ function BilingualField({
           onChange={(event) => onChange({ ...current, en: event.currentTarget.value })}
         />
       </div>
+    </div>
+  );
+}
+
+function GalleryEditor({
+  items,
+  onChange,
+}: {
+  items: GalleryItem[];
+  onChange: (items: GalleryItem[]) => void;
+}) {
+  return (
+    <div className="mt-4 rounded-2xl border border-dashed border-oxford/20 p-3">
+      <p className="mb-2 font-medium text-oxford">Scrolling images</p>
+      {items.map((item, index) => (
+        <div key={`${item.src}-${index}`} className="mb-3 rounded-2xl bg-cream p-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.src} alt="" className="mb-2 max-h-24 w-full object-contain" />
+          <input
+            className="mb-2 h-10 w-full rounded-xl border border-oxford/15 bg-white px-3 text-sm"
+            placeholder="Link (optional) e.g. /product/white-tee"
+            value={item.href ?? ""}
+            onChange={(event) =>
+              onChange(items.map((row, i) => (i === index ? { ...row, href: event.target.value } : row)))
+            }
+          />
+          <button
+            type="button"
+            className="text-xs font-semibold text-red-700"
+            onClick={() => onChange(items.filter((_, i) => i !== index))}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <ImageUpload label="Add image" onChange={(url) => onChange([...items, { src: url }])} />
     </div>
   );
 }

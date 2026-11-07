@@ -49,6 +49,7 @@
   --color-cream: var(--cream);
   --color-press: #06182c;
   --color-chip: var(--chip);
+  --color-cream: var(--cream);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -238,6 +239,42 @@
   background: #141b24;
   color: #f4efe4;
   border-color: #f4efe4;
+}
+
+.dark .bg-white {
+  background-color: var(--card);
+}
+
+.dark .text-oxford,
+.dark .text-oxford\/70,
+.dark .text-oxford\/60,
+.dark .text-oxford\/55,
+.dark .text-oxford\/50,
+.dark .text-oxford\/45 {
+  color: var(--foreground);
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-scroll linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
 }
 
 @keyframes saved-pop {

@@ -35,7 +35,7 @@ export function ProductCard({
 
   return (
     <Link href={`/product/${product.slug}`} className="group block">
-      <div className="relative overflow-hidden rounded-[28px] bg-white shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)] transition duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_22px_40px_-20px_rgba(10,37,64,0.4)]">
+      <div className="relative overflow-hidden rounded-[28px] bg-card shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)] transition duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_22px_40px_-20px_rgba(10,37,64,0.4)]">
         <div className="relative aspect-[4/5] overflow-hidden bg-chip">
           <Image
             src={product.mockup}

@@ -61,7 +61,7 @@ export function DisciplineCarousel() {
         >
           {ITEMS.map((item) => (
             <Link key={item.href} href={item.href} className="group w-[240px] shrink-0 sm:w-[280px]">
-              <div className="relative overflow-hidden rounded-[28px] bg-white shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]">
+              <div className="relative overflow-hidden rounded-[28px] bg-card shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]">
                 <div className="relative aspect-[4/5] bg-chip">
                   <Image
                     src={item.image}
