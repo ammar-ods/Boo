@@ -5,7 +5,7 @@ import { MUG_WRAP_FLAT, productViews, SEED_PRODUCTS, type Product, type ProductV
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { DEFAULT_SITE, type SiteSection } from "@/lib/site";
+import { DEFAULT_SITE, migrateSite, type SiteDocument } from "@/lib/site";
 import { SEED_BUNDLES, type Bundle } from "@/lib/bundles";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -398,71 +398,39 @@ function normalizeInquiry(row: Record<string, unknown>): InquiryRecord {
   };
 }
 
-export async function listOrders(): Promise<InquiryRecord[]> {
-  if (useSupabase()) {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("inquiries")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      if (canUseSeedFallback(error)) {
-        const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-        return orders.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-      }
-      throw new Error(error.message);
-    }
-    return (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
-  }
-  const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-  return orders.sort(
+let memoryOrders: InquiryRecord[] = [];
+
+function sortOrders(orders: InquiryRecord[]) {
+  return [...orders].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 }
 
-export async function getOrder(id: string) {
-  const key = decodeURIComponent(id).trim();
-  const ref = key.startsWith("#") ? key : `#${key.replace(/^#/, "")}`;
-  if (useSupabase()) {
-    const supabase = createAdminClient();
-    const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
-    if (byId.error) {
-      if (canUseSeedFallback(byId.error)) {
-        const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-        return orders.find(
-          (order) => order.id === key || order.reference_code === ref || order.reference_code === key,
-        );
-      }
-      throw new Error(byId.error.message);
+function mergeOrders(...lists: InquiryRecord[][]) {
+  const map = new Map<string, InquiryRecord>();
+  for (const list of lists) {
+    for (const order of list) {
+      if (!order?.id) continue;
+      map.set(order.id, order);
     }
-    if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
-    const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
-    if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
-    const byBare = await supabase.from("inquiries").select("*").eq("reference_code", key).maybeSingle();
-    return byBare.data ? normalizeInquiry(byBare.data as Record<string, unknown>) : undefined;
   }
-  const orders = await listOrders();
-  return orders.find(
-    (order) => order.id === key || order.reference_code === ref || order.reference_code === key,
-  );
+  return sortOrders([...map.values()]);
 }
 
-export async function saveOrder(order: InquiryRecord) {
+export async function listOrders(): Promise<InquiryRecord[]> {
+  const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+  let remote: InquiryRecord[] = [];
   if (useSupabase()) {
     try {
-      requireServiceRole();
       const supabase = createAdminClient();
-      const { error } = await supabase.from("inquiries").upsert(order);
+      const { data, error } = await supabase
+        .from("inquiries")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) {
-        if (canUseSeedFallback(error)) {
-          /* fall through to local file */
-        } else {
-          throw new Error(error.message);
-        }
+        if (!canUseSeedFallback(error)) throw new Error(error.message);
       } else {
-        return order;
+        remote = (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
@@ -471,11 +439,55 @@ export async function saveOrder(order: InquiryRecord) {
       }
     }
   }
+  return mergeOrders(memoryOrders, local, remote);
+}
+
+export async function getOrder(id: string) {
+  const key = decodeURIComponent(id).trim();
+  const ref = key.startsWith("#") ? key : `#${key.replace(/^#/, "")}`;
+  const match = (order: InquiryRecord) =>
+    order.id === key || order.reference_code === ref || order.reference_code === key;
+
+  if (useSupabase()) {
+    try {
+      const supabase = createAdminClient();
+      const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
+      if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
+      if (byId.error && !canUseSeedFallback(byId.error)) throw new Error(byId.error.message);
+      const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
+      if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
+      const byBare = await supabase.from("inquiries").select("*").eq("reference_code", key).maybeSingle();
+      if (byBare.data) return normalizeInquiry(byBare.data as Record<string, unknown>);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
+      }
+    }
+  }
   const orders = await listOrders();
-  const index = orders.findIndex((item) => item.id === order.id);
-  if (index >= 0) orders[index] = order;
-  else orders.unshift(order);
-  await writeJson(ORDERS_FILE, orders);
+  return orders.find(match);
+}
+
+export async function saveOrder(order: InquiryRecord) {
+  memoryOrders = mergeOrders(memoryOrders, [order]);
+  const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+  await writeJson(ORDERS_FILE, mergeOrders(local, memoryOrders, [order]));
+
+  if (useSupabase()) {
+    try {
+      const supabase = createAdminClient();
+      const { error } = await supabase.from("inquiries").upsert(order);
+      if (error && !canUseSeedFallback(error) && !/invalid api key|jwt|service_role/i.test(error.message)) {
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
+      }
+    }
+  }
   return order;
 }
 
@@ -580,16 +592,23 @@ export function uploadsDir() {
 const SITE_FILE = path.join(DATA_DIR, "site.json");
 const BUNDLES_FILE = path.join(DATA_DIR, "bundles.json");
 
+let memorySite: SiteDocument | null = null;
+
 export async function getSite() {
   noStore();
-  const stored = await readJson<{ sections: SiteSection[] } | null>(SITE_FILE, null);
-  if (!stored?.sections?.length) return DEFAULT_SITE;
-  return stored;
+  if (memorySite) return memorySite;
+  const stored = await readJson<unknown>(SITE_FILE, null);
+  if (!stored) return DEFAULT_SITE;
+  const migrated = migrateSite(stored);
+  if (!migrated.sections.length) return DEFAULT_SITE;
+  return migrated;
 }
 
-export async function saveSite(site: { sections: SiteSection[] }) {
-  await writeJson(SITE_FILE, site);
-  return site;
+export async function saveSite(site: SiteDocument) {
+  const migrated = migrateSite(site);
+  memorySite = migrated;
+  await writeJson(SITE_FILE, migrated);
+  return migrated;
 }
 
 export async function getBundles() {

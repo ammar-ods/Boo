@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
 import { getSite, saveSite } from "@/lib/local-db";
-import type { SiteSection } from "@/lib/site";
+import { migrateSite } from "@/lib/site";
 
 export async function GET() {
   return NextResponse.json(await getSite());
@@ -14,11 +14,11 @@ export async function POST(request: Request) {
   if (!(await isValidAdminSession(token))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = (await request.json()) as { sections: SiteSection[] };
+  const body = migrateSite(await request.json());
   if (!Array.isArray(body.sections)) {
-    return NextResponse.json({ error: "Invalid sections" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid site" }, { status: 400 });
   }
-  const saved = await saveSite({ sections: body.sections });
+  const saved = await saveSite(body);
   revalidatePath("/");
   return NextResponse.json(saved);
 }

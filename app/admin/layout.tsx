@@ -28,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/products" className="rounded-full px-3 py-1.5 hover:bg-secondary">
               Products
             </Link>
-            <Link href="/?edit=1" className="rounded-full px-3 py-1.5 hover:bg-secondary">
+            <Link href="/" className="rounded-full px-3 py-1.5 hover:bg-secondary">
               View site
             </Link>
             <form action={logoutAdmin}>

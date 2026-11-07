@@ -5,7 +5,8 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { I18nProvider } from "@/lib/i18n";
 import { cookies } from "next/headers";
-import { AdminEditFab } from "@/components/cms/admin-edit-fab";
+import { EditProvider } from "@/lib/edit-context";
+import { getSite } from "@/lib/local-db";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
 import "./globals.css";
 
@@ -38,16 +39,18 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   } catch {
     isAdmin = false;
   }
+  const site = await getSite();
 
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${playfair.variable} ${geistMono.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans">
         <I18nProvider>
-          <SiteHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
-          <SiteFooter />
-          {isAdmin ? <AdminEditFab /> : null}
-          <Toaster />
+          <EditProvider initial={site} isAdmin={isAdmin}>
+            <SiteHeader />
+            <main className="flex flex-1 flex-col">{children}</main>
+            <SiteFooter />
+            <Toaster />
+          </EditProvider>
         </I18nProvider>
       </body>
     </html>

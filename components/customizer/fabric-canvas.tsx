@@ -64,6 +64,8 @@ export function FabricCanvas({
   previewRef.current = previewMode;
   const onDesignChangeRef = useRef(onDesignChange);
   onDesignChangeRef.current = onDesignChange;
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     let disposed = false;
@@ -105,10 +107,17 @@ export function FabricCanvas({
         canvas.setZoom(zoom);
         if (canvas.wrapperEl) {
           canvas.wrapperEl.style.position = "absolute";
-          canvas.wrapperEl.style.left = "0";
-          canvas.wrapperEl.style.top = "0";
+          canvas.wrapperEl.style.inset = "0";
           canvas.wrapperEl.style.width = "100%";
           canvas.wrapperEl.style.height = "100%";
+          canvas.wrapperEl.style.maxWidth = "100%";
+          canvas.wrapperEl.style.maxHeight = "100%";
+          canvas.wrapperEl.style.overflow = "hidden";
+        }
+        for (const el of [canvas.lowerCanvasEl, canvas.upperCanvasEl]) {
+          if (!el) continue;
+          el.style.maxWidth = "100%";
+          el.style.maxHeight = "100%";
         }
         applyMugMask();
         canvas.requestRenderAll();
@@ -357,7 +366,7 @@ export function FabricCanvas({
         canvas.requestRenderAll();
       };
 
-      onReady({
+      onReadyRef.current({
         addImageFromFile,
         addText,
         applyTextDraft,
@@ -433,7 +442,7 @@ export function FabricCanvas({
       canvasRef.current?.dispose();
       canvasRef.current = null;
     };
-  }, [onReady, setBleedWarning, setSelectedKind, setTextDraft]);
+  }, [setBleedWarning, setSelectedKind, setTextDraft]);
 
   useEffect(() => {
     canvasRef.current
@@ -457,7 +466,7 @@ export function FabricCanvas({
   return (
     <div
       ref={wrapRef}
-      className="relative aspect-square w-full overflow-hidden rounded-[1.6rem] bg-[#f6f3ee] ring-1 ring-foreground/10"
+      className="relative isolate aspect-square w-full overflow-hidden rounded-[1.6rem] bg-[#f6f3ee] ring-1 ring-foreground/10"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -465,8 +474,8 @@ export function FabricCanvas({
         alt=""
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
       />
-      <div className="absolute inset-0 z-10">
-        <canvas ref={hostRef} />
+      <div className="absolute inset-0 z-10 overflow-hidden">
+        <canvas ref={hostRef} className="max-h-full max-w-full" />
       </div>
       <div
         className={

@@ -72,7 +72,9 @@ export function ProductWorkspace({ product }: { product: Product }) {
                 <FabricCanvas
                   product={product}
                   view={view}
-                  onReady={(handle) => onReady(view.id, handle)}
+                  onReady={(handle) => {
+                    onReady(view.id, handle);
+                  }}
                 />
               ) : (
                 <div className="relative aspect-square overflow-hidden rounded-[28px] bg-chip">
