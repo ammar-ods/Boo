@@ -4,7 +4,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { MUG_WRAP_FLAT, productViews, SEED_PRODUCTS, type Product, type ProductView } from "@/lib/products";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isSupabaseConfigured, supabaseServiceKey } from "@/lib/supabase/env";
 import { DEFAULT_SITE, migrateSite, type SiteDocument } from "@/lib/site";
 import { SEED_BUNDLES, type Bundle } from "@/lib/bundles";
 
@@ -419,21 +419,45 @@ function mergeOrders(...lists: InquiryRecord[][]) {
   return sortOrders([...map.values()]);
 }
 
+function orderToRow(order: InquiryRecord) {
+  return {
+    id: order.id,
+    reference_code: order.reference_code,
+    product_slug: order.product_slug,
+    product_name: order.product_name,
+    customer_name: order.customer_name,
+    customer_email: order.customer_email,
+    customer_phone: order.customer_phone,
+    material: order.material,
+    quantity: order.quantity,
+    notes: order.notes,
+    status: order.status,
+    quoted_price: order.quoted_price,
+    mockup_path: order.mockup_path,
+    production_paths: order.production_paths ?? [],
+    canvas_json: order.canvas_json ?? null,
+    created_at: order.created_at,
+    updated_at: order.updated_at,
+    cleanup_requested_at: order.cleanup_requested_at,
+  };
+}
+
 export async function listOrders(): Promise<InquiryRecord[]> {
+  noStore();
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
   let remote: InquiryRecord[] = [];
   if (useSupabase()) {
-    try {
-      const supabase = createAdminClient();
-      const { data, error } = await supabase
-        .from("inquiries")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error) {
-        remote = (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("inquiries")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      if (!canUseSeedFallback(error) && !tableMissing(error)) {
+        throw new Error(`Could not load orders: ${error.message}`);
       }
-    } catch {
-      /* keep local orders */
+    } else {
+      remote = (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
     }
   }
   return mergeOrders(memoryOrders, local, remote);
@@ -469,15 +493,29 @@ export async function getOrder(id: string) {
 export async function saveOrder(order: InquiryRecord) {
   memoryOrders = mergeOrders(memoryOrders, [order]);
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-  await writeJson(ORDERS_FILE, mergeOrders(local, memoryOrders, [order]));
+  const wroteLocal = await writeJson(ORDERS_FILE, mergeOrders(local, memoryOrders, [order]));
 
   if (useSupabase()) {
-    try {
-      const supabase = createAdminClient();
-      await supabase.from("inquiries").upsert(order);
-    } catch {
-      /* local copy is enough to finish checkout */
+    if (!supabaseServiceKey()) {
+      throw new Error(
+        "Set SUPABASE_SERVICE_ROLE_KEY so checkout orders can be saved and shown in the admin dashboard.",
+      );
     }
+    const supabase = createAdminClient();
+    const row = orderToRow(order);
+    const { error } = await supabase.from("inquiries").upsert(row, { onConflict: "id" });
+    if (error) {
+      const retry = await supabase.from("inquiries").insert(row);
+      if (retry.error) {
+        throw new Error(
+          tableMissing(retry.error)
+            ? "The inquiries table is missing in Supabase. Run supabase/schema.sql in the SQL editor, then try checkout again."
+            : `Could not save order: ${retry.error.message}`,
+        );
+      }
+    }
+  } else if (!wroteLocal) {
+    throw new Error("Could not save this order. Configure Supabase so orders persist.");
   }
   return order;
 }

@@ -1,5 +1,5 @@
 export type Locale = "ar" | "en";
-export type SectionType = "hero" | "banner" | "text" | "products" | "collections" | "cta" | "faq";
+export type SectionType = "hero" | "banner" | "text" | "products" | "collections" | "cta" | "faq" | "marquee";
 
 export type Localized = { ar: string; en: string };
 
@@ -16,6 +16,12 @@ export type SectionStyle = {
   imageWidth?: number;
   showPrimaryCta?: boolean;
   showSecondaryCta?: boolean;
+  imageRounded?: boolean;
+};
+
+export type GalleryItem = {
+  src: string;
+  href?: string;
 };
 
 export type SectionContent = {
@@ -27,6 +33,7 @@ export type SectionContent = {
   secondaryCtaLabel?: Localized;
   secondaryCtaHref?: string;
   image?: Localized;
+  gallery?: GalleryItem[];
 };
 
 export type SiteSection = {
@@ -68,10 +75,36 @@ export const SECTION_TYPES: { type: SectionType; label: string; labelAr: string 
   { type: "collections", label: "Collections", labelAr: "أقسام" },
   { type: "cta", label: "Call to action", labelAr: "دعوة للشراء" },
   { type: "faq", label: "FAQ / about", labelAr: "أسئلة / عنّا" },
+  { type: "marquee", label: "Auto-scroll images", labelAr: "شريط تمرير" },
 ];
 
 export function loc(ar: string, en: string): Localized {
   return { ar, en };
+}
+
+function hex(value?: string) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function luminance(value: string) {
+  const raw = hex(value).replace("#", "");
+  const full = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
+  if (!/^[0-9a-f]{6}$/.test(full)) return 128;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+export function sectionSurface(style: SectionStyle): { background?: string; color?: string } {
+  const background = hex(style.background);
+  const color = hex(style.color);
+  const lightBackground = !background || luminance(background) > 180;
+  const inkText = !color || luminance(color) < 70;
+  return {
+    background: lightBackground ? "var(--background)" : style.background,
+    color: inkText ? "var(--foreground)" : style.color,
+  };
 }
 
 export function pick(value: Localized | string | undefined, locale: string): string {
@@ -138,6 +171,7 @@ export function newSection(type: SectionType): SiteSection {
         imageHeight: 360,
         imagePlacement: "bleed",
         imageWidth: 100,
+        imageRounded: false,
         showPrimaryCta: true,
         showSecondaryCta: false,
       },
@@ -190,6 +224,29 @@ export function newSection(type: SectionType): SiteSection {
         ctaHref: "/bundles",
       },
     },
+    marquee: {
+      id,
+      type,
+      visible: true,
+      style: {
+        background: "#f6f3ea",
+        color: "#0a2540",
+        fontSize: 28,
+        paddingY: 28,
+        align: "center",
+        imageHeight: 220,
+        imageRounded: true,
+      },
+      content: {
+        title: loc("منتجات تتحرك", "In motion"),
+        gallery: [
+          { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
+          { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
+          { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
+          { src: "/products/white-tee-back.jpg", href: "/product/white-tee" },
+        ],
+      },
+    },
     faq: {
       id,
       type,
@@ -232,6 +289,18 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
     secondaryCtaLabel: src.secondaryCtaLabel ? asLoc(src.secondaryCtaLabel) : undefined,
     secondaryCtaHref: typeof src.secondaryCtaHref === "string" ? src.secondaryCtaHref : undefined,
     image: src.image ? asLoc(src.image) : undefined,
+    gallery: Array.isArray(src.gallery)
+      ? src.gallery
+          .map((item) => {
+            if (typeof item === "string") return { src: item };
+            if (item && typeof item === "object" && "src" in item && typeof (item as GalleryItem).src === "string") {
+              const row = item as GalleryItem;
+              return { src: row.src, href: row.href };
+            }
+            return null;
+          })
+          .filter((item): item is GalleryItem => Boolean(item?.src))
+      : undefined,
   };
 }
 
