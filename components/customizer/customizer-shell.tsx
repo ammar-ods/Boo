@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import { MUG_WRAP_FLAT, mugPhotoUrl, productViews, type Product, type ProductView } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
@@ -20,7 +20,10 @@ export function CustomizerShell({ product }: { product: Product }) {
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
   const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
   const [wrapTexture, setWrapTexture] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ id: string; label: string; url: string }[] | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const views = productViews(product);
+  const multiView = views.length > 1;
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id] ?? null;
   const wrapProduct = views.some((view) => view.wrap);
 
@@ -39,10 +42,40 @@ export function CustomizerShell({ product }: { product: Product }) {
     setWrapTexture(overlay);
   }, []);
 
-  function togglePreview() {
-    const next = !previewMode;
-    setPreviewMode(next);
-    Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(next));
+  async function openPreview() {
+    if (previewBusy) return;
+    setPreviewBusy(true);
+    setPreviewMode(true);
+    Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(true));
+    const shots: { id: string; label: string; url: string }[] = [];
+    for (const view of views) {
+      const handle = canvases[view.id];
+      if (handle) {
+        try {
+          const blob = await handle.exportMockup();
+          shots.push({
+            id: view.id,
+            label: view.label || view.id,
+            url: URL.createObjectURL(blob),
+          });
+          continue;
+        } catch {
+          /* mockup fallback */
+        }
+      }
+      shots.push({ id: view.id, label: view.label || view.id, url: view.mockup });
+    }
+    setPreview(shots);
+    setPreviewBusy(false);
+  }
+
+  function closePreview() {
+    preview?.forEach((item) => {
+      if (item.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+    });
+    setPreview(null);
+    setPreviewMode(false);
+    Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(false));
   }
 
   return (
@@ -56,11 +89,12 @@ export function CustomizerShell({ product }: { product: Product }) {
             </Link>
             <button
               type="button"
-              onClick={togglePreview}
+              onClick={() => void openPreview()}
+              disabled={previewBusy}
               className="inline-flex items-center gap-2 rounded-full bg-oxford px-4 py-2 text-sm font-medium text-white"
             >
-              {previewMode ? <Pencil className="size-4" /> : <Eye className="size-4" />}
-              {previewMode ? "Back to editor" : "Preview final product"}
+              <Eye className="size-4" />
+              {previewBusy ? "…" : "Preview final product"}
             </button>
           </div>
           {wrapProduct ? (
@@ -88,30 +122,49 @@ export function CustomizerShell({ product }: { product: Product }) {
               </div>
             </div>
           ) : (
-            <div className={`grid gap-4 ${views.length > 1 ? "sm:grid-cols-2" : ""}`}>
-              {views.map((view) => (
-                <div key={view.id} className="space-y-2">
-                  {views.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => setActiveViewId(view.id)}
-                      className={`font-heading text-sm ${
-                        activeViewId === view.id ? "text-boo-teal" : "text-muted-foreground"
-                      }`}
-                    >
-                      {view.label}
-                      {activeViewId === view.id ? " · editing" : ""}
-                    </button>
-                  ) : null}
-                  <ProductViewCanvas
-                    product={product}
-                    view={view}
-                    register={onReady}
-                    highlight={bleedWarning && !previewMode && activeViewId === view.id}
-                    onFocus={() => setActiveViewId(view.id)}
-                  />
-                </div>
-              ))}
+            <div
+              className={`grid items-center justify-items-center gap-4 py-3 ${multiView ? "sm:grid-cols-2" : ""}`}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) void openPreview();
+              }}
+            >
+              {views.map((view) => {
+                const active = !multiView || activeViewId === view.id;
+                return (
+                  <div
+                    key={view.id}
+                    className={`w-full origin-center space-y-2 transition duration-300 ${
+                      active
+                        ? "z-10 scale-[1.05] opacity-100"
+                        : "scale-[0.86] opacity-40 grayscale brightness-90"
+                    }`}
+                  >
+                    {multiView ? (
+                      <button
+                        type="button"
+                        onClick={() => setActiveViewId(view.id)}
+                        className={`font-heading text-sm ${
+                          active ? "text-oxford" : "text-muted-foreground"
+                        }`}
+                      >
+                        {view.label}
+                        {active ? " · editing" : ""}
+                      </button>
+                    ) : null}
+                    <div className={active ? "rounded-[1.8rem] ring-4 ring-oxford/30" : "rounded-[1.8rem]"}>
+                      <div className={active ? "" : "pointer-events-none"}>
+                        <ProductViewCanvas
+                          product={product}
+                          view={view}
+                          register={onReady}
+                          highlight={bleedWarning && !previewMode && active}
+                          onFocus={() => setActiveViewId(view.id)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
           <p className="text-xs text-muted-foreground">
@@ -137,20 +190,55 @@ export function CustomizerShell({ product }: { product: Product }) {
               . The other side stays as you left it.
             </p>
           ) : null}
-          <div className={previewMode ? "hidden" : ""}>
-            <ControlsPanel product={product} canvas={activeCanvas} />
-          </div>
-          {previewMode ? (
-            <div className="rounded-2xl bg-secondary p-4 text-sm">
-              Happy with the look? Send an inquiry and we’ll quote it from the studio desk.
-            </div>
-          ) : null}
+          <ControlsPanel product={product} canvas={activeCanvas} />
           <div className="mt-8 border-t border-border pt-5">
             <h2 className="mb-3 font-heading text-xl">Inquiry</h2>
             <InquiryForm product={product} canvases={canvases} />
           </div>
         </aside>
       </div>
+      {preview ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-oxford/50 p-3 backdrop-blur-[2px] sm:p-6"
+          onClick={closePreview}
+        >
+          <div
+            className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-background shadow-[0_24px_80px_-28px_rgba(10,37,64,0.55)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-oxford/10 px-5 py-4">
+              <h3 className="font-heading text-2xl text-oxford">Preview final product</h3>
+              <button
+                type="button"
+                className="grid size-11 place-items-center rounded-2xl bg-cream"
+                onClick={closePreview}
+                aria-label="Close"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className={`grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 ${preview.length > 1 ? "sm:grid-cols-2" : ""}`}>
+              {preview.map((item) => (
+                <figure key={item.id} className="space-y-2">
+                  <figcaption className="text-sm font-semibold text-oxford">{item.label}</figcaption>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.url} alt={item.label} className="w-full rounded-[24px] bg-chip object-contain" />
+                </figure>
+              ))}
+              {wrapProduct && wrapTexture ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-sm font-semibold text-oxford">3D mug</p>
+                  <MugTurntable
+                    textureUrl={wrapTexture}
+                    mugPhotoUrl={mugPhotoUrl(product)}
+                    wrapBounds={views.find((view) => view.wrap)?.wrapBounds ?? MUG_WRAP_FLAT.wrapBounds}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
