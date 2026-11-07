@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import { productViews, localizedName, localizedDescription, type Product } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
@@ -25,18 +26,67 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
   const addItem = useCart((s) => s.addItem);
   const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
+  const [preview, setPreview] = useState<{ id: string; label: string; url: string }[] | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const views = productViews(product);
   const colors = product.colors?.length ? product.colors : product.materials;
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
+  const multiView = views.length > 1;
 
   useEffect(() => {
     hydrateProduct(product);
     return () => clearRememberedFiles();
   }, [hydrateProduct, product]);
 
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closePreview();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
+
   const onReady = useCallback((viewId: string, handle: CanvasHandle) => {
     setCanvases((current) => ({ ...current, [viewId]: handle }));
   }, []);
+
+  function viewLabel(view: { id: string; label?: string }) {
+    if (view.label) return view.label;
+    if (view.id === "front") return locale === "ar" ? "الأمام" : "Front";
+    if (view.id === "back") return locale === "ar" ? "الخلف" : "Back";
+    return view.id;
+  }
+
+  async function openPreview() {
+    if (previewBusy) return;
+    setPreviewBusy(true);
+    Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(true));
+    const shots: { id: string; label: string; url: string }[] = [];
+    for (const view of views) {
+      const handle = canvases[view.id];
+      if (handle) {
+        try {
+          const blob = await handle.exportMockup();
+          shots.push({ id: view.id, label: viewLabel(view), url: URL.createObjectURL(blob) });
+          continue;
+        } catch {
+          /* fall through to mockup */
+        }
+      }
+      shots.push({ id: view.id, label: viewLabel(view), url: view.mockup });
+    }
+    setPreview(shots);
+    setPreviewBusy(false);
+  }
+
+  function closePreview() {
+    preview?.forEach((item) => {
+      if (item.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+    });
+    setPreview(null);
+    Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(false));
+  }
 
   async function addToCart() {
     addItem({
@@ -58,33 +108,84 @@ export function ProductWorkspace({ product }: { product: Product }) {
         <Link href="/catalog" className="text-sm text-oxford">
           ← {t("catalogTitle")}
         </Link>
-        <div className={`grid gap-4 ${views.length > 1 ? "sm:grid-cols-2" : ""}`}>
-          {views.map((view) => (
-            <div key={view.id} className="space-y-2">
-              {views.length > 1 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {multiView
+            ? views.map((view) => (
                 <button
+                  key={view.id}
                   type="button"
                   onClick={() => setActiveViewId(view.id)}
-                  className={`text-sm font-medium ${activeViewId === view.id ? "text-oxford" : "text-muted-foreground"}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    activeViewId === view.id
+                      ? "bg-oxford text-white"
+                      : "bg-white text-oxford ring-1 ring-oxford/15 hover:ring-oxford/40"
+                  }`}
                 >
-                  {view.id === "front" ? (locale === "ar" ? "الأمام" : "Front") : locale === "ar" ? "الخلف" : "Back"}
+                  {viewLabel(view)}
                 </button>
-              ) : null}
-              {product.customizable ? (
-                <FabricCanvas
-                  product={product}
-                  view={view}
-                  onReady={(handle) => {
-                    onReady(view.id, handle);
-                  }}
-                />
-              ) : (
-                <div className="relative aspect-square overflow-hidden rounded-[28px] bg-chip">
-                  <Image src={view.mockup} alt="" fill className="object-contain" />
+              ))
+            : null}
+          {product.customizable ? (
+            <button
+              type="button"
+              className="ms-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford ring-1 ring-oxford/15"
+              onClick={() => void openPreview()}
+              disabled={previewBusy}
+            >
+              <Eye className="size-4" />
+              {previewBusy ? "…" : t("previewProduct")}
+            </button>
+          ) : null}
+        </div>
+        <div
+          className={`grid items-start justify-items-center gap-6 py-4 ${multiView ? "sm:grid-cols-2" : ""}`}
+          onClick={(event) => {
+            if (!product.customizable) return;
+            if (event.target === event.currentTarget) void openPreview();
+          }}
+        >
+          {views.map((view) => {
+            const active = !multiView || activeViewId === view.id;
+            return (
+              <div
+                key={view.id}
+                className={`w-full max-w-md origin-center space-y-2 transition duration-300 ${
+                  active
+                    ? "z-10 scale-[1.05] opacity-100"
+                    : "scale-[0.86] opacity-40 grayscale brightness-90"
+                }`}
+                onPointerDown={() => {
+                  if (multiView) setActiveViewId(view.id);
+                }}
+              >
+                <p className="text-sm font-medium text-oxford">
+                  {viewLabel(view)}
+                  {active && product.customizable ? (
+                    <span className="ms-2 rounded-full bg-oxford px-2 py-0.5 text-[11px] text-white">
+                      {t("editingSide")}
+                    </span>
+                  ) : null}
+                </p>
+                <div className={active ? "rounded-[1.8rem] ring-4 ring-oxford/30" : "rounded-[1.8rem]"}>
+                  {product.customizable ? (
+                    <div className={active ? "" : "pointer-events-none"}>
+                      <FabricCanvas
+                        product={product}
+                        view={view}
+                        onReady={(handle) => {
+                          onReady(view.id, handle);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative aspect-square overflow-hidden rounded-[28px] bg-chip">
+                      <Image src={view.mockup} alt="" fill className="object-contain" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -141,7 +242,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           </ul>
         </div>
 
-        <button type="button" onClick={async () => { addToCart(); router.push("/checkout"); }} className="btn-press mt-8 w-full">
+        <button type="button" onClick={() => { addToCart(); queueMicrotask(() => router.push("/checkout")); }} className="btn-press mt-8 w-full">
           {t("checkoutNow")}
         </button>
         <button
@@ -155,6 +256,44 @@ export function ProductWorkspace({ product }: { product: Product }) {
           {t("addAndShop")}
         </button>
       </aside>
+
+      {preview ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-oxford/50 p-3 backdrop-blur-[2px] sm:p-6"
+          onClick={closePreview}
+        >
+          <div
+            className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-background shadow-[0_24px_80px_-28px_rgba(10,37,64,0.55)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-oxford/10 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.16em] text-oxford/50 uppercase">
+                  {localizedName(product, locale)}
+                </p>
+                <h3 className="font-heading text-2xl text-oxford">{t("previewProduct")}</h3>
+              </div>
+              <button
+                type="button"
+                className="grid size-11 place-items-center rounded-2xl bg-cream"
+                onClick={closePreview}
+                aria-label={t("closePreview")}
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className={`grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 ${preview.length > 1 ? "sm:grid-cols-2" : ""}`}>
+              {preview.map((item) => (
+                <figure key={item.id} className="space-y-2">
+                  <figcaption className="text-sm font-semibold text-oxford">{item.label}</figcaption>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.url} alt={item.label} className="w-full rounded-[24px] bg-chip object-contain" />
+                </figure>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

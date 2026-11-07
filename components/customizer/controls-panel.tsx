@@ -41,6 +41,7 @@ export function ControlsPanel({
   const addAsset = useCustomizerStore((s) => s.addAsset);
   const removeAsset = useCustomizerStore((s) => s.removeAsset);
   const assets = useCustomizerStore((s) => s.assets);
+  const activeViewId = useCustomizerStore((s) => s.activeViewId);
 
   const onDrop = useCallback(
     async (files: File[]) => {
@@ -85,6 +86,9 @@ export function ControlsPanel({
 
       <section className="space-y-2">
         <h3 className="font-heading text-lg">Upload artwork</h3>
+        <p className="text-sm text-oxford/70">
+          Adding to <span className="font-semibold">{activeViewId === "back" ? "back" : "front"}</span>. Select a side on the photos first.
+        </p>
         <div
           {...dropzone.getRootProps()}
           className="cursor-pointer rounded-2xl border border-dashed border-boo-teal bg-white px-4 py-6 text-center"

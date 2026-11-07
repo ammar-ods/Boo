@@ -41,7 +41,8 @@ export default function CheckoutPage() {
     });
     setBusy(false);
     if (!response.ok) {
-      toast.error("Checkout failed");
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      toast.error(payload.error || "Checkout failed");
       return;
     }
     const payload = (await response.json()) as { ref: string };

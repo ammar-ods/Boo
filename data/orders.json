@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cab15e09-cb12-4992-b398-2f7943558146",
+    "reference_code": "BOO-1004",
+    "product_slug": "white-tee",
+    "product_name": "1× White Cotton Tee (White)",
+    "customer_name": "عمار",
+    "customer_email": null,
+    "customer_phone": "01000000000",
+    "material": "White",
+    "quantity": 1,
+    "notes": "Cairo\nTotal 100 EGP",
+    "status": "pending",
+    "quoted_price": 100,
+    "mockup_path": null,
+    "production_paths": [],
+    "canvas_json": {
+      "items": [
+        {
+          "slug": "white-tee",
+          "name": "White Cotton Tee",
+          "quantity": 1,
+          "color": "White",
+          "priceEgp": 100
+        }
+      ]
+    },
+    "created_at": "2026-11-07T15:29:38.374Z",
+    "updated_at": "2026-11-07T15:29:38.374Z",
+    "cleanup_requested_at": null
+  }
+]

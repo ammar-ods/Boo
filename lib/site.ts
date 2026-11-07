@@ -3,6 +3,8 @@ export type SectionType = "hero" | "banner" | "text" | "products" | "collections
 
 export type Localized = { ar: string; en: string };
 
+export type ImagePlacement = "hidden" | "below" | "bleed" | "cover" | "start" | "end";
+
 export type SectionStyle = {
   background?: string;
   color?: string;
@@ -10,6 +12,10 @@ export type SectionStyle = {
   paddingY?: number;
   align?: "start" | "center";
   imageHeight?: number;
+  imagePlacement?: ImagePlacement;
+  imageWidth?: number;
+  showPrimaryCta?: boolean;
+  showSecondaryCta?: boolean;
 };
 
 export type SectionContent = {
@@ -105,7 +111,7 @@ export function newSection(type: SectionType): SiteSection {
       id,
       type,
       visible: true,
-      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 56, paddingY: 72, align: "center" },
+      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 56, paddingY: 72, align: "center", showPrimaryCta: true, showSecondaryCta: true },
       content: {
         eyebrow: loc("بو · مشغل أكسفورد", "Boo · Oxford atelier"),
         title: loc("قطع مختارة للمكتب والهدايا.", "Pieces chosen for the desk and for gifting."),
@@ -123,7 +129,18 @@ export function newSection(type: SectionType): SiteSection {
       id,
       type,
       visible: true,
-      style: { background: "#0a2540", color: "#ffffff", fontSize: 32, paddingY: 48, align: "start", imageHeight: 280 },
+      style: {
+        background: "#0a2540",
+        color: "#ffffff",
+        fontSize: 32,
+        paddingY: 48,
+        align: "start",
+        imageHeight: 360,
+        imagePlacement: "bleed",
+        imageWidth: 100,
+        showPrimaryCta: true,
+        showSecondaryCta: false,
+      },
       content: {
         eyebrow: loc("إصدار جديد", "New drop"),
         title: loc("بانر المنتج الجديد", "New product banner"),

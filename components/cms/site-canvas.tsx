@@ -10,7 +10,7 @@ import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import type { Product } from "@/lib/products";
-import { pick, SECTION_TYPES, type Localized, type SiteSection } from "@/lib/site";
+import { pick, SECTION_TYPES, type ImagePlacement, type Localized, type SiteSection } from "@/lib/site";
 
 export function SiteCanvas({ products }: { products: Product[] }) {
   const { editing, site, selectedId, setSelectedId, patchSection, moveSection, removeSection } = useEdit();
@@ -81,6 +81,7 @@ export function SiteCanvas({ products }: { products: Product[] }) {
             t={t}
             formatPrice={formatPrice}
             locale={locale}
+            index={visible.indexOf(section)}
           />
         </div>
       ))}
@@ -94,18 +95,51 @@ export function SiteCanvas({ products }: { products: Product[] }) {
   );
 }
 
+function SectionMedia({
+  src,
+  height,
+  widthPct,
+  bleed,
+}: {
+  src: string;
+  height: number;
+  widthPct: number;
+  bleed?: boolean;
+}) {
+  const img = src.startsWith("data:") || src.startsWith("http") ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className="h-full w-full object-cover" />
+  ) : (
+    <Image src={src} alt="" fill className="object-cover" />
+  );
+  return (
+    <div
+      className={`relative overflow-hidden ${bleed ? "" : "rounded-[28px]"}`}
+      style={{
+        height,
+        width: bleed ? "100%" : `${Math.min(100, Math.max(20, widthPct))}%`,
+        maxWidth: bleed ? "none" : "100%",
+      }}
+    >
+      {img}
+    </div>
+  );
+}
+
 function SectionView({
   section,
   products,
   t,
   formatPrice,
   locale,
+  index = 0,
 }: {
   section: SiteSection;
   products: Product[];
   t: (key: string) => string;
   formatPrice: (n: number) => string;
   locale: string;
+  index?: number;
 }) {
   const style = {
     background: section.style.background,
@@ -116,6 +150,15 @@ function SectionView({
   };
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
+  const placement: ImagePlacement =
+    section.style.imagePlacement ?? (image ? "below" : "hidden");
+  const showImage = placement !== "hidden" && Boolean(image);
+  const widthPct = section.style.imageWidth ?? (placement === "bleed" || placement === "cover" ? 100 : 70);
+  const height = section.style.imageHeight ?? 280;
+  const showPrimary =
+    section.style.showPrimaryCta !== false && Boolean(pick(section.content.ctaLabel, locale));
+  const showSecondary =
+    section.style.showSecondaryCta !== false && Boolean(pick(section.content.secondaryCtaLabel, locale));
 
   function text(key: keyof SiteSection["content"], className: string, as: "h1" | "h2" | "p" = "p") {
     const Tag = as;
@@ -128,9 +171,31 @@ function SectionView({
     );
   }
 
+  const copy = (
+    <>
+      {text("eyebrow", "text-xs font-medium tracking-[0.18em] opacity-70")}
+      {text("title", "mt-2 font-heading leading-tight", "h1")}
+      {text("body", "mx-auto mt-4 max-w-xl opacity-80")}
+    </>
+  );
+  const actions = showPrimary || showSecondary ? (
+    <div className={`mt-6 flex flex-wrap gap-3 ${section.style.align === "center" ? "justify-center" : ""}`}>
+      {showPrimary ? (
+        <Link href={section.content.ctaHref || "/catalog"} className="btn-press">
+          {pick(section.content.ctaLabel, locale)}
+        </Link>
+      ) : null}
+      {showSecondary ? (
+        <Link href={section.content.secondaryCtaHref || "/bundles"} className="btn-press btn-press-outline">
+          {pick(section.content.secondaryCtaLabel, locale)}
+        </Link>
+      ) : null}
+    </div>
+  ) : null;
+
   if (section.type === "collections") {
     return (
-      <div style={style}>
+      <div className="reveal" style={{ ...style, animationDelay: `${index * 80}ms` }}>
         {text("title", "px-4 font-heading text-oxford sm:px-6", "h2")}
         <DisciplineCarousel />
       </div>
@@ -139,7 +204,7 @@ function SectionView({
 
   if (section.type === "products") {
     return (
-      <section id="creations" className="mx-auto max-w-6xl px-4 sm:px-6" style={style}>
+      <section id="creations" className="reveal mx-auto max-w-6xl px-4 sm:px-6" style={{ ...style, animationDelay: `${index * 80}ms` }}>
         {text("title", "font-heading text-oxford", "h2")}
         {text("body", "mt-2 text-muted-foreground")}
         <div className="mt-8">
@@ -149,37 +214,58 @@ function SectionView({
     );
   }
 
-  return (
-    <section style={style} className="px-4 sm:px-6">
-      <div className={`mx-auto max-w-6xl ${section.style.align === "center" ? "text-center" : ""}`}>
-        {text("eyebrow", "text-xs font-medium tracking-[0.18em] opacity-70")}
-        {text("title", "mt-2 font-heading leading-tight", "h1")}
-        {text("body", "mx-auto mt-4 max-w-xl opacity-80")}
-        {image ? (
-          <div
-            className="relative mx-auto mt-6 overflow-hidden rounded-[28px]"
-            style={{ height: section.style.imageHeight ?? 280, maxWidth: 720 }}
-          >
-            {image.startsWith("data:") || image.startsWith("http") ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <Image src={image} alt="" fill className="object-cover" />
-            )}
-          </div>
-        ) : null}
-        <div className={`mt-6 flex flex-wrap gap-3 ${section.style.align === "center" ? "justify-center" : ""}`}>
-          {section.content.ctaHref && pick(section.content.ctaLabel, locale) ? (
-            <Link href={section.content.ctaHref} className="btn-press">
-              {pick(section.content.ctaLabel, locale)}
-            </Link>
-          ) : null}
-          {section.content.secondaryCtaHref && pick(section.content.secondaryCtaLabel, locale) ? (
-            <Link href={section.content.secondaryCtaHref} className="btn-press btn-press-outline">
-              {pick(section.content.secondaryCtaLabel, locale)}
-            </Link>
+  if (placement === "cover" && showImage) {
+    return (
+      <section className="reveal relative overflow-hidden" style={{ color: section.style.color, minHeight: height, animationDelay: `${index * 80}ms` }}>
+        <div className="absolute inset-0">
+          {image.startsWith("data:") || image.startsWith("http") || image.startsWith("/") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt="" className="h-full w-full object-cover" />
           ) : null}
         </div>
+        <div className="absolute inset-0 bg-oxford/35" />
+        <div className={`relative z-10 mx-auto max-w-6xl px-4 py-16 sm:px-6 ${section.style.align === "center" ? "text-center" : ""}`}>
+          {copy}
+          {actions}
+        </div>
+      </section>
+    );
+  }
+
+  if ((placement === "start" || placement === "end") && showImage) {
+    const imageCol = (
+      <SectionMedia src={image} height={height} widthPct={100} />
+    );
+    return (
+      <section className="reveal px-4 sm:px-6" style={{ ...style, animationDelay: `${index * 80}ms` }}>
+        <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2">
+          {placement === "start" ? imageCol : null}
+          <div className={section.style.align === "center" ? "text-center" : ""}>
+            {copy}
+            {actions}
+          </div>
+          {placement === "end" ? imageCol : null}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className={`reveal ${placement === "bleed" && showImage ? "" : "px-4 sm:px-6"}`}
+      style={{ ...style, animationDelay: `${index * 80}ms` }}
+    >
+      {placement === "bleed" && showImage ? (
+        <SectionMedia src={image} height={height} widthPct={100} bleed />
+      ) : null}
+      <div className={`mx-auto max-w-6xl ${placement === "bleed" && showImage ? "px-4 sm:px-6" : ""} ${section.style.align === "center" ? "text-center" : ""}`}>
+        {copy}
+        {placement === "below" && showImage ? (
+          <div className={`mt-6 ${section.style.align === "center" ? "flex justify-center" : ""}`}>
+            <SectionMedia src={image} height={height} widthPct={widthPct} />
+          </div>
+        ) : null}
+        {actions}
         {section.type === "hero" ? (
           <dl className="mx-auto mt-10 grid max-w-lg grid-cols-3 gap-4 text-sm">
             <div>
@@ -192,7 +278,7 @@ function SectionView({
             </div>
             <div>
               <dt className="text-2xl font-semibold">EGP</dt>
-              <dd className="mt-1 opacity-70">default</dd>
+              <dd className="mt-1 opacity-70">{locale === "ar" ? "افتراضي" : "default"}</dd>
             </div>
           </dl>
         ) : null}
@@ -299,6 +385,24 @@ function SectionInspector({
           <option value="center">Center</option>
         </select>
       </label>
+      <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-cream px-3 text-sm">
+        <span>Show primary button</span>
+        <input
+          type="checkbox"
+          className="size-5"
+          checked={section.style.showPrimaryCta !== false}
+          onChange={(event) => patchSection(section.id, { style: { showPrimaryCta: event.target.checked } })}
+        />
+      </label>
+      <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-cream px-3 text-sm">
+        <span>Show second button</span>
+        <input
+          type="checkbox"
+          className="size-5"
+          checked={section.style.showSecondaryCta !== false}
+          onChange={(event) => patchSection(section.id, { style: { showSecondaryCta: event.target.checked } })}
+        />
+      </label>
       <BilingualField
         label="Eyebrow"
         value={section.content.eyebrow}
@@ -347,12 +451,45 @@ function SectionInspector({
         <p className="mb-2 flex items-center gap-2 font-medium text-oxford">
           <ImagePlus className="size-4" /> Banner image
         </p>
+        <label className="mb-3 block text-sm">
+          <span className="mb-1 block text-oxford/70">Image layout</span>
+          <select
+            className="h-10 w-full rounded-xl border border-oxford/15 bg-cream px-3"
+            value={section.style.imagePlacement ?? (section.content.image ? "below" : "hidden")}
+            onChange={(event) =>
+              patchSection(section.id, { style: { imagePlacement: event.target.value as ImagePlacement } })
+            }
+          >
+            <option value="hidden">No image</option>
+            <option value="below">Below text, inset</option>
+            <option value="bleed">Full-width strip</option>
+            <option value="cover">Fill the whole section</option>
+            <option value="start">Half, image first</option>
+            <option value="end">Half, image last</option>
+          </select>
+        </label>
+        <NumberField
+          label="Image width % (inset layout)"
+          value={section.style.imageWidth ?? 70}
+          onChange={(imageWidth) => patchSection(section.id, { style: { imageWidth } })}
+        />
+        <NumberField
+          label="Image height"
+          value={section.style.imageHeight ?? 280}
+          onChange={(imageHeight) => patchSection(section.id, { style: { imageHeight } })}
+        />
         <ImageUpload
           label="Arabic image"
           value={section.content.image?.ar}
           onChange={(url) =>
             patchSection(section.id, {
               content: { image: { ar: url, en: section.content.image?.en || url } },
+              style: { imagePlacement: section.style.imagePlacement === "hidden" ? "below" : section.style.imagePlacement },
+            })
+          }
+          onClear={() =>
+            patchSection(section.id, {
+              content: { image: { ar: "", en: section.content.image?.en || "" } },
             })
           }
         />
@@ -362,14 +499,27 @@ function SectionInspector({
           onChange={(url) =>
             patchSection(section.id, {
               content: { image: { ar: section.content.image?.ar || url, en: url } },
+              style: { imagePlacement: section.style.imagePlacement === "hidden" ? "below" : section.style.imagePlacement },
+            })
+          }
+          onClear={() =>
+            patchSection(section.id, {
+              content: { image: { ar: section.content.image?.ar || "", en: "" } },
             })
           }
         />
-        <NumberField
-          label="Image height"
-          value={section.style.imageHeight ?? 280}
-          onChange={(imageHeight) => patchSection(section.id, { style: { imageHeight } })}
-        />
+        <button
+          type="button"
+          className="mt-2 w-full rounded-full bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+          onClick={() =>
+            patchSection(section.id, {
+              content: { image: { ar: "", en: "" } },
+              style: { imagePlacement: "hidden" },
+            })
+          }
+        >
+          Remove all images
+        </button>
       </div>
           </div>
         </div>
@@ -469,18 +619,28 @@ function ImageUpload({
   label,
   value,
   onChange,
+  onClear,
 }: {
   label: string;
   value?: string;
   onChange: (url: string) => void;
+  onClear?: () => void;
 }) {
   return (
-    <label className="mb-3 block text-sm">
-      <span className="mb-1 block text-oxford/70">{label}</span>
+    <div className="mb-3 text-sm">
+      <p className="mb-1 text-oxford/70">{label}</p>
       {value ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="" className="mb-2 h-24 w-full rounded-xl object-cover" />
+        <div className="mb-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="" className="h-24 w-full rounded-xl object-cover" />
+          {onClear ? (
+            <button type="button" className="mt-1 text-xs font-semibold text-red-700" onClick={onClear}>
+              Remove this image
+            </button>
+          ) : null}
+        </div>
       ) : null}
+      <label>
       <input
         type="file"
         accept="image/*"
@@ -499,6 +659,7 @@ function ImageUpload({
           onChange(payload.url);
         }}
       />
-    </label>
+      </label>
+    </div>
   );
 }
