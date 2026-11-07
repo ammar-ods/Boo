@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { productViews, localizedName, localizedDescription, type Product } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
@@ -13,6 +14,7 @@ import { ControlsPanel } from "@/components/customizer/controls-panel";
 import { clearRememberedFiles } from "@/lib/upload-registry";
 
 export function ProductWorkspace({ product }: { product: Product }) {
+  const router = useRouter();
   const { locale, t, formatPrice } = useI18n();
   const hydrateProduct = useCustomizerStore((s) => s.hydrateProduct);
   const material = useCustomizerStore((s) => s.material);
@@ -139,8 +141,18 @@ export function ProductWorkspace({ product }: { product: Product }) {
           </ul>
         </div>
 
-        <button type="button" onClick={addToCart} className="btn-press mt-8 w-full">
-          {t("addToCart")}
+        <button type="button" onClick={async () => { addToCart(); router.push("/checkout"); }} className="btn-press mt-8 w-full">
+          {t("checkoutNow")}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            addToCart();
+            router.push("/catalog");
+          }}
+          className="btn-press-outline mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold"
+        >
+          {t("addAndShop")}
         </button>
       </aside>
     </div>

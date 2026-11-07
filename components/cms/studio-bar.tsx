@@ -67,12 +67,15 @@ export function StudioChromePanel() {
   if (!isAdmin || !editing || pathname.startsWith("/admin")) return null;
 
   return (
-        <div className="border-b border-oxford/10 bg-white">
+        <div className="border-b border-oxford/10 bg-background">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
             <div className="flex flex-wrap items-center gap-2">
               <p className="me-auto font-heading text-lg text-oxford">
                 {locale === "ar" ? "تحرير هذه الصفحة" : "Editing this page"}
                 {dirty ? <span className="ms-2 text-sm font-normal text-oxford/50">unsaved</span> : null}
+                <span className="mt-1 block text-sm font-normal text-oxford/50">
+                  {locale === "ar" ? "اضغط على أي قسم لفتح نافذة التعديل." : "Click a section to open its editor."}
+                </span>
               </p>
               <button
                 type="button"

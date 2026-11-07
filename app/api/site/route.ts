@@ -6,7 +6,7 @@ import { getSite, saveSite } from "@/lib/local-db";
 import { migrateSite } from "@/lib/site";
 
 export async function GET() {
-  return NextResponse.json(await getSite());
+  return NextResponse.json({ site: await getSite(), persist: "ok" });
 }
 
 export async function POST(request: Request) {

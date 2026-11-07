@@ -154,3 +154,24 @@ on storage.objects
 for all
 using (bucket_id = 'uploads' and auth.role() = 'service_role')
 with check (bucket_id = 'uploads' and auth.role() = 'service_role');
+
+create table if not exists public.site_content (
+  id text primary key default 'default',
+  document jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.site_content enable row level security;
+
+drop policy if exists "public read site" on public.site_content;
+create policy "public read site"
+on public.site_content
+for select
+using (true);
+
+drop policy if exists "service write site" on public.site_content;
+create policy "service write site"
+on public.site_content
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');

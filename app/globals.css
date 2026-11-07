@@ -46,9 +46,9 @@
   --color-boo-ink: #121214;
   --color-oxford: #0a2540;
   --color-ivory: #faf9f6;
-  --color-cream: #f6f3ea;
+  --color-cream: var(--cream);
   --color-press: #06182c;
-  --color-chip: #ede6d2;
+  --color-chip: var(--chip);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -60,6 +60,8 @@
 
 :root {
   color-scheme: light;
+  --cream: #f6f3ea;
+  --chip: #ede6d2;
   --background: #f6f3ea;
   --foreground: #121214;
   --card: #ffffff;
@@ -92,6 +94,31 @@
   --sidebar-accent-foreground: #0a2540;
   --sidebar-border: rgba(10, 37, 64, 0.08);
   --sidebar-ring: #0a2540;
+}
+
+.dark {
+  color-scheme: dark;
+  --cream: #141b24;
+  --chip: #1e2834;
+  --background: #0e141c;
+  --foreground: #f4efe4;
+  --card: #1a222d;
+  --card-foreground: #f4efe4;
+  --popover: #1a222d;
+  --popover-foreground: #f4efe4;
+  --secondary: #1e2834;
+  --secondary-foreground: #f4efe4;
+  --muted: #1a222d;
+  --muted-foreground: #b7c0cb;
+  --border: rgba(246, 243, 234, 0.12);
+  --input: rgba(246, 243, 234, 0.18);
+  --sidebar: #141b24;
+  --sidebar-foreground: #f4efe4;
+  --color-cream: #141b24;
+  --color-chip: #1e2834;
+  --color-background: #0e141c;
+  --color-foreground: #f4efe4;
+  --color-card: #1a222d;
 }
 
 @layer base {
@@ -198,6 +225,19 @@
   border-radius: 28px;
   background: #fff;
   box-shadow: 0 16px 36px -22px rgba(10, 37, 64, 0.32);
+}
+
+.dark .surface-card,
+.dark .btn-press-light,
+.dark .icon-circle {
+  background: #1a222d;
+  color: #f4efe4;
+}
+
+.dark .btn-press-outline {
+  background: #141b24;
+  color: #f4efe4;
+  border-color: #f4efe4;
 }
 
 @keyframes saved-pop {
