@@ -54,7 +54,7 @@ export async function updateInquiryStatus(formData: FormData) {
     for (const file of files) {
       await deleteStoredFile(file);
     }
-    next.mockup_path = null;
+    next.mockup_path = "";
     next.production_paths = [];
     next.cleanup_requested_at = new Date().toISOString();
   }

@@ -19,7 +19,7 @@ create table if not exists public.inquiries (
   status text not null default 'pending'
     check (status in ('pending', 'quoted', 'fulfilled', 'cancelled')),
   quoted_price numeric(12, 2),
-  mockup_path text,
+  mockup_path text not null default '',
   production_paths text[] default '{}',
   canvas_json jsonb,
   created_at timestamptz not null default now(),
