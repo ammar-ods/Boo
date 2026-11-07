@@ -42,8 +42,12 @@ async function readJson<T>(file: string, fallback: T): Promise<T> {
 }
 
 async function writeJson(file: string, value: unknown) {
-  await ensureLocalDirs();
-  await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+  try {
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+  } catch {
+    /* Vercel’s filesystem is read-only; keep serving in-memory data. */
+  }
 }
 
 type SafeZonePayload = Product["safe_zone_bounds"] & {
@@ -234,48 +238,6 @@ async function seedRemoteCatalog() {
   }
 }
 
-export async function getCatalog(): Promise<Product[]> {
-  noStore();
-  if (useSupabase()) {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: true });
-    if (error) {
-      if (canUseSeedFallback(error)) return SEED_PRODUCTS;
-      throw new Error(error.message);
-    }
-    if (!data || data.length === 0) {
-      try {
-        await seedRemoteCatalog();
-        const { data: seeded, error: seedReadError } = await supabase
-          .from("products")
-          .select("*")
-          .order("created_at", { ascending: true });
-        if (!seedReadError && seeded && seeded.length > 0) {
-          return seeded.map((row) => rowToProduct(row as Record<string, unknown>));
-        }
-      } catch {
-        /* table may still be missing write permission */
-      }
-      return SEED_PRODUCTS;
-    }
-    return data.map((row) => rowToProduct(row as Record<string, unknown>));
-  }
-
-  const stored = await readJson<Product[] | null>(CATALOG_FILE, null);
-  const stale =
-    !stored ||
-    stored.length === 0 ||
-    (stored.some((item) => item.slug === "classic-tee") && !stored.some((item) => item.slug === "white-tee"));
-  if (stale) {
-    await writeJson(CATALOG_FILE, SEED_PRODUCTS);
-    return SEED_PRODUCTS;
-  }
-  return stored;
-}
-
 const RETIRED_SLUGS = new Set([
   "classic-tee",
   "studio-hoodie",
@@ -287,6 +249,53 @@ const RETIRED_SLUGS = new Set([
   "vinyl-sticker-sheet",
   "die-cut-sticker",
 ]);
+
+export async function getCatalog(): Promise<Product[]> {
+  noStore();
+  if (useSupabase()) {
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) {
+        if (canUseSeedFallback(error)) return SEED_PRODUCTS;
+        return SEED_PRODUCTS;
+      }
+      if (!data || data.length === 0) {
+        try {
+          await seedRemoteCatalog();
+          const { data: seeded, error: seedReadError } = await supabase
+            .from("products")
+            .select("*")
+            .order("created_at", { ascending: true });
+          if (!seedReadError && seeded && seeded.length > 0) {
+            return seeded.map((row) => rowToProduct(row as Record<string, unknown>));
+          }
+        } catch {
+          /* table may still be missing write permission */
+        }
+        return SEED_PRODUCTS;
+      }
+      return data.map((row) => rowToProduct(row as Record<string, unknown>));
+    } catch {
+      return SEED_PRODUCTS;
+    }
+  }
+
+  const stored = await readJson<Product[] | null>(CATALOG_FILE, null);
+  const stale =
+    !stored ||
+    stored.length === 0 ||
+    (stored.some((item) => RETIRED_SLUGS.has(item.slug)) &&
+      !stored.some((item) => item.slug === "white-tee"));
+  if (stale) {
+    await writeJson(CATALOG_FILE, SEED_PRODUCTS);
+    return SEED_PRODUCTS;
+  }
+  return stored;
+}
 
 export async function getLiveCatalog() {
   return (await getCatalog()).filter((product) => !product.archived && !RETIRED_SLUGS.has(product.slug));

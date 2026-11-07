@@ -31,8 +31,13 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const token = (await cookies()).get(adminCookieName())?.value;
-  const isAdmin = await isValidAdminSession(token);
+  let isAdmin = false;
+  try {
+    const token = (await cookies()).get(adminCookieName())?.value;
+    isAdmin = await isValidAdminSession(token);
+  } catch {
+    isAdmin = false;
+  }
 
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${playfair.variable} ${geistMono.variable} h-full`}>
