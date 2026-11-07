@@ -1,241 +1,97 @@
 [
   {
-    "slug": "classic-tee",
-    "name": "Classic Cotton Tee",
+    "slug": "white-tee",
+    "name": "White Cotton Tee",
+    "nameAr": "تيشيرت أبيض",
     "category": "Apparel",
-    "tagline": "Soft blanks, loud ideas.",
-    "description": "A midweight cotton tee with a generous chest print area. Perfect for logos, illustrations, and event merch.",
+    "tagline": "Front and back print on a clean cotton blank.",
+    "taglineAr": "طباعة أمام وخلف على تيشيرت قطن أبيض.",
+    "description": "Choose a color, then upload artwork on the front and back photos. Price is 100 EGP.",
+    "descriptionAr": "اختار اللون، وبعدين ارفع التصميم على صورة الأمام والخلف. السعر ١٠٠ جنيه.",
     "is_laser_cut": false,
-    "materials": [
-      "White cotton",
-      "Heather grey",
-      "Teal",
-      "Ink black"
-    ],
-    "defaultMaterial": "White cotton",
+    "materials": ["White", "Black", "Navy"],
+    "colors": ["White", "Black", "Navy"],
+    "defaultMaterial": "White",
     "canvasWidth": 800,
     "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 275,
-      "top": 210,
-      "width": 250,
-      "height": 290
-    },
-    "mockup": "/products/classic-tee.svg",
-    "accent": "teal"
-  },
-  {
-    "slug": "studio-hoodie",
-    "name": "Studio Hoodie",
-    "category": "Apparel",
-    "tagline": "Cozy canvas for big graphics.",
-    "description": "Heavyweight hoodie with a centered chest zone. Keep key art inside the dashed safe area for clean DTG prints.",
-    "is_laser_cut": false,
-    "materials": [
-      "Fleece black",
-      "Fleece cream",
-      "Fleece teal"
-    ],
-    "defaultMaterial": "Fleece cream",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 270,
-      "top": 230,
-      "width": 260,
-      "height": 250
-    },
-    "mockup": "/products/studio-hoodie.svg",
-    "accent": "pink"
-  },
-  {
-    "slug": "ceramic-mug",
-    "name": "Ceramic Mug",
-    "category": "Drinkware",
-    "tagline": "Wrap-print sipware.",
-    "description": "11oz ceramic mug. Place art in the wrap window — anything past the red warning edge can clip at the handle.",
-    "is_laser_cut": false,
-    "materials": [
-      "Gloss white",
-      "Matte black",
-      "Teal glaze"
-    ],
-    "defaultMaterial": "Gloss white",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 210,
-      "top": 250,
-      "width": 300,
-      "height": 220
-    },
-    "mockup": "/products/ceramic-mug.svg",
-    "accent": "orange"
-  },
-  {
-    "slug": "wood-plaque",
-    "name": "Laser-Cut Wood Plaque",
-    "category": "Laser Cut Wood",
-    "tagline": "Etched grain, gallery finish.",
-    "description": "Birch plaque engraved on our diode/CO2 bed. High-contrast artwork reads best — enable laser preview to see the etch.",
-    "is_laser_cut": true,
-    "materials": [
-      "Birch plywood",
-      "Walnut veneer",
-      "Cherry plywood"
-    ],
-    "defaultMaterial": "Birch plywood",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 170,
-      "top": 170,
-      "width": 460,
-      "height": 460
-    },
-    "mockup": "/products/wood-plaque.svg",
-    "accent": "orange"
-  },
-  {
-    "slug": "wood-keychain",
-    "name": "Wood Keycharm",
-    "category": "Laser Cut Wood",
-    "tagline": "Tiny etch, huge personality.",
-    "description": "Small-format engraved keycharm. Keep type chunky — hairlines may vanish in the grain.",
-    "is_laser_cut": true,
-    "materials": [
-      "Birch 3mm",
-      "Walnut 3mm"
-    ],
-    "defaultMaterial": "Birch 3mm",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 250,
-      "top": 230,
-      "width": 300,
-      "height": 300
-    },
-    "mockup": "/products/wood-keychain.svg",
-    "accent": "teal"
-  },
-  {
-    "slug": "acrylic-medal",
-    "name": "Acrylic Medal",
-    "category": "Acrylic",
-    "tagline": "Clear, gold, and trophy-ready.",
-    "description": "Cut-and-engrave acrylic medal with ribbon hole. Laser preview shows how frosted etch will read on clear stock.",
-    "is_laser_cut": true,
-    "materials": [
-      "Clear 3mm",
-      "Frosted 3mm",
-      "Gold mirror 3mm"
-    ],
-    "defaultMaterial": "Clear 3mm",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 230,
-      "top": 210,
-      "width": 340,
-      "height": 380
-    },
-    "mockup": "/products/acrylic-medal.svg",
-    "accent": "teal"
-  },
-  {
-    "slug": "acrylic-standee",
-    "name": "Desktop Acrylic Standee",
-    "category": "Acrylic",
-    "tagline": "Little monument for your logo.",
-    "description": "Freestanding acrylic plaque. Vector-friendly marks and bold type engrave cleanly.",
-    "is_laser_cut": true,
-    "materials": [
-      "Clear 5mm",
-      "Black 5mm"
-    ],
-    "defaultMaterial": "Clear 5mm",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 220,
-      "top": 160,
-      "width": 360,
-      "height": 420
-    },
-    "mockup": "/products/acrylic-standee.svg",
-    "accent": "pink"
-  },
-  {
-    "slug": "vinyl-sticker-sheet",
-    "name": "Vinyl Sticker Sheet",
-    "category": "Stickers",
-    "tagline": "Kiss-cut sheets, made with love.",
-    "description": "Print-and-cut vinyl sheet. Leave a little padding inside the dashed zone so the plotter has bleed.",
-    "is_laser_cut": false,
-    "materials": [
-      "Gloss vinyl",
-      "Matte vinyl",
-      "Holographic vinyl"
-    ],
-    "defaultMaterial": "Gloss vinyl",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 150,
-      "top": 150,
-      "width": 500,
-      "height": 500
-    },
-    "mockup": "/products/vinyl-sheet.svg",
-    "accent": "pink"
-  },
-  {
-    "slug": "die-cut-sticker",
-    "name": "Die-Cut Sticker",
-    "category": "Stickers",
-    "tagline": "One shape, infinite sparkle.",
-    "description": "Single-shape kiss-cut sticker. Extend background color slightly past the safe zone for a clean cut line.",
-    "is_laser_cut": false,
-    "materials": [
-      "Gloss vinyl",
-      "Matte vinyl",
-      "Transparent vinyl"
-    ],
-    "defaultMaterial": "Gloss vinyl",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 220,
-      "top": 220,
-      "width": 360,
-      "height": 360
-    },
-    "mockup": "/products/die-cut-sticker.svg",
-    "accent": "orange"
-  },
-  {
-    "slug": "thermos",
-    "name": "Thermal Mug",
-    "category": "Drinkware",
-    "tagline": "Thermal mug with a printed picture",
-    "description": "put an image to be printed on the thermal mug, making it special and one of a kind",
-    "is_laser_cut": false,
-    "materials": [
-      "Stainless steel"
-    ],
-    "defaultMaterial": "Stainless steel",
-    "canvasWidth": 800,
-    "canvasHeight": 800,
-    "safe_zone_bounds": {
-      "left": 220,
-      "top": 200,
-      "width": 360,
-      "height": 360
-    },
-    "mockup": "/uploads/products/thermos-1793681628457.jpeg",
+    "safe_zone_bounds": { "left": 270, "top": 210, "width": 260, "height": 300 },
+    "mockup": "/products/white-tee-front.jpg",
     "accent": "teal",
-    "showSafeZone": true,
-    "archived": false
+    "priceEgp": 100,
+    "customizable": true,
+    "views": [
+      {
+        "id": "front",
+        "label": "Front",
+        "mockup": "/products/white-tee-front.jpg",
+        "safe_zone_bounds": { "left": 270, "top": 210, "width": 260, "height": 300 }
+      },
+      {
+        "id": "back",
+        "label": "Back",
+        "mockup": "/products/white-tee-back.jpg",
+        "safe_zone_bounds": { "left": 270, "top": 200, "width": 260, "height": 320 }
+      }
+    ]
+  },
+  {
+    "slug": "thermal-tumbler",
+    "name": "Thermal Tumbler",
+    "nameAr": "مج حراري",
+    "category": "Drinkware",
+    "tagline": "Insulated tumbler with a steel lid.",
+    "taglineAr": "مج حراري مع غطاء استانلس.",
+    "description": "Double-wall tumbler. Pick a color and add it to your bag. 100 EGP.",
+    "descriptionAr": "مج حراري جدار مزدوج. اختار اللون وضيفه للسلة. السعر ١٠٠ جنيه.",
+    "is_laser_cut": false,
+    "materials": ["White", "Black", "Silver"],
+    "colors": ["White", "Black", "Silver"],
+    "defaultMaterial": "White",
+    "canvasWidth": 800,
+    "canvasHeight": 800,
+    "safe_zone_bounds": { "left": 300, "top": 160, "width": 200, "height": 420 },
+    "mockup": "/products/thermal-tumbler.jpg",
+    "mugPhoto": "/products/thermal-tumbler.jpg",
+    "accent": "orange",
+    "wrapPreview": false,
+    "priceEgp": 100,
+    "customizable": true,
+    "views": [
+      {
+        "id": "front",
+        "label": "Front",
+        "mockup": "/products/thermal-tumbler.jpg",
+        "safe_zone_bounds": { "left": 300, "top": 160, "width": 200, "height": 420 }
+      }
+    ]
+  },
+  {
+    "slug": "wood-coaster",
+    "name": "Wood Coaster",
+    "nameAr": "كوستر خشب",
+    "category": "Laser Cut Wood",
+    "tagline": "Round birch coaster, ready for a mark.",
+    "taglineAr": "كوستر خشب دائري جاهز للنقش أو الطباعة.",
+    "description": "Natural round wood coaster. 100 EGP.",
+    "descriptionAr": "كوستر خشب طبيعي دائري. السعر ١٠٠ جنيه.",
+    "is_laser_cut": true,
+    "materials": ["Natural pine", "Walnut", "Cherry"],
+    "colors": ["Natural pine", "Walnut", "Cherry"],
+    "defaultMaterial": "Natural pine",
+    "canvasWidth": 800,
+    "canvasHeight": 800,
+    "safe_zone_bounds": { "left": 190, "top": 160, "width": 420, "height": 420 },
+    "mockup": "/products/wood-coaster.png",
+    "accent": "orange",
+    "priceEgp": 100,
+    "customizable": true,
+    "views": [
+      {
+        "id": "front",
+        "label": "Front",
+        "mockup": "/products/wood-coaster.png",
+        "safe_zone_bounds": { "left": 190, "top": 160, "width": 420, "height": 420 }
+      }
+    ]
   }
 ]

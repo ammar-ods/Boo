@@ -5,6 +5,8 @@ import { MUG_WRAP_FLAT, productViews, SEED_PRODUCTS, type Product, type ProductV
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { DEFAULT_SITE, migrateSite, type SiteDocument } from "@/lib/site";
+import { SEED_BUNDLES, type Bundle } from "@/lib/bundles";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
@@ -40,8 +42,12 @@ async function readJson<T>(file: string, fallback: T): Promise<T> {
 }
 
 async function writeJson(file: string, value: unknown) {
-  await ensureLocalDirs();
-  await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+  try {
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+  } catch {
+    /* Vercel’s filesystem is read-only; keep serving in-memory data. */
+  }
 }
 
 type SafeZonePayload = Product["safe_zone_bounds"] & {
@@ -120,8 +126,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
   const overlay = row.overlay_image_url ? String(row.overlay_image_url) : null;
   const wrapPreview = Boolean(bounds.wrapPreview);
   const slug = String(row.slug);
-  let views = parseViews(bounds, mockup, overlay, wrapPreview);
   const seed = SEED_PRODUCTS.find((item) => item.slug === slug);
+  let views = parseViews(bounds, mockup, overlay, wrapPreview);
   if ((!views || views.length === 0) && seed?.views) {
     views = seed.views.map((view, index) =>
       index === 0
@@ -136,12 +142,16 @@ function rowToProduct(row: Record<string, unknown>): Product {
 
   return {
     slug,
-    name: String(row.title ?? row.name ?? ""),
-    category: row.category as Product["category"],
-    tagline: String(row.tagline ?? bounds.tagline ?? ""),
-    description: String(row.description ?? ""),
+    name: String(row.title ?? row.name ?? seed?.name ?? ""),
+    nameAr: String(row.name_ar ?? row.nameAr ?? seed?.nameAr ?? row.title ?? ""),
+    category: (row.category as Product["category"]) || seed?.category || "Apparel",
+    tagline: String(row.tagline ?? bounds.tagline ?? seed?.tagline ?? ""),
+    taglineAr: String(row.tagline_ar ?? row.taglineAr ?? seed?.taglineAr ?? ""),
+    description: String(row.description ?? seed?.description ?? ""),
+    descriptionAr: String(row.description_ar ?? row.descriptionAr ?? seed?.descriptionAr ?? ""),
     is_laser_cut: Boolean(row.is_laser_cut),
-    materials: materials.length ? materials : ["Standard"],
+    materials: materials.length ? materials : seed?.materials ?? ["Standard"],
+    colors: Array.isArray(row.colors) ? (row.colors as string[]) : seed?.colors ?? materials,
     defaultMaterial: String(row.default_material ?? bounds.defaultMaterial ?? materials[0] ?? "Standard"),
     canvasWidth: Number(row.canvas_width ?? bounds.canvasWidth ?? 800),
     canvasHeight: Number(row.canvas_height ?? bounds.canvasHeight ?? 800),
@@ -159,6 +169,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
     mugPhoto: bounds.mugPhoto ? String(bounds.mugPhoto) : wrapPreview ? mockup : undefined,
     wrapTemplate: bounds.wrapTemplate ? String(bounds.wrapTemplate) : undefined,
     views,
+    priceEgp: Number(row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
+    customizable: row.customizable !== false,
   };
 }
 
@@ -183,8 +195,12 @@ function productToRow(product: Product) {
   return {
     slug: product.slug,
     title: product.name,
+    name_ar: product.nameAr,
     category: product.category,
     description: product.description,
+    description_ar: product.descriptionAr,
+    colors: product.colors,
+    price_egp: product.priceEgp,
     base_image_url: catalogImage,
     overlay_image_url: views[1]?.mockup || null,
     safe_zone_bounds,
@@ -222,43 +238,67 @@ async function seedRemoteCatalog() {
   }
 }
 
+const RETIRED_SLUGS = new Set([
+  "classic-tee",
+  "studio-hoodie",
+  "ceramic-mug",
+  "wood-plaque",
+  "wood-keychain",
+  "acrylic-medal",
+  "acrylic-standee",
+  "vinyl-sticker-sheet",
+  "die-cut-sticker",
+]);
+
 export async function getCatalog(): Promise<Product[]> {
   noStore();
   if (useSupabase()) {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: true });
-    if (error) {
-      if (canUseSeedFallback(error)) return SEED_PRODUCTS;
-      throw new Error(error.message);
-    }
-    if (!data || data.length === 0) {
-      try {
-        await seedRemoteCatalog();
-        const { data: seeded, error: seedReadError } = await supabase
-          .from("products")
-          .select("*")
-          .order("created_at", { ascending: true });
-        if (!seedReadError && seeded && seeded.length > 0) {
-          return seeded.map((row) => rowToProduct(row as Record<string, unknown>));
-        }
-      } catch {
-        /* table may still be missing write permission */
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) {
+        if (canUseSeedFallback(error)) return SEED_PRODUCTS;
+        return SEED_PRODUCTS;
       }
+      if (!data || data.length === 0) {
+        try {
+          await seedRemoteCatalog();
+          const { data: seeded, error: seedReadError } = await supabase
+            .from("products")
+            .select("*")
+            .order("created_at", { ascending: true });
+          if (!seedReadError && seeded && seeded.length > 0) {
+            return seeded.map((row) => rowToProduct(row as Record<string, unknown>));
+          }
+        } catch {
+          /* table may still be missing write permission */
+        }
+        return SEED_PRODUCTS;
+      }
+      return data.map((row) => rowToProduct(row as Record<string, unknown>));
+    } catch {
       return SEED_PRODUCTS;
     }
-    return data.map((row) => rowToProduct(row as Record<string, unknown>));
   }
 
   const stored = await readJson<Product[] | null>(CATALOG_FILE, null);
-  if (!stored || stored.length === 0) return SEED_PRODUCTS;
+  const stale =
+    !stored ||
+    stored.length === 0 ||
+    (stored.some((item) => RETIRED_SLUGS.has(item.slug)) &&
+      !stored.some((item) => item.slug === "white-tee"));
+  if (stale) {
+    await writeJson(CATALOG_FILE, SEED_PRODUCTS);
+    return SEED_PRODUCTS;
+  }
   return stored;
 }
 
 export async function getLiveCatalog() {
-  return (await getCatalog()).filter((product) => !product.archived);
+  return (await getCatalog()).filter((product) => !product.archived && !RETIRED_SLUGS.has(product.slug));
 }
 
 export async function getCatalogProduct(slug: string) {
@@ -358,70 +398,96 @@ function normalizeInquiry(row: Record<string, unknown>): InquiryRecord {
   };
 }
 
-export async function listOrders(): Promise<InquiryRecord[]> {
-  if (useSupabase()) {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("inquiries")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      if (canUseSeedFallback(error)) {
-        const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-        return orders.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-      }
-      throw new Error(error.message);
-    }
-    return (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
-  }
-  const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-  return orders.sort(
+let memoryOrders: InquiryRecord[] = [];
+
+function sortOrders(orders: InquiryRecord[]) {
+  return [...orders].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
+}
+
+function mergeOrders(...lists: InquiryRecord[][]) {
+  const map = new Map<string, InquiryRecord>();
+  for (const list of lists) {
+    for (const order of list) {
+      if (!order?.id) continue;
+      map.set(order.id, order);
+    }
+  }
+  return sortOrders([...map.values()]);
+}
+
+export async function listOrders(): Promise<InquiryRecord[]> {
+  const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+  let remote: InquiryRecord[] = [];
+  if (useSupabase()) {
+    try {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("inquiries")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        if (!canUseSeedFallback(error)) throw new Error(error.message);
+      } else {
+        remote = (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
+      }
+    }
+  }
+  return mergeOrders(memoryOrders, local, remote);
 }
 
 export async function getOrder(id: string) {
   const key = decodeURIComponent(id).trim();
   const ref = key.startsWith("#") ? key : `#${key.replace(/^#/, "")}`;
+  const match = (order: InquiryRecord) =>
+    order.id === key || order.reference_code === ref || order.reference_code === key;
+
   if (useSupabase()) {
-    const supabase = createAdminClient();
-    const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
-    if (byId.error) {
-      if (canUseSeedFallback(byId.error)) {
-        const orders = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
-        return orders.find(
-          (order) => order.id === key || order.reference_code === ref || order.reference_code === key,
-        );
+    try {
+      const supabase = createAdminClient();
+      const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
+      if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
+      if (byId.error && !canUseSeedFallback(byId.error)) throw new Error(byId.error.message);
+      const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
+      if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
+      const byBare = await supabase.from("inquiries").select("*").eq("reference_code", key).maybeSingle();
+      if (byBare.data) return normalizeInquiry(byBare.data as Record<string, unknown>);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
       }
-      throw new Error(byId.error.message);
     }
-    if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
-    const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
-    if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
-    const byBare = await supabase.from("inquiries").select("*").eq("reference_code", key).maybeSingle();
-    return byBare.data ? normalizeInquiry(byBare.data as Record<string, unknown>) : undefined;
   }
   const orders = await listOrders();
-  return orders.find(
-    (order) => order.id === key || order.reference_code === ref || order.reference_code === key,
-  );
+  return orders.find(match);
 }
 
 export async function saveOrder(order: InquiryRecord) {
+  memoryOrders = mergeOrders(memoryOrders, [order]);
+  const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+  await writeJson(ORDERS_FILE, mergeOrders(local, memoryOrders, [order]));
+
   if (useSupabase()) {
-    requireServiceRole();
-    const supabase = createAdminClient();
-    const { error } = await supabase.from("inquiries").upsert(order);
-    if (error) throw new Error(error.message);
-    return order;
+    try {
+      const supabase = createAdminClient();
+      const { error } = await supabase.from("inquiries").upsert(order);
+      if (error && !canUseSeedFallback(error) && !/invalid api key|jwt|service_role/i.test(error.message)) {
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
+      }
+    }
   }
-  const orders = await listOrders();
-  const index = orders.findIndex((item) => item.id === order.id);
-  if (index >= 0) orders[index] = order;
-  else orders.unshift(order);
-  await writeJson(ORDERS_FILE, orders);
   return order;
 }
 
@@ -521,4 +587,36 @@ export async function deleteStoredFile(fileUrl: string) {
 
 export function uploadsDir() {
   return UPLOADS_DIR;
+}
+
+const SITE_FILE = path.join(DATA_DIR, "site.json");
+const BUNDLES_FILE = path.join(DATA_DIR, "bundles.json");
+
+let memorySite: SiteDocument | null = null;
+
+export async function getSite() {
+  noStore();
+  if (memorySite) return memorySite;
+  const stored = await readJson<unknown>(SITE_FILE, null);
+  if (!stored) return DEFAULT_SITE;
+  const migrated = migrateSite(stored);
+  if (!migrated.sections.length) return DEFAULT_SITE;
+  return migrated;
+}
+
+export async function saveSite(site: SiteDocument) {
+  const migrated = migrateSite(site);
+  memorySite = migrated;
+  await writeJson(SITE_FILE, migrated);
+  return migrated;
+}
+
+export async function getBundles() {
+  noStore();
+  const stored = await readJson<Bundle[] | null>(BUNDLES_FILE, null);
+  if (!stored?.length) {
+    await writeJson(BUNDLES_FILE, SEED_BUNDLES);
+    return SEED_BUNDLES;
+  }
+  return stored;
 }

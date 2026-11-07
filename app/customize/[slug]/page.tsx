@@ -1,18 +1,10 @@
-import { notFound } from "next/navigation";
-import { CustomizerShell } from "@/components/customizer/customizer-shell";
-import { getCatalogProduct } from "@/lib/local-db";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const dynamicParams = true;
-
-export default async function CustomizePage({
+export default async function CustomizeRedirect({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getCatalogProduct(slug);
-  if (!product || product.archived) notFound();
-  return <CustomizerShell product={product} />;
+  redirect(`/product/${slug}`);
 }

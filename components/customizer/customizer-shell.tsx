@@ -57,7 +57,7 @@ export function CustomizerShell({ product }: { product: Product }) {
             <button
               type="button"
               onClick={togglePreview}
-              className="inline-flex items-center gap-2 rounded-full bg-boo-ink px-4 py-2 font-heading text-sm text-white"
+              className="inline-flex items-center gap-2 rounded-full bg-oxford px-4 py-2 text-sm font-medium text-white"
             >
               {previewMode ? <Pencil className="size-4" /> : <Eye className="size-4" />}
               {previewMode ? "Back to editor" : "Preview final product"}

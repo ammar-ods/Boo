@@ -32,7 +32,7 @@ function SavedToastInner() {
     <div className="pointer-events-none fixed inset-0 z-[80] grid place-items-center">
       <div
         role="status"
-        className="saved-toast flex items-center gap-2 rounded-full bg-boo-teal px-7 py-4 font-heading text-xl text-white shadow-xl ring-1 ring-white/30"
+        className="saved-toast flex items-center gap-2 rounded-full bg-oxford px-7 py-4 font-heading text-xl text-white shadow-xl ring-1 ring-white/30"
       >
         <span className="grid size-6 place-items-center rounded-full bg-white/20 text-sm">✓</span>
         Saved

@@ -1,0 +1,44 @@
+import { NextResponse } from "next/server";
+import { saveOrder, nextReferenceCode } from "@/lib/local-db";
+
+export async function POST(request: Request) {
+  const body = (await request.json()) as {
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    notes?: string;
+    items?: { slug: string; name: string; quantity: number; color: string; priceEgp: number }[];
+  };
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (!body.name?.trim() || !body.phone?.trim() || items.length === 0) {
+    return NextResponse.json({ error: "Missing checkout fields" }, { status: 400 });
+  }
+  const reference_code = await nextReferenceCode();
+  const summary = items
+    .map((item) => `${item.quantity}× ${item.name} (${item.color})`)
+    .join(", ");
+  const total = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
+  const now = new Date().toISOString();
+  const order = await saveOrder({
+    id: crypto.randomUUID(),
+    reference_code,
+    product_slug: items[0]?.slug ?? "cart",
+    product_name: summary,
+    customer_name: body.name.trim(),
+    customer_email: body.email?.trim() || null,
+    customer_phone: body.phone.trim(),
+    material: items[0]?.color ?? null,
+    quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+    notes: [body.address, body.notes, `Total ${total} EGP`].filter(Boolean).join("\n"),
+    status: "pending",
+    quoted_price: total,
+    mockup_path: null,
+    production_paths: [],
+    canvas_json: { items },
+    created_at: now,
+    updated_at: now,
+    cleanup_requested_at: null,
+  });
+  return NextResponse.json({ ref: order.reference_code });
+}

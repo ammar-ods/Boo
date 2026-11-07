@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
-import { Caveat, Fredoka, Geist_Mono, Nunito } from "next/font/google";
+import { Cairo, Geist_Mono, Playfair_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { I18nProvider } from "@/lib/i18n";
+import { cookies } from "next/headers";
+import { EditProvider } from "@/lib/edit-context";
+import { getSite } from "@/lib/local-db";
+import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
 import "./globals.css";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin"],
+const cairo = Cairo({
+  variable: "--font-inter",
+  subsets: ["arabic", "latin"],
 });
 
-const fredoka = Fredoka({
-  variable: "--font-fredoka",
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
-});
-
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
 const geistMono = Geist_Mono({
@@ -26,22 +27,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BOO Custom Creations",
-  description:
-    "Bespoke apparel, drinkware, laser-cut wood, acrylic medals, and vinyl stickers from a Giza apartment studio.",
+  title: "Boo — Oxford Atelier",
+  description: "تيشيرت، مج حراري، وكوستر خشب. كل قطعة بـ ١٠٠ جنيه.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  let isAdmin = false;
+  try {
+    const token = (await cookies()).get(adminCookieName())?.value;
+    isAdmin = await isValidAdminSession(token);
+  } catch {
+    isAdmin = false;
+  }
+  const site = await getSite();
+
   return (
-    <html
-      lang="en"
-      className={`${nunito.variable} ${fredoka.variable} ${caveat.variable} ${geistMono.variable} h-full`}
-    >
+    <html lang="ar" dir="rtl" className={`${cairo.variable} ${playfair.variable} ${geistMono.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans">
-        <SiteHeader />
-        <main className="flex flex-1 flex-col">{children}</main>
-        <SiteFooter />
-        <Toaster />
+        <I18nProvider>
+          <EditProvider initial={site} isAdmin={isAdmin}>
+            <SiteHeader />
+            <main className="flex flex-1 flex-col">{children}</main>
+            <SiteFooter />
+            <Toaster />
+          </EditProvider>
+        </I18nProvider>
       </body>
     </html>
   );

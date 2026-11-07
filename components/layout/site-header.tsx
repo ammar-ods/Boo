@@ -1,82 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
-import { cn } from "@/lib/utils";
+import { StudioChromePanel, StudioNavButtons } from "@/components/cms/studio-bar";
+import { useEdit } from "@/lib/edit-context";
+import { useI18n, type Currency } from "@/lib/i18n";
+import { cartCount, useCart } from "@/lib/cart";
+import { pick } from "@/lib/site";
 
-const LINKS = [
-  { href: "/#about", label: "About" },
-  { href: "/catalog", label: "Shop" },
-  { href: "/#how", label: "How it works" },
-  { href: "/#contact", label: "Contact" },
-];
+const CURRENCIES: Currency[] = ["EGP", "USD", "EUR", "GBP"];
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { t, locale, setLocale, currency, setCurrency } = useI18n();
+  const { site, isAdmin } = useEdit();
+  const items = useCart((s) => s.items);
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    setCount(cartCount(items));
+  }, [items]);
+
+  const links = site.chrome.navLinks.filter((link) => link.visible);
+
   if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) return null;
 
   return (
     <header className="sticky top-0 z-40">
-      <div className="chrome-bar h-2.5" />
-      <div className="border-b border-border/80 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-3 sm:px-6">
-          <Link href="/" className="shrink-0">
-            <BooLogo />
-          </Link>
-          <nav className="hidden items-center gap-7 font-heading text-lg text-boo-ink md:flex">
-            {LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "transition-colors hover:text-boo-teal",
-                  pathname === link.href && "text-boo-teal",
-                )}
+      {site.chrome.showAnnouncement ? (
+        <div className="bg-oxford text-[11px] tracking-[0.12em] text-white/85">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
+            <p>{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
+                {locale === "ar" ? "EN" : "عربي"}
+              </button>
+              <select
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value as Currency)}
+                className="bg-transparent text-white/90 outline-none"
+                aria-label="Currency"
               >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin/login"
-              className="hidden rounded-full border border-border px-4 py-2 font-heading text-sm text-boo-ink hover:border-boo-teal sm:inline-flex"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/catalog"
-              className="rounded-full bg-boo-pink px-4 py-2 font-heading text-sm text-white shadow-sm transition hover:bg-boo-pink/90"
-            >
-              Start a custom
-            </Link>
-            <button
-              type="button"
-              className="rounded-full p-2 md:hidden"
-              onClick={() => setOpen((value) => !value)}
-              aria-label="Menu"
-            >
-              {open ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
+                {CURRENCIES.map((item) => (
+                  <option key={item} value={item} className="text-oxford">
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-        {open ? (
-          <div className="flex flex-col gap-2 border-t border-border px-4 py-3 font-heading md:hidden">
-            {LINKS.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
-                {link.label}
-              </Link>
-            ))}
-            <Link href="/admin/login" onClick={() => setOpen(false)}>
-              Log in
+      ) : (
+        <div className="flex justify-end bg-oxford px-4 py-2 text-[11px] text-white/85">
+          <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
+            {locale === "ar" ? "EN" : "عربي"}
+          </button>
+        </div>
+      )}
+      {site.chrome.showHeader ? (
+        <div className="relative border-b border-oxford/8 bg-cream">
+          <div className={`mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6 ${isAdmin ? "pe-36 sm:pe-44" : ""}`}>
+            <Link href="/" className="shrink-0">
+              <BooLogo />
             </Link>
+            {site.chrome.showNav ? (
+              <nav className="hidden items-center gap-7 text-[15px] font-medium text-oxford md:flex">
+                {links.map((link) => (
+                  <Link key={link.id} href={link.href} className="hover:text-oxford/55">
+                    {pick(link.label, locale)}
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="grid size-10 place-items-center rounded-full text-oxford"
+                aria-label={t("search")}
+              >
+                <Search className="size-[18px]" />
+              </button>
+              <Link href="/cart" className="relative grid size-10 place-items-center rounded-full text-oxford" aria-label={t("cart")}>
+                <ShoppingBag className="size-[18px]" />
+                {count > 0 ? (
+                  <span className="absolute end-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-oxford text-[10px] text-white">
+                    {count}
+                  </span>
+                ) : null}
+              </Link>
+              <button type="button" className="rounded-full p-2 md:hidden" onClick={() => setOpen((v) => !v)} aria-label="Menu">
+                {open ? <X className="size-5" /> : <Menu className="size-5" />}
+              </button>
+            </div>
           </div>
-        ) : null}
-      </div>
+          {open && site.chrome.showNav ? (
+            <div className="flex flex-col gap-2 border-t border-oxford/8 px-4 py-3 text-sm md:hidden">
+              {links.map((link) => (
+                <Link key={link.id} href={link.href} onClick={() => setOpen(false)}>
+                  {pick(link.label, locale)}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          <StudioNavButtons />
+        </div>
+      ) : (
+        <div className="relative h-14 bg-cream">
+          <StudioNavButtons />
+        </div>
+      )}
+      <StudioChromePanel />
+      {searchOpen ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-start bg-oxford/40 px-4 pt-28"
+          onClick={() => setSearchOpen(false)}
+        >
+          <form
+            className="mx-auto w-full max-w-xl rounded-2xl bg-white p-4 shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]"
+            onClick={(event) => event.stopPropagation()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSearchOpen(false);
+              router.push(`/catalog?q=${encodeURIComponent(query)}`);
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Search className="size-4 text-muted-foreground" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("search")}
+                className="h-10 w-full bg-transparent outline-none"
+              />
+              <button type="button" className="text-sm text-muted-foreground" onClick={() => setSearchOpen(false)}>
+                Esc
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </header>
   );
 }

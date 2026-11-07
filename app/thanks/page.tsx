@@ -7,35 +7,29 @@ export default async function ThanksPage({
 }: {
   searchParams: Promise<{ ref?: string; product?: string }>;
 }) {
-  const { ref, product } = await searchParams;
+  const { ref } = await searchParams;
   const reference = ref ? (ref.startsWith("#") ? ref : `#${ref}`) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-4 py-20 text-center">
-      <p className="font-script text-4xl text-boo-pink">made with love</p>
-      <h1 className="mt-2 font-heading text-5xl">Thank you</h1>
+      <p className="font-script text-3xl text-oxford/70">selected with taste</p>
+      <h1 className="mt-2 font-heading text-5xl text-oxford">شكرًا لطلبك</h1>
       <p className="mt-4 text-muted-foreground">
-        We received your {product ? `${product} ` : ""}inquiry
+        استلمنا طلبك
         {reference ? (
           <>
             {" "}
-            as <span className="font-heading text-boo-ink">{reference}</span>
+            برقم <span className="font-medium text-oxford">{reference}</span>
           </>
         ) : null}
-        . The studio will follow up with a quote.
-      </p>
-      <p className="mt-2 text-sm text-muted-foreground">
-        WhatsApp checkout is coming next — for now this confirmation is enough.
+        . هنتواصل معاك لتأكيد التوصيل.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link
-          href="/catalog"
-          className="rounded-full bg-boo-teal px-5 py-2 font-heading text-white"
-        >
-          Back to shop
+        <Link href="/catalog" className="btn-press">
+          رجوع للمتجر
         </Link>
-        <Link href="/" className="rounded-full bg-white px-5 py-2 font-heading ring-1 ring-foreground/10">
-          Home
+        <Link href="/" className="btn-press btn-press-outline">
+          الرئيسية
         </Link>
       </div>
     </div>

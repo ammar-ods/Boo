@@ -3,32 +3,47 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BooLogo } from "@/components/brand/boo-logo";
+import { useEdit } from "@/lib/edit-context";
+import { useI18n } from "@/lib/i18n";
+import { pick } from "@/lib/site";
 
 export function SiteFooter() {
   const pathname = usePathname();
-  if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) {
-    return null;
-  }
+  const { locale, t } = useI18n();
+  const { site } = useEdit();
+  if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) return null;
+  if (!site.chrome.showFooter) return null;
+
+  const links = site.chrome.navLinks.filter((link) => link.visible);
 
   return (
-    <footer className="mt-auto border-t border-border bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+    <footer className="mt-8 rounded-t-[32px] bg-[#121214] text-white">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
         <div>
-          <BooLogo />
-          <p className="font-script mt-3 text-2xl text-boo-teal">
-            made with love
-          </p>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-            tempor incididunt ut labore et dolore magna aliqua.
-          </p>
+          <BooLogo onDark />
+          <p className="font-script mt-4 text-2xl text-white/80">{pick(site.chrome.footerTagline, locale)}</p>
+          <p className="mt-2 max-w-sm text-sm text-white/60">{pick(site.chrome.footerBlurb, locale)}</p>
         </div>
-        <div className="text-sm text-muted-foreground">
-          <p>Lorem ipsum dolor sit amet</p>
-          <p>consectetur adipiscing elit</p>
-          <Link href="/admin/login" className="mt-3 inline-block text-boo-ink/50 hover:text-boo-teal">
-            Studio log in
-          </Link>
+        <div className="text-sm text-white/70">
+          <p className="mb-3 font-medium text-white">{t("shop")}</p>
+          {links.map((link) => (
+            <Link key={link.id} href={link.href} className="block py-1 hover:text-white">
+              {pick(link.label, locale)}
+            </Link>
+          ))}
+        </div>
+        <div className="text-sm text-white/70">
+          <p className="mb-3 font-medium text-white">Boo</p>
+          <p>100 EGP</p>
+          <p>EGP · USD · EUR · GBP</p>
+          <a
+            href="/admin/login"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-block text-white/40 hover:text-white"
+          >
+            {t("studio")}
+          </a>
         </div>
       </div>
     </footer>
