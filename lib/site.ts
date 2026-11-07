@@ -95,7 +95,7 @@ export const DEFAULT_CHROME: SiteChrome = {
   ],
   showFooter: true,
   footerTagline: loc("مختار بذوق.", "Selected with taste."),
-  footerBlurb: loc("مشغل أكسفورد للطباعة والهدايا.", "An Oxford atelier for print and gifting."),
+  footerBlurb: loc(".", "An Oxford atelier for print and gifting."),
 };
 
 export function newSection(type: SectionType): SiteSection {
@@ -107,10 +107,10 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#f6f3ea", color: "#0a2540", fontSize: 56, paddingY: 72, align: "center" },
       content: {
-        eyebrow: loc("بو · مشغل أكسفورد", "Boo · Oxford atelier"),
-        title: loc("قطع مختارة للمكتب والهدايا.", "Pieces chosen for the desk and for gifting."),
+        eyebrow: loc(" · ", "Boo · Oxford atelier"),
+        title: loc("قطع  للمكتب والهدايا.", "Pieces chosen for the desk and for gifting."),
         body: loc(
-          "تيشيرت للطباعة، مج حراري، وكوستر خشب. سعر موحّد ١٠٠ جنيه.",
+          "تيشيرت ، مج حراري، وكوستر خشب.  ١٠٠ جنيه.",
           "Printable tee, thermal tumbler, and a wood coaster. 100 EGP each.",
         ),
         ctaLabel: loc("تسوّق الآن", "Shop now"),
@@ -149,8 +149,8 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#f6f3ea", color: "#0a2540", fontSize: 40, paddingY: 56, align: "center" },
       content: {
-        title: loc("اختيارات الاستوديو", "Staff picks"),
-        body: loc("القطع الثلاثة الحالية بسعر ١٠٠ جنيه.", "The three current pieces, 100 EGP each."),
+        title: loc(" الاستوديو", "Staff picks"),
+        body: loc(" الثلاثة  بسعر ١٠٠ جنيه.", "The three current pieces, 100 EGP each."),
       },
     },
     collections: {
@@ -179,10 +179,10 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#ffffff", color: "#0a2540", fontSize: 28, paddingY: 56, align: "start" },
       content: {
-        title: loc("مشغل، مش كتالوج عشوائي.", "An atelier, not a catalog dump."),
+        title: loc("", "."),
         body: loc(
-          "بو للطباعة المخصصة والهدايا. كل طلب بيتراجع في الاستوديو قبل التنفيذ.",
-          "Boo is for custom print and gifting. Every order is reviewed at the studio desk.",
+          "بو للطباعة المخصصة والهدايا. .",
+          "Boo is for custom print and gifting. .",
         ),
       },
     },
