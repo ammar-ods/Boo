@@ -12,7 +12,8 @@ import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
 import { FabricCanvas, type CanvasHandle } from "@/components/customizer/fabric-canvas";
 import { ControlsPanel } from "@/components/customizer/controls-panel";
-import { clearRememberedFiles } from "@/lib/upload-registry";
+import { storeOrderAsset } from "@/lib/order-assets";
+import { allRememberedFiles, clearRememberedFiles, uploadRegistry } from "@/lib/upload-registry";
 
 export function ProductWorkspace({ product }: { product: Product }) {
   const router = useRouter();
@@ -25,9 +26,11 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const activeViewId = useCustomizerStore((s) => s.activeViewId);
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
   const addItem = useCart((s) => s.addItem);
+  const assets = useCustomizerStore((s) => s.assets);
   const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
   const [preview, setPreview] = useState<{ id: string; label: string; url: string }[] | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [cartBusy, setCartBusy] = useState(false);
   const views = productViews(product);
   const colors = product.colors?.length ? product.colors : product.materials;
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
@@ -89,17 +92,62 @@ export function ProductWorkspace({ product }: { product: Product }) {
   }
 
   async function addToCart() {
-    addItem({
-      slug: product.slug,
-      name: product.name,
-      nameAr: product.nameAr,
-      image: product.mockup,
-      color: material || colors[0],
-      quantity,
-      priceEgp: product.priceEgp || 100,
-      kind: "product",
-    });
-    toast.success(t("added"));
+    if (cartBusy) return;
+    setCartBusy(true);
+    try {
+      Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(true));
+      const viewMockups: { id: string; label: string; url: string }[] = [];
+      for (const view of views) {
+        const handle = canvases[view.id];
+        if (handle) {
+          try {
+            const blob = await handle.exportMockup();
+            const file = new File([blob], `${product.slug}-${view.id}.jpg`, { type: blob.type || "image/jpeg" });
+            viewMockups.push({
+              id: view.id,
+              label: viewLabel(view),
+              url: await storeOrderAsset(file),
+            });
+            continue;
+          } catch {
+            /* use blank mockup */
+          }
+        }
+        viewMockups.push({ id: view.id, label: viewLabel(view), url: view.mockup });
+      }
+      const uploads: { name: string; url: string }[] = [];
+      for (const asset of assets) {
+        const remembered = uploadRegistry.get(asset.id);
+        if (remembered) {
+          uploads.push({ name: asset.name, url: await storeOrderAsset(remembered) });
+        }
+      }
+      if (uploads.length === 0) {
+        for (const file of allRememberedFiles()) {
+          uploads.push({ name: file.name, url: await storeOrderAsset(file) });
+        }
+      }
+      Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(false));
+      addItem({
+        slug: product.slug,
+        name: product.name,
+        nameAr: product.nameAr,
+        image: viewMockups[0]?.url || product.mockup,
+        color: material || colors[0],
+        quantity,
+        priceEgp: product.priceEgp || 100,
+        kind: "product",
+        viewMockups,
+        uploads,
+      });
+      toast.success(t("added"));
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the design");
+      return false;
+    } finally {
+      setCartBusy(false);
+    }
   }
 
   return (
@@ -242,18 +290,29 @@ export function ProductWorkspace({ product }: { product: Product }) {
           </ul>
         </div>
 
-        <button type="button" onClick={() => { addToCart(); queueMicrotask(() => router.push("/checkout")); }} className="btn-press mt-8 w-full">
-          {t("checkoutNow")}
+        <button
+          type="button"
+          disabled={cartBusy}
+          onClick={() => {
+            void addToCart().then((ok) => {
+              if (ok) router.push("/checkout");
+            });
+          }}
+          className="btn-press mt-8 w-full"
+        >
+          {cartBusy ? "…" : t("checkoutNow")}
         </button>
         <button
           type="button"
+          disabled={cartBusy}
           onClick={() => {
-            addToCart();
-            router.push("/catalog");
+            void addToCart().then((ok) => {
+              if (ok) router.push("/catalog");
+            });
           }}
           className="btn-press-outline mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold"
         >
-          {t("addAndShop")}
+          {cartBusy ? "…" : t("addAndShop")}
         </button>
       </aside>
 

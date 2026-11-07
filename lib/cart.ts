@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export type CartDesignFile = {
+  id?: string;
+  label?: string;
+  name?: string;
+  url: string;
+};
+
 export type CartItem = {
   id: string;
   slug: string;
@@ -15,6 +22,8 @@ export type CartItem = {
   priceEgp: number;
   kind: "product" | "bundle";
   mockup?: string;
+  viewMockups?: CartDesignFile[];
+  uploads?: CartDesignFile[];
 };
 
 type CartState = {
@@ -32,9 +41,15 @@ export const useCart = create<CartState>()(
       addItem: (item) => {
         const id = item.id ?? `${item.slug}-${item.color}-${Date.now()}`;
         const existing = get().items.find(
-          (row) => row.slug === item.slug && row.color === item.color && !item.mockup && !row.mockup,
+          (row) =>
+            row.slug === item.slug &&
+            row.color === item.color &&
+            !item.mockup &&
+            !row.mockup &&
+            !item.viewMockups?.length &&
+            !row.viewMockups?.length,
         );
-        if (existing && !item.mockup) {
+        if (existing && !item.mockup && !item.viewMockups?.length) {
           set({
             items: get().items.map((row) =>
               row.id === existing.id ? { ...row, quantity: row.quantity + item.quantity } : row,

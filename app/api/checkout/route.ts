@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server";
-import { getCatalogProduct, saveOrder, nextReferenceCode } from "@/lib/local-db";
+import { getCatalogProduct, persistOrderMedia, saveOrder, nextReferenceCode } from "@/lib/local-db";
+
+type CheckoutItem = {
+  slug: string;
+  name: string;
+  quantity: number;
+  color: string;
+  priceEgp: number;
+  image?: string;
+  viewMockups?: { id?: string; label?: string; url: string }[];
+  uploads?: { name?: string; url: string }[];
+};
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +20,7 @@ export async function POST(request: Request) {
       email?: string;
       address?: string;
       notes?: string;
-      items?: { slug: string; name: string; quantity: number; color: string; priceEgp: number; image?: string }[];
+      items?: CheckoutItem[];
     };
     const items = Array.isArray(body.items) ? body.items : [];
     if (!body.name?.trim() || !body.phone?.trim() || items.length === 0) {
@@ -23,10 +34,38 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const first = items[0];
     const catalogItem = first?.slug ? await getCatalogProduct(first.slug) : undefined;
+
+    const viewFiles: { id: string; label: string; url: string }[] = [];
+    const uploadFiles: { name: string; url: string }[] = [];
+    for (const [itemIndex, item] of items.entries()) {
+      for (const [index, view] of (item.viewMockups ?? []).entries()) {
+        if (!view.url) continue;
+        const url = await persistOrderMedia(view.url, `${item.slug || "item"}-${view.id || index}.jpg`);
+        viewFiles.push({
+          id: view.id || `${item.slug}-view-${index}`,
+          label: view.label || view.id || `View ${index + 1}`,
+          url,
+        });
+      }
+      for (const [index, file] of (item.uploads ?? []).entries()) {
+        if (!file.url) continue;
+        const url = await persistOrderMedia(file.url, file.name || `${item.slug}-upload-${index}`);
+        uploadFiles.push({ name: file.name || `Upload ${index + 1}`, url });
+      }
+      if (!(item.viewMockups ?? []).length && item.image) {
+        const url = await persistOrderMedia(item.image, `${item.slug || itemIndex}.jpg`);
+        viewFiles.push({ id: item.slug, label: item.name, url });
+      }
+    }
+
+    const previewPaths = viewFiles.map((item) => item.url).filter(Boolean);
+    const uploadPaths = uploadFiles.map((item) => item.url).filter(Boolean);
     const mockup =
+      previewPaths[0] ||
       first?.image ||
       catalogItem?.mockup ||
       "/products/white-tee-front.jpg";
+
     const order = await saveOrder({
       id: crypto.randomUUID(),
       reference_code,
@@ -41,8 +80,8 @@ export async function POST(request: Request) {
       status: "pending",
       quoted_price: total,
       mockup_path: mockup,
-      production_paths: [],
-      canvas_json: { items },
+      production_paths: [...previewPaths.slice(1), ...uploadPaths],
+      canvas_json: { items, views: viewFiles, uploads: uploadFiles },
       created_at: now,
       updated_at: now,
       cleanup_requested_at: null,

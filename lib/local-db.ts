@@ -600,6 +600,19 @@ export async function savePublicUpload(
   }
 }
 
+export async function persistOrderMedia(url: string, filename: string) {
+  if (!url) return "";
+  if (url.startsWith("/uploads/") || url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  if (!url.startsWith("data:")) return url;
+  const match = url.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return url;
+  const buffer = Buffer.from(match[2], "base64");
+  const ext = contentTypeFor(filename).includes("png") ? "png" : filename.split(".").pop() || "jpg";
+  return savePublicUpload("orders", `${Date.now()}-${filename.replace(/[^\w.-]+/g, "") || `file.${ext}`}`, buffer, match[1]);
+}
+
 export async function deleteStoredFile(fileUrl: string) {
   if (!fileUrl) return;
   if (useSupabase() && fileUrl.includes("/storage/v1/object/public/uploads/")) {

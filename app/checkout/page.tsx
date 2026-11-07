@@ -37,6 +37,8 @@ export default function CheckoutPage() {
           color: item.color,
           priceEgp: item.priceEgp,
           image: item.image,
+          viewMockups: item.viewMockups,
+          uploads: item.uploads,
         })),
       }),
     });
