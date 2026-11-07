@@ -11,7 +11,7 @@ export function SiteFooter() {
   }
 
   return (
-    <footer className="mt-auto bg-[#121214] text-white">
+    <footer className="mt-8 rounded-t-[32px] bg-[#121214] text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
         <div>
           <BooLogo onDark />

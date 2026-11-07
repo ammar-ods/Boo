@@ -46,6 +46,9 @@
   --color-boo-ink: #121214;
   --color-oxford: #0a2540;
   --color-ivory: #faf9f6;
+  --color-cream: #f6f3ea;
+  --color-press: #06182c;
+  --color-chip: #ede6d2;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -57,7 +60,7 @@
 
 :root {
   color-scheme: light;
-  --background: #faf9f6;
+  --background: #f6f3ea;
   --foreground: #121214;
   --card: #ffffff;
   --card-foreground: #121214;
@@ -81,7 +84,7 @@
   --chart-4: #121214;
   --chart-5: #8aa0b8;
   --radius: 1rem;
-  --sidebar: #faf9f6;
+  --sidebar: #f6f3ea;
   --sidebar-foreground: #121214;
   --sidebar-primary: #0a2540;
   --sidebar-primary-foreground: #ffffff;
@@ -118,7 +121,83 @@
 }
 
 .atelier-shadow {
-  box-shadow: 0 10px 30px -10px rgba(10, 37, 64, 0.06);
+  box-shadow: 0 18px 40px -24px rgba(10, 37, 64, 0.28);
+}
+
+.btn-press {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  padding: 13px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  background: #0a2540;
+  color: #fff;
+  box-shadow: 0 6px 0 0 #04101c, 0 12px 18px -10px rgba(10, 37, 64, 0.55);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-press:hover {
+  transform: translateY(2px);
+  box-shadow: 0 4px 0 0 #04101c, 0 8px 14px -10px rgba(10, 37, 64, 0.45);
+}
+
+.btn-press:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 0 #04101c;
+}
+
+.btn-press-sm {
+  padding: 9px 18px;
+  font-size: 0.85rem;
+}
+
+.btn-press-outline {
+  background: #fbf7ee;
+  color: #0a2540;
+  border: 2px solid #0a2540;
+  box-shadow: none;
+}
+
+.btn-press-outline:hover,
+.btn-press-outline:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.btn-press-light {
+  background: #fff;
+  color: #0a2540;
+  box-shadow: 0 6px 0 0 #c9d3de;
+}
+
+.btn-press-light:hover {
+  box-shadow: 0 4px 0 0 #c9d3de;
+}
+
+.btn-press-light:active {
+  box-shadow: 0 0 0 0 #c9d3de;
+}
+
+.icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #fff;
+  color: #0a2540;
+  box-shadow: 0 10px 24px -12px rgba(10, 37, 64, 0.45);
+}
+
+.surface-card {
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 16px 36px -22px rgba(10, 37, 64, 0.32);
 }
 
 @keyframes saved-pop {

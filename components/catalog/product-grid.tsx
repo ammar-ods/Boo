@@ -61,7 +61,15 @@ export function ProductGrid({
   }, [category, collection, inStock, products, query, sort]);
 
   const grid = (
-    <div className={layout === "list" ? "grid gap-3" : "grid gap-5 sm:grid-cols-2 xl:grid-cols-3"}>
+    <div
+      className={
+        layout === "list"
+          ? "grid gap-3"
+          : compact
+            ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            : "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+      }
+    >
       {items.map((product) => (
         <ProductCard key={product.slug} product={product} layout={layout} />
       ))}
@@ -84,8 +92,8 @@ export function ProductGrid({
                 type="button"
                 onClick={() => setCategory(item)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-left text-sm transition",
-                  category === item ? "bg-oxford text-white" : "text-oxford hover:bg-secondary",
+                  "rounded-full px-3 py-1.5 text-left text-sm font-medium transition",
+                  category === item ? "bg-oxford text-white shadow-[0_3px_0_0_#06182c]" : "text-oxford hover:bg-chip",
                 )}
               >
                 {item}
@@ -111,7 +119,7 @@ export function ProductGrid({
             <select
               value={sort}
               onChange={(event) => setSort(event.target.value as "featured" | "name")}
-              className="h-9 rounded-full border border-border bg-white px-3 text-sm"
+              className="h-9 rounded-full border-2 border-oxford/15 bg-white px-3 text-sm"
             >
               <option value="featured">Featured</option>
               <option value="name">Name</option>

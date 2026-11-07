@@ -23,8 +23,10 @@ export default async function CatalogPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-      <p className="text-xs tracking-[0.2em] text-oxford/60">ATELIER STOREFRONT</p>
-      <h1 className="mt-2 font-heading text-5xl text-oxford">{heading}</h1>
+      <p className="inline-flex rounded-full bg-chip px-3 py-1 text-xs font-medium text-oxford">
+        Atelier storefront
+      </p>
+      <h1 className="mt-4 font-heading text-5xl text-oxford">{heading}</h1>
       <p className="mb-8 mt-2 max-w-2xl text-muted-foreground">
         Filter by discipline, then open a piece in the customizer. Every inquiry is saved
         for the studio desk with a mockup and your original files.

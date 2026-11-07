@@ -45,9 +45,9 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40">
-      <div className="bg-oxford text-[11px] tracking-[0.18em] text-white/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1.5 sm:px-6">
-          <p>MICRO-BATCH ATELIER · FREE SHIPPING OVER $75</p>
+      <div className="bg-oxford text-[11px] tracking-[0.16em] text-white/85">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
+          <p>Free shipping over $75 · Micro-batch atelier</p>
           <select
             value={currency}
             onChange={(event) => {
@@ -65,14 +65,14 @@ export function SiteHeader() {
           </select>
         </div>
       </div>
-      <div className="border-b border-border bg-[#FAF9F6]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-3 sm:px-6">
+      <div className="border-b border-oxford/8 bg-cream">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <Link href="/" className="shrink-0">
             <BooLogo />
           </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-oxford lg:flex">
+          <nav className="hidden items-center gap-7 text-[15px] font-medium text-oxford lg:flex">
             {LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="transition-colors hover:text-oxford/60">
+              <Link key={link.href} href={link.href} className="transition-colors hover:text-oxford/55">
                 {link.label}
               </Link>
             ))}
@@ -81,16 +81,12 @@ export function SiteHeader() {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-xs text-muted-foreground"
+              className="grid size-10 place-items-center rounded-full text-oxford"
+              aria-label="Search"
             >
-              <Search className="size-4" />
-              <span className="hidden sm:inline">Search</span>
-              <kbd className="hidden rounded bg-secondary px-1.5 py-0.5 text-[10px] md:inline">⌘K</kbd>
+              <Search className="size-[18px]" />
             </button>
-            <Link
-              href="/catalog"
-              className="rounded-full bg-oxford px-4 py-2 text-sm font-medium text-white"
-            >
+            <Link href="/catalog" className="btn-press btn-press-sm hidden sm:inline-flex">
               Shop drops
             </Link>
             <button
@@ -104,7 +100,7 @@ export function SiteHeader() {
           </div>
         </div>
         {open ? (
-          <div className="flex flex-col gap-2 border-t border-border px-4 py-3 text-sm lg:hidden">
+          <div className="flex flex-col gap-2 border-t border-oxford/8 px-4 py-3 text-sm lg:hidden">
             {LINKS.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
                 {link.label}
@@ -116,7 +112,7 @@ export function SiteHeader() {
       {searchOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-start bg-oxford/40 px-4 pt-28">
           <form
-            className="mx-auto w-full max-w-xl rounded-2xl bg-white p-4 atelier-shadow"
+            className="mx-auto w-full max-w-xl rounded-2xl bg-white p-4 shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]"
             onSubmit={(event) => {
               event.preventDefault();
               setSearchOpen(false);
@@ -130,7 +126,7 @@ export function SiteHeader() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search kits, gear, gifts…"
-                className="h-10 w-full outline-none"
+                className="h-10 w-full bg-transparent outline-none"
               />
               <button type="button" className="text-sm text-muted-foreground" onClick={() => setSearchOpen(false)}>
                 Esc
