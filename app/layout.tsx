@@ -1,23 +1,19 @@
 import type { Metadata } from "next";
-import { Caveat, Fredoka, Geist_Mono, Nunito } from "next/font/google";
+import { Geist_Mono, Inter, Playfair_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const fredoka = Fredoka({
-  variable: "--font-fredoka",
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
-});
-
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
 const geistMono = Geist_Mono({
@@ -26,16 +22,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BOO Custom Creations",
+  title: "Boo — Oxford Atelier & Creator Studio",
   description:
-    "Bespoke apparel, drinkware, laser-cut wood, acrylic medals, and vinyl stickers from a Giza apartment studio.",
+    "Curated creator kits, studio gear, and bespoke gifting. Micro-batch hardware and letterpress keepsakes, selected with taste.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${fredoka.variable} ${caveat.variable} ${geistMono.variable} h-full`}
+      className={`${inter.variable} ${playfair.variable} ${geistMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col font-sans">
         <SiteHeader />

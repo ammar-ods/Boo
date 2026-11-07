@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-[#fff7f0]">
+    <div className="min-h-screen bg-ivory">
       <div className="chrome-bar h-2.5" />
       <div className="border-b border-border bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">

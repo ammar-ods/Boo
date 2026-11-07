@@ -35,7 +35,7 @@ export default async function AdminLoginPage({
         </div>
         <button
           type="submit"
-          className="h-9 w-full rounded-full bg-boo-teal font-heading text-white"
+          className="h-9 w-full rounded-full bg-oxford font-heading text-white"
         >
           Enter
         </button>

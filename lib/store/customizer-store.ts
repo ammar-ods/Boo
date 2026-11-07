@@ -45,7 +45,7 @@ type CustomizerState = {
 
 const defaultText: TextDraft = {
   content: "BOO",
-  fontFamily: "Fredoka",
+  fontFamily: "Playfair Display",
   fill: "#333333",
 };
 
