@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { useEdit } from "@/lib/edit-context";
@@ -85,6 +87,7 @@ export function SiteCanvas({ products }: { products: Product[] }) {
       {editing && selectedId ? (
         <SectionInspector
           section={site.sections.find((item) => item.id === selectedId) ?? null}
+          products={products}
         />
       ) : null}
     </div>
@@ -157,7 +160,12 @@ function SectionView({
             className="relative mx-auto mt-6 overflow-hidden rounded-[28px]"
             style={{ height: section.style.imageHeight ?? 280, maxWidth: 720 }}
           >
-            <Image src={image} alt="" fill className="object-cover" />
+            {image.startsWith("data:") || image.startsWith("http") ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={image} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Image src={image} alt="" fill className="object-cover" />
+            )}
           </div>
         ) : null}
         <div className={`mt-6 flex flex-wrap gap-3 ${section.style.align === "center" ? "justify-center" : ""}`}>
@@ -193,17 +201,69 @@ function SectionView({
   );
 }
 
-function SectionInspector({ section }: { section: SiteSection | null }) {
-  const { patchSection } = useEdit();
+function SectionInspector({
+  section,
+  products,
+}: {
+  section: SiteSection | null;
+  products: Product[];
+}) {
+  const { patchSection, setSelectedId, save, saving, dirty } = useEdit();
+  const { t, formatPrice, locale } = useI18n();
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedId(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setSelectedId]);
   if (!section) return null;
   const meta = SECTION_TYPES.find((item) => item.type === section.type);
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-[80] max-h-[48vh] overflow-y-auto border-t border-oxford/10 bg-white/97 p-4 shadow-[0_-12px_40px_-24px_rgba(10,37,64,0.45)] sm:inset-x-auto sm:bottom-4 sm:end-4 sm:max-h-[80vh] sm:w-[380px] sm:rounded-[28px] sm:border sm:p-5">
-      <p className="text-xs font-semibold tracking-[0.16em] text-oxford/50 uppercase">
-        {meta?.labelAr} · {meta?.label}
-      </p>
-      <h3 className="font-heading mt-1 text-2xl text-oxford">Edit section</h3>
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-oxford/50 p-3 backdrop-blur-[2px] sm:p-6"
+      onClick={() => setSelectedId(null)}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-background shadow-[0_24px_80px_-28px_rgba(10,37,64,0.55)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-oxford/10 px-5 py-4">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.16em] text-oxford/50 uppercase">
+              {meta?.labelAr} · {meta?.label}
+            </p>
+            <h3 className="font-heading text-2xl text-oxford">Edit section</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn-press btn-press-sm" onClick={() => void save()} disabled={saving || !dirty}>
+              {saving ? "…" : "Save"}
+            </button>
+            <button
+              type="button"
+              className="grid size-11 place-items-center rounded-2xl bg-cream"
+              onClick={() => setSelectedId(null)}
+              aria-label="Close"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+        </div>
+        <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="hidden overflow-y-auto bg-cream lg:block">
+            <p className="px-4 pt-4 text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">Live preview</p>
+            <div className="origin-top scale-[0.92] p-2">
+              <SectionView
+                section={section}
+                products={products}
+                t={t}
+                formatPrice={formatPrice}
+                locale={locale}
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto p-5">
       <div className="mt-4 grid grid-cols-2 gap-3">
         <NumberField
           label="Font size"
@@ -311,7 +371,10 @@ function SectionInspector({ section }: { section: SiteSection | null }) {
           onChange={(imageHeight) => patchSection(section.id, { style: { imageHeight } })}
         />
       </div>
-    </aside>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -415,7 +478,8 @@ function ImageUpload({
     <label className="mb-3 block text-sm">
       <span className="mb-1 block text-oxford/70">{label}</span>
       {value ? (
-        <span className="mb-1 block truncate text-xs text-oxford/50">{value}</span>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="" className="mb-2 h-24 w-full rounded-xl object-cover" />
       ) : null}
       <input
         type="file"
@@ -427,8 +491,12 @@ function ImageUpload({
           const data = new FormData();
           data.set("file", file);
           const response = await fetch("/api/site/upload", { method: "POST", body: data });
-          const payload = (await response.json()) as { url?: string };
-          if (payload.url) onChange(payload.url);
+          const payload = (await response.json()) as { url?: string; error?: string };
+          if (!response.ok || !payload.url) {
+            toast.error(payload.error || "Could not upload image");
+            return;
+          }
+          onChange(payload.url);
         }}
       />
     </label>

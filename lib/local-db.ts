@@ -45,8 +45,10 @@ async function writeJson(file: string, value: unknown) {
   try {
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, JSON.stringify(value, null, 2), "utf8");
+    return true;
   } catch {
     /* Vercel’s filesystem is read-only; keep serving in-memory data. */
+    return false;
   }
 }
 
@@ -532,38 +534,43 @@ export async function savePublicUpload(
   bytes: Buffer,
   contentType?: string,
 ) {
+  const type = contentType || contentTypeFor(filename);
   if (useSupabase()) {
-    requireServiceRole();
-    const supabase = createAdminClient();
-    await ensureUploadsBucket();
-    const filePath = `${folder}/${filename}`;
-    const type = contentType || contentTypeFor(filename);
-    let { error: uploadError } = await supabase.storage
-      .from(UPLOADS_BUCKET)
-      .upload(filePath, bytes, { contentType: type, upsert: true });
-
-    if (uploadError && /bucket/i.test(uploadError.message) && /not found/i.test(uploadError.message)) {
+    try {
+      const supabase = createAdminClient();
       await ensureUploadsBucket();
-      const retry = await supabase.storage
+      const filePath = `${folder}/${filename}`;
+      let { error: uploadError } = await supabase.storage
         .from(UPLOADS_BUCKET)
         .upload(filePath, bytes, { contentType: type, upsert: true });
-      uploadError = retry.error;
-    }
 
-    if (uploadError) {
-      throw new Error(`Supabase storage upload failed: ${uploadError.message}`);
-    }
+      if (uploadError && /bucket/i.test(uploadError.message) && /not found/i.test(uploadError.message)) {
+        await ensureUploadsBucket();
+        const retry = await supabase.storage
+          .from(UPLOADS_BUCKET)
+          .upload(filePath, bytes, { contentType: type, upsert: true });
+        uploadError = retry.error;
+      }
 
-    const { data: publicUrlData } = supabase.storage.from(UPLOADS_BUCKET).getPublicUrl(filePath);
-    return publicUrlData.publicUrl;
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage.from(UPLOADS_BUCKET).getPublicUrl(filePath);
+        return publicUrlData.publicUrl;
+      }
+    } catch {
+      /* fall through to disk / data URL */
+    }
   }
 
-  await ensureLocalDirs();
-  const relative = `/uploads/${folder}/${filename}`;
-  const full = path.join(process.cwd(), "public", relative);
-  await mkdir(path.dirname(full), { recursive: true });
-  await writeFile(full, bytes);
-  return relative;
+  try {
+    await ensureLocalDirs();
+    const relative = `/uploads/${folder}/${filename}`;
+    const full = path.join(process.cwd(), "public", relative);
+    await mkdir(path.dirname(full), { recursive: true });
+    await writeFile(full, bytes);
+    return relative;
+  } catch {
+    return `data:${type};base64,${bytes.toString("base64")}`;
+  }
 }
 
 export async function deleteStoredFile(fileUrl: string) {
@@ -593,9 +600,57 @@ const SITE_FILE = path.join(DATA_DIR, "site.json");
 const BUNDLES_FILE = path.join(DATA_DIR, "bundles.json");
 
 let memorySite: SiteDocument | null = null;
+const SITE_OBJECT = "cms/site.json";
+
+export type SitePersist = "supabase" | "local" | "memory";
+
+async function readRemoteSite(): Promise<unknown | null> {
+  if (!useSupabase()) return null;
+  try {
+    const supabase = createAdminClient();
+    const table = await supabase.from("site_content").select("document").eq("id", "default").maybeSingle();
+    if (!table.error && table.data?.document) return table.data.document;
+  } catch {
+    /* table may not exist yet */
+  }
+  try {
+    const supabase = createAdminClient();
+    const file = await supabase.storage.from(UPLOADS_BUCKET).download(SITE_OBJECT);
+    if (file.data) return JSON.parse(await file.data.text());
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function writeRemoteSite(document: SiteDocument) {
+  if (!useSupabase()) return false;
+  try {
+    const supabase = createAdminClient();
+    const table = await supabase.from("site_content").upsert({
+      id: "default",
+      document,
+      updated_at: new Date().toISOString(),
+    });
+    const payload = Buffer.from(JSON.stringify(document), "utf8");
+    await ensureUploadsBucket();
+    const uploaded = await supabase.storage
+      .from(UPLOADS_BUCKET)
+      .upload(SITE_OBJECT, payload, { contentType: "application/json", upsert: true });
+    return !table.error || !uploaded.error;
+  } catch {
+    return false;
+  }
+}
 
 export async function getSite() {
   noStore();
+  const remote = await readRemoteSite();
+  if (remote) {
+    const migrated = migrateSite(remote);
+    memorySite = migrated;
+    return migrated;
+  }
   if (memorySite) return memorySite;
   const stored = await readJson<unknown>(SITE_FILE, null);
   if (!stored) return DEFAULT_SITE;
@@ -604,11 +659,14 @@ export async function getSite() {
   return migrated;
 }
 
-export async function saveSite(site: SiteDocument) {
+export async function saveSite(site: SiteDocument): Promise<{ site: SiteDocument; persist: SitePersist }> {
   const migrated = migrateSite(site);
   memorySite = migrated;
-  await writeJson(SITE_FILE, migrated);
-  return migrated;
+  const wroteLocal = await writeJson(SITE_FILE, migrated);
+  if (await writeRemoteSite(migrated)) {
+    return { site: migrated, persist: "supabase" };
+  }
+  return { site: migrated, persist: wroteLocal ? "local" : "memory" };
 }
 
 export async function getBundles() {

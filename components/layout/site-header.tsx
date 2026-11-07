@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
 import { StudioChromePanel, StudioNavButtons } from "@/components/cms/studio-bar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n, type Currency } from "@/lib/i18n";
 import { cartCount, useCart } from "@/lib/cart";
@@ -36,9 +37,9 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40">
       {site.chrome.showAnnouncement ? (
         <div className="bg-oxford text-[11px] tracking-[0.12em] text-white/85">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
-            <p>{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
                 {locale === "ar" ? "EN" : "عربي"}
               </button>
@@ -55,10 +56,12 @@ export function SiteHeader() {
                 ))}
               </select>
             </div>
+            <p className="min-w-0 truncate">{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
           </div>
         </div>
       ) : (
-        <div className="flex justify-end bg-oxford px-4 py-2 text-[11px] text-white/85">
+        <div className="flex items-center gap-3 bg-oxford px-4 py-2 text-[11px] text-white/85">
+          <ThemeToggle />
           <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
             {locale === "ar" ? "EN" : "عربي"}
           </button>

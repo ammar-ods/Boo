@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   migrateSite,
@@ -57,6 +57,7 @@ export function EditProvider({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [site, setSite] = useState(() => cloneSite(initial));
   const [baseline, setBaseline] = useState(() => cloneSite(initial));
   const [editing, setEditing] = useState(false);
@@ -75,10 +76,7 @@ export function EditProvider({
   const startEdit = useCallback(() => {
     if (!isAdmin) return;
     setEditing(true);
-    if (pathname === "/") {
-      setSelectedId((current) => current ?? site.sections[0]?.id ?? null);
-    }
-  }, [isAdmin, pathname, site.sections]);
+  }, [isAdmin]);
 
   const stopEdit = useCallback(() => {
     setEditing(false);
@@ -103,11 +101,24 @@ export function EditProvider({
       toast.error("Could not save changes");
       return;
     }
-    const saved = migrateSite(await response.json());
+    const payload = (await response.json()) as {
+      site?: unknown;
+      persist?: string;
+    };
+    const saved = migrateSite(payload.site ?? payload);
     setSite(cloneSite(saved));
     setBaseline(cloneSite(saved));
-    toast.success("Saved");
-  }, [site]);
+    router.refresh();
+    if (payload.persist === "memory") {
+      toast.error("Saved in this session only. Add Supabase so homepage edits stay on the live site.");
+      return;
+    }
+    if (payload.persist === "local") {
+      toast.success("Saved on this computer. Production needs the Supabase site_content table.");
+      return;
+    }
+    toast.success("Saved to the live site");
+  }, [router, site]);
 
   const setChrome = useCallback((chrome: Partial<SiteChrome>) => {
     setSite((current) => ({ ...current, chrome: { ...current.chrome, ...chrome } }));
