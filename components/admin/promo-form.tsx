@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { savePromo } from "@/actions/admin";
 import { PromoDialog } from "@/components/promo-popup";
+import { flashStatus } from "@/components/status-flash";
 import { useI18n } from "@/lib/i18n";
 
 function Submit() {
@@ -44,7 +45,7 @@ export function PromoForm({
         try {
           await savePromo(formData);
           router.refresh();
-          toast.success("Promo saved");
+          flashStatus("Saved");
         } catch (error) {
           toast.error(error instanceof Error ? error.message : "Could not save");
         }

@@ -133,6 +133,9 @@
   body {
     @apply bg-background text-foreground antialiased;
     overflow-x: clip;
+    transition:
+      opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
   h1,
   h2,
@@ -143,6 +146,21 @@
   .font-script {
     font-family: var(--font-playfair), Georgia, serif;
     font-style: italic;
+  }
+}
+
+html.locale-fading body {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+  html.locale-fading body {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -467,7 +485,7 @@
     opacity: 1;
     transform: scale(1);
   }
-  72% {
+  70% {
     opacity: 1;
   }
   100% {
@@ -477,7 +495,7 @@
 }
 
 .saved-toast {
-  animation: saved-pop 1.35s ease forwards;
+  animation: saved-pop 1s ease forwards;
 }
 
 @keyframes boo-fade-up {

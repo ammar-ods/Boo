@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 export type Locale = "ar" | "en";
 export type Currency = "EGP" | "USD" | "EUR" | "GBP";
@@ -152,6 +152,7 @@ const I18nContext = createContext<Ctx | null>(null);
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("ar");
   const [currency, setCurrencyState] = useState<Currency>("EGP");
+  const swapping = useRef(false);
 
   useEffect(() => {
     const storedLocale = window.localStorage.getItem("boo-locale") as Locale | null;
@@ -165,12 +166,29 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+    if (!document.documentElement.classList.contains("locale-fading")) return;
+    const show = window.setTimeout(() => {
+      document.documentElement.classList.remove("locale-fading");
+      swapping.current = false;
+    }, 40);
+    return () => window.clearTimeout(show);
   }, [locale]);
 
   const value = useMemo<Ctx>(() => {
     function setLocale(next: Locale) {
-      setLocaleState(next);
-      window.localStorage.setItem("boo-locale", next);
+      if (next === locale || swapping.current) return;
+      const apply = () => {
+        setLocaleState(next);
+        window.localStorage.setItem("boo-locale", next);
+      };
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduceMotion) {
+        apply();
+        return;
+      }
+      swapping.current = true;
+      document.documentElement.classList.add("locale-fading");
+      window.setTimeout(apply, 220);
     }
     function setCurrency(next: Currency) {
       setCurrencyState(next);

@@ -199,7 +199,7 @@ export async function removeProduct(formData: FormData) {
     await deleteProduct(slug);
     revalidateProductPages(slug);
   }
-  redirect("/admin/products");
+  redirect("/admin/products?deleted=1");
 }
 
 function revalidateProductPages(slug: string) {
