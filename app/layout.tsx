@@ -32,6 +32,12 @@ export const metadata: Metadata = {
   description: "تيشيرت، مج حراري، وكوستر خشب. كل قطعة بـ ١٠٠ جنيه.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   let isAdmin = false;
   try {

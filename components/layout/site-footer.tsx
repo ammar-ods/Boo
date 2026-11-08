@@ -17,8 +17,8 @@ export function SiteFooter() {
   const links = site.chrome.navLinks.filter((link) => link.visible);
 
   return (
-    <footer className="mt-8 rounded-t-[32px] bg-[#121214] text-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
+    <footer className="mt-8 rounded-t-[28px] bg-[#121214] text-white sm:rounded-t-[32px]">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 sm:py-14 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
         <div>
           <BooLogo onDark />
           <p className="font-script mt-4 text-2xl text-white/80">{pick(site.chrome.footerTagline, locale)}</p>
@@ -27,7 +27,7 @@ export function SiteFooter() {
         <div className="text-sm text-white/70">
           <p className="mb-3 font-medium text-white">{t("shop")}</p>
           {links.map((link) => (
-            <Link key={link.id} href={link.href} className="block py-1 hover:text-white">
+            <Link key={link.id} href={link.href} className="flex min-h-11 items-center hover:text-white">
               {pick(link.label, locale)}
             </Link>
           ))}

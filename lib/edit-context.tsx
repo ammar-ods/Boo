@@ -36,7 +36,7 @@ type EditContextValue = {
       style?: Partial<SectionStyle>;
     },
   ) => void;
-  addSection: (type: SectionType, afterId?: string) => void;
+  addSection: (type: SectionType, beforeId?: string) => void;
   removeSection: (id: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
 };
@@ -152,13 +152,13 @@ export function EditProvider({
     [],
   );
 
-  const addSection = useCallback((type: SectionType, afterId?: string) => {
+  const addSection = useCallback((type: SectionType, beforeId?: string) => {
     const section = newSection(type);
     setSite((current) => {
-      if (!afterId) return { ...current, sections: [...current.sections, section] };
-      const index = current.sections.findIndex((item) => item.id === afterId);
+      if (!beforeId) return { ...current, sections: [...current.sections, section] };
+      const index = current.sections.findIndex((item) => item.id === beforeId);
       const sections = [...current.sections];
-      sections.splice(index + 1, 0, section);
+      sections.splice(index < 0 ? sections.length : index, 0, section);
       return { ...current, sections };
     });
     setSelectedId(section.id);

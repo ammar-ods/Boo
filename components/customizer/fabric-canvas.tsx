@@ -466,7 +466,7 @@ export function FabricCanvas({
   return (
     <div
       ref={wrapRef}
-      className="relative isolate aspect-square w-full overflow-hidden rounded-[1.6rem] bg-[#f6f3ee] ring-1 ring-foreground/10"
+      className="relative isolate mx-auto aspect-square w-full max-w-[min(100%,20rem)] overflow-hidden rounded-[1.4rem] bg-[#f6f3ee] ring-1 ring-foreground/10 sm:max-w-none sm:rounded-[1.6rem]"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

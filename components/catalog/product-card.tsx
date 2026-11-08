@@ -52,7 +52,7 @@ export function ProductCard({
         </div>
       </div>
       <div className="space-y-1 px-1 pt-3">
-        <h3 className="font-heading text-lg leading-snug text-oxford">{name}</h3>
+        <h3 className="font-heading text-base leading-snug text-oxford sm:text-lg">{name}</h3>
         <p className="text-sm text-muted-foreground">{tagline}</p>
         <p className="text-sm font-semibold text-oxford">{formatPrice(product.priceEgp || 100)}</p>
       </div>

@@ -151,11 +151,17 @@ export function ProductWorkspace({ product }: { product: Product }) {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="space-y-4">
-        <Link href="/catalog" className="text-sm text-oxford">
-          ← {t("catalogTitle")}
-        </Link>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
+      <Link href="/catalog" className="inline-flex min-h-11 items-center text-sm text-oxford lg:col-span-2">
+        ← {t("catalogTitle")}
+      </Link>
+      <div className="order-1 lg:col-start-2 lg:row-start-2">
+        <p className="text-xs font-medium text-oxford/60">{product.category}</p>
+        <h1 className="mt-1 font-heading text-3xl leading-tight text-oxford sm:text-4xl">{localizedName(product, locale)}</h1>
+        <p className="mt-2 text-xl font-semibold text-oxford sm:text-2xl">{formatPrice(product.priceEgp || 100)}</p>
+        <p className="mt-2 text-sm text-muted-foreground sm:text-base">{localizedDescription(product, locale)}</p>
+      </div>
+      <div className="order-2 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
         <div className="flex flex-wrap items-center gap-2">
           {multiView
             ? views.map((view) => (
@@ -176,7 +182,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           {product.customizable ? (
             <button
               type="button"
-              className="ms-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford ring-1 ring-oxford/15"
+              className="ms-auto inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford ring-1 ring-oxford/15"
               onClick={() => void openPreview()}
               disabled={previewBusy}
             >
@@ -186,7 +192,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           ) : null}
         </div>
         <div
-          className={`grid items-start justify-items-center gap-6 py-4 ${multiView ? "sm:grid-cols-2" : ""}`}
+          className={`grid items-start justify-items-center gap-4 py-2 sm:gap-6 sm:py-4 ${multiView ? "sm:grid-cols-2" : ""}`}
           onClick={(event) => {
             if (!product.customizable) return;
             if (event.target === event.currentTarget) void openPreview();
@@ -197,10 +203,10 @@ export function ProductWorkspace({ product }: { product: Product }) {
             return (
               <div
                 key={view.id}
-                className={`w-full max-w-md origin-center space-y-2 transition duration-300 ${
+                className={`w-full max-w-[min(100%,22rem)] origin-center space-y-2 transition duration-300 sm:max-w-md ${
                   active
-                    ? "z-10 scale-[1.05] opacity-100"
-                    : "scale-[0.86] opacity-40 grayscale brightness-90"
+                    ? "z-10 scale-100 opacity-100 sm:scale-[1.03]"
+                    : "hidden scale-[0.86] opacity-40 grayscale brightness-90 sm:block"
                 }`}
                 onPointerDown={() => {
                   if (multiView) setActiveViewId(view.id);
@@ -237,13 +243,8 @@ export function ProductWorkspace({ product }: { product: Product }) {
         </div>
       </div>
 
-      <aside className="surface-card p-6">
-        <p className="text-xs font-medium text-oxford/60">{product.category}</p>
-        <h1 className="mt-1 font-heading text-4xl text-oxford">{localizedName(product, locale)}</h1>
-        <p className="mt-3 text-2xl font-semibold text-oxford">{formatPrice(product.priceEgp || 100)}</p>
-        <p className="mt-3 text-muted-foreground">{localizedDescription(product, locale)}</p>
-
-        <div className="mt-6">
+      <aside className="order-3 surface-card p-4 sm:p-6 lg:col-start-2 lg:row-start-3">
+        <div className="mt-0">
           <p className="mb-2 text-sm font-medium">{t("color")}</p>
           <div className="flex flex-wrap gap-2">
             {colors.map((color) => (
@@ -290,30 +291,32 @@ export function ProductWorkspace({ product }: { product: Product }) {
           </ul>
         </div>
 
-        <button
-          type="button"
-          disabled={cartBusy}
-          onClick={() => {
-            void addToCart().then((ok) => {
-              if (ok) router.push("/checkout");
-            });
-          }}
-          className="btn-press mt-8 w-full"
-        >
-          {cartBusy ? "…" : t("checkoutNow")}
-        </button>
-        <button
-          type="button"
-          disabled={cartBusy}
-          onClick={() => {
-            void addToCart().then((ok) => {
-              if (ok) router.push("/catalog");
-            });
-          }}
-          className="btn-press-outline mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold"
-        >
-          {cartBusy ? "…" : t("addAndShop")}
-        </button>
+        <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-oxford/10 bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+          <button
+            type="button"
+            disabled={cartBusy}
+            onClick={() => {
+              void addToCart().then((ok) => {
+                if (ok) router.push("/checkout");
+              });
+            }}
+            className="btn-press mt-0 w-full sm:mt-8"
+          >
+            {cartBusy ? "…" : t("checkoutNow")}
+          </button>
+          <button
+            type="button"
+            disabled={cartBusy}
+            onClick={() => {
+              void addToCart().then((ok) => {
+                if (ok) router.push("/catalog");
+              });
+            }}
+            className="btn-press-outline mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold"
+          >
+            {cartBusy ? "…" : t("addAndShop")}
+          </button>
+        </div>
       </aside>
 
       {preview ? (

@@ -17,6 +17,8 @@ export type SectionStyle = {
   showPrimaryCta?: boolean;
   showSecondaryCta?: boolean;
   imageRounded?: boolean;
+  blockWidth?: number;
+  rounded?: boolean;
 };
 
 export type GalleryItem = {
@@ -188,7 +190,15 @@ export function newSection(type: SectionType): SiteSection {
       id,
       type,
       visible: true,
-      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 20, paddingY: 48, align: "start" },
+      style: {
+        background: "#f6f3ea",
+        color: "#0a2540",
+        fontSize: 20,
+        paddingY: 48,
+        align: "start",
+        blockWidth: 100,
+        rounded: false,
+      },
       content: {
         title: loc("قسم نص", "Text section"),
         body: loc("اكتب أي محتوى هنا.", "Write any copy here."),

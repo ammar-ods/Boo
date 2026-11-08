@@ -69,7 +69,7 @@ export function SiteHeader() {
       )}
       {site.chrome.showHeader ? (
         <div className="relative border-b border-oxford/8 bg-cream">
-          <div className={`mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6 ${isAdmin ? "pe-36 sm:pe-44" : ""}`}>
+          <div className={`mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-5 ${isAdmin ? "md:pe-44" : ""}`}>
             <Link href="/" className="shrink-0">
               <BooLogo />
             </Link>
@@ -105,9 +105,14 @@ export function SiteHeader() {
             </div>
           </div>
           {open && site.chrome.showNav ? (
-            <div className="flex flex-col gap-2 border-t border-oxford/8 px-4 py-3 text-sm md:hidden">
+            <div className="flex flex-col border-t border-oxford/8 px-4 py-2 md:hidden">
               {links.map((link) => (
-                <Link key={link.id} href={link.href} onClick={() => setOpen(false)}>
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className="flex min-h-12 items-center text-base font-medium text-oxford"
+                >
                   {pick(link.label, locale)}
                 </Link>
               ))}

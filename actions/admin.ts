@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   adminCookieName,
@@ -60,5 +61,6 @@ export async function updateInquiryStatus(formData: FormData) {
   }
 
   await saveOrder(next);
-  redirect(`/admin/inquiries/${id}?saved=1`);
+  revalidatePath("/admin/inquiries");
+  revalidatePath(`/admin/inquiries/${id}`);
 }

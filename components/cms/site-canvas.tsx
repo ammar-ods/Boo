@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { DisciplineCarousel } from "@/components/home/discipline-carousel";
@@ -21,28 +22,56 @@ import {
 } from "@/lib/site";
 
 export function SiteCanvas({ products }: { products: Product[] }) {
-  const { editing, site, selectedId, setSelectedId, patchSection, moveSection, removeSection } = useEdit();
+  const { editing, site, selectedId, setSelectedId, patchSection, moveSection, removeSection, addSection } = useEdit();
   const { locale } = useI18n();
+  const [insertFor, setInsertFor] = useState<string | null>(null);
   const visible = editing ? site.sections : site.sections.filter((section) => section.visible);
+
+  useEffect(() => {
+    if (!insertFor) return;
+    const close = () => setInsertFor(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [insertFor]);
+
+  function animateMove(id: string, dir: -1 | 1) {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-section-id]"));
+    const before = new Map(nodes.map((node) => [node.dataset.sectionId ?? "", node.getBoundingClientRect()]));
+    flushSync(() => moveSection(id, dir));
+    requestAnimationFrame(() => {
+      document.querySelectorAll<HTMLElement>("[data-section-id]").forEach((node) => {
+        const prev = before.get(node.dataset.sectionId ?? "");
+        if (!prev) return;
+        const next = node.getBoundingClientRect();
+        const dy = prev.top - next.top;
+        if (Math.abs(dy) < 1) return;
+        node.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], {
+          duration: 480,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        });
+      });
+    });
+  }
 
   return (
     <div>
       {visible.map((section) => (
         <div
           key={section.id}
+          data-section-id={section.id}
           className={`relative ${editing && selectedId === section.id ? "ring-4 ring-oxford/30" : ""}`}
           onClick={() => {
             if (editing) setSelectedId(section.id);
           }}
         >
           {editing ? (
-            <div className="absolute start-3 top-3 z-30 flex flex-wrap items-center gap-2">
+            <div className="absolute start-2 top-2 z-30 flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1.5 sm:start-3 sm:top-3 sm:gap-2">
               <button
                 type="button"
-                className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-bold text-oxford shadow-lg ring-1 ring-oxford/10"
+                className="grid size-9 place-items-center rounded-2xl bg-white text-lg font-bold text-oxford shadow-lg ring-1 ring-oxford/10 sm:size-11"
                 onClick={(event) => {
                   event.stopPropagation();
-                  moveSection(section.id, -1);
+                  animateMove(section.id, -1);
                 }}
                 aria-label="Move up"
               >
@@ -50,10 +79,10 @@ export function SiteCanvas({ products }: { products: Product[] }) {
               </button>
               <button
                 type="button"
-                className="grid size-11 place-items-center rounded-2xl bg-white text-lg font-bold text-oxford shadow-lg ring-1 ring-oxford/10"
+                className="grid size-9 place-items-center rounded-2xl bg-white text-lg font-bold text-oxford shadow-lg ring-1 ring-oxford/10 sm:size-11"
                 onClick={(event) => {
                   event.stopPropagation();
-                  moveSection(section.id, 1);
+                  animateMove(section.id, 1);
                 }}
                 aria-label="Move down"
               >
@@ -61,7 +90,7 @@ export function SiteCanvas({ products }: { products: Product[] }) {
               </button>
               <button
                 type="button"
-                className="grid size-11 place-items-center rounded-2xl bg-white shadow-lg ring-1 ring-oxford/10"
+                className="grid size-9 place-items-center rounded-2xl bg-white shadow-lg ring-1 ring-oxford/10 sm:size-11"
                 onClick={(event) => {
                   event.stopPropagation();
                   patchSection(section.id, { visible: !section.visible });
@@ -72,7 +101,7 @@ export function SiteCanvas({ products }: { products: Product[] }) {
               </button>
               <button
                 type="button"
-                className="grid size-11 place-items-center rounded-2xl bg-red-50 text-red-700 shadow-lg ring-1 ring-red-200"
+                className="grid size-9 place-items-center rounded-2xl bg-red-50 text-red-700 shadow-lg ring-1 ring-red-200 sm:size-11"
                 onClick={(event) => {
                   event.stopPropagation();
                   removeSection(section.id);
@@ -81,6 +110,42 @@ export function SiteCanvas({ products }: { products: Product[] }) {
               >
                 <Trash2 className="size-5" />
               </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="grid size-9 place-items-center rounded-2xl bg-oxford text-white shadow-lg sm:size-11"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setInsertFor((current) => (current === section.id ? null : section.id));
+                  }}
+                  aria-label="Add section above"
+                >
+                  <Plus className="size-5" />
+                </button>
+                {insertFor === section.id ? (
+                  <div
+                    className="absolute start-0 top-12 z-40 w-52 overflow-hidden rounded-2xl bg-white py-1 shadow-xl ring-1 ring-oxford/10"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <p className="px-3 py-2 text-[11px] font-semibold tracking-[0.12em] text-oxford/50 uppercase">
+                      Insert above
+                    </p>
+                    {SECTION_TYPES.map((item) => (
+                      <button
+                        key={item.type}
+                        type="button"
+                        className="block w-full px-3 py-2 text-start text-sm text-oxford hover:bg-cream"
+                        onClick={() => {
+                          addSection(item.type, section.id);
+                          setInsertFor(null);
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           ) : null}
           <SectionView
@@ -130,8 +195,56 @@ function SectionMedia({
         className={`mx-auto block h-auto max-w-full object-contain object-top ${
           rounded ? "rounded-[28px]" : ""
         }`}
-        style={{ maxHeight: Math.max(80, height) }}
+        style={{ maxHeight: `min(${Math.max(80, height)}px, 42vh)` }}
       />
+    </div>
+  );
+}
+
+function SectionShell({
+  section,
+  index,
+  children,
+  className = "",
+  cover,
+}: {
+  section: SiteSection;
+  index: number;
+  children: React.ReactNode;
+  className?: string;
+  cover?: { src: string; height: number };
+}) {
+  const surface = sectionSurface(section.style);
+  const pad = section.style.paddingY ?? 48;
+  const width = Math.min(100, Math.max(40, section.style.blockWidth ?? 100));
+  const rounded = Boolean(section.style.rounded);
+  const inset = width < 100 || rounded;
+  return (
+    <div className={inset ? "px-3 py-3 sm:px-6" : ""}>
+      <section
+        className={`reveal relative overflow-hidden ${rounded ? "rounded-[22px] sm:rounded-[28px]" : ""} ${className}`}
+        style={{
+          background: cover ? undefined : surface.background,
+          color: surface.color,
+          paddingTop: cover ? undefined : `clamp(1.15rem, 4.5vw, ${pad}px)`,
+          paddingBottom: cover ? undefined : `clamp(1.15rem, 4.5vw, ${pad}px)`,
+          width: inset ? `${width}%` : undefined,
+          marginInline: inset ? "auto" : undefined,
+          minHeight: cover ? `min(${cover.height}px, 68vh)` : undefined,
+          animationDelay: `${index * 80}ms`,
+        }}
+      >
+        {cover ? (
+          <>
+            <div className="absolute inset-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cover.src} alt="" className="h-full w-full object-cover object-top" />
+            </div>
+            <div className="absolute inset-0 bg-oxford/35" />
+          </>
+        ) : null}
+        {children}
+      </section>
     </div>
   );
 }
@@ -147,14 +260,6 @@ function SectionView({
   locale: string;
   index?: number;
 }) {
-  const surface = sectionSurface(section.style);
-  const style = {
-    background: surface.background,
-    color: surface.color,
-    paddingTop: section.style.paddingY ?? 48,
-    paddingBottom: section.style.paddingY ?? 48,
-    textAlign: (section.style.align ?? "center") as "center" | "start",
-  };
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
   const placement: ImagePlacement =
@@ -173,8 +278,12 @@ function SectionView({
     const Tag = as;
     const value = pick(section.content[key] as Localized | undefined, locale);
     if (!value) return null;
+    const min = Math.min(22, Math.round(fontSize * 0.42));
     return (
-      <Tag className={className} style={as === "h1" || as === "h2" ? { fontSize } : undefined}>
+      <Tag
+        className={className}
+        style={as === "h1" || as === "h2" ? { fontSize: `clamp(${min}px, 6.2vw, ${fontSize}px)` } : undefined}
+      >
         {value}
       </Tag>
     );
@@ -184,18 +293,18 @@ function SectionView({
     <>
       {text("eyebrow", "text-xs font-medium tracking-[0.18em] opacity-70")}
       {text("title", "mt-2 font-heading leading-tight", "h1")}
-      {text("body", "mx-auto mt-4 max-w-xl opacity-80")}
+      {text("body", "mx-auto mt-3 max-w-xl text-pretty text-[15px] leading-relaxed opacity-80 sm:mt-4 sm:text-base")}
     </>
   );
   const actions = showPrimary || showSecondary ? (
-    <div className={`mt-6 flex flex-wrap gap-3 ${section.style.align === "center" ? "justify-center" : ""}`}>
+    <div className={`mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap ${section.style.align === "center" ? "sm:justify-center" : ""}`}>
       {showPrimary ? (
-        <Link href={section.content.ctaHref || "/catalog"} className="btn-press">
+        <Link href={section.content.ctaHref || "/catalog"} className="btn-press w-full sm:w-auto">
           {pick(section.content.ctaLabel, locale)}
         </Link>
       ) : null}
       {showSecondary ? (
-        <Link href={section.content.secondaryCtaHref || "/bundles"} className="btn-press btn-press-outline">
+        <Link href={section.content.secondaryCtaHref || "/bundles"} className="btn-press btn-press-outline w-full sm:w-auto">
           {pick(section.content.secondaryCtaLabel, locale)}
         </Link>
       ) : null}
@@ -204,56 +313,48 @@ function SectionView({
 
   if (section.type === "marquee") {
     return (
-      <section className="reveal" style={{ ...style, animationDelay: `${index * 80}ms` }}>
+      <SectionShell section={section} index={index}>
         {text("title", "mb-4 px-4 font-heading sm:px-6", "h2")}
         <AutoScroller
           items={section.content.gallery ?? []}
           height={height}
           rounded={section.style.imageRounded !== false}
         />
-      </section>
+      </SectionShell>
     );
   }
 
   if (section.type === "collections") {
     return (
-      <div className="reveal" style={{ ...style, animationDelay: `${index * 80}ms` }}>
+      <SectionShell section={section} index={index}>
         {text("title", "px-4 font-heading sm:px-6", "h2")}
         <DisciplineCarousel />
-      </div>
+      </SectionShell>
     );
   }
 
   if (section.type === "products") {
     return (
-      <section id="creations" className="reveal mx-auto max-w-6xl px-4 sm:px-6" style={{ ...style, animationDelay: `${index * 80}ms` }}>
-        {text("title", "font-heading", "h2")}
-        {text("body", "mt-2 text-muted-foreground")}
-        <div className="mt-8">
-          <ProductGrid products={products} compact />
+      <SectionShell section={section} index={index} className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div id="creations">
+          {text("title", "font-heading", "h2")}
+          {text("body", "mt-2 text-muted-foreground")}
+          <div className="mt-6 sm:mt-8">
+            <ProductGrid products={products} compact />
+          </div>
         </div>
-      </section>
+      </SectionShell>
     );
   }
 
   if (placement === "cover" && showImage) {
     return (
-      <section
-        className={`reveal relative overflow-hidden ${rounded ? "mx-4 rounded-[28px] sm:mx-6" : ""}`}
-        style={{ color: surface.color, minHeight: height, animationDelay: `${index * 80}ms` }}
-      >
-        <div className="absolute inset-0">
-          {image.startsWith("data:") || image.startsWith("http") || image.startsWith("/") ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt="" className="h-full w-full object-cover object-top" />
-          ) : null}
-        </div>
-        <div className="absolute inset-0 bg-oxford/35" />
-        <div className={`relative z-10 mx-auto max-w-6xl px-4 py-16 sm:px-6 ${section.style.align === "center" ? "text-center" : ""}`}>
+      <SectionShell section={section} index={index} cover={{ src: image, height }}>
+        <div className={`relative z-10 mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16 ${section.style.align === "center" ? "text-center" : ""}`}>
           {copy}
           {actions}
         </div>
-      </section>
+      </SectionShell>
     );
   }
 
@@ -262,8 +363,8 @@ function SectionView({
       <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} />
     );
     return (
-      <section className="reveal px-4 sm:px-6" style={{ ...style, animationDelay: `${index * 80}ms` }}>
-        <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2">
+      <SectionShell section={section} index={index} className="px-4 sm:px-6">
+        <div className="mx-auto grid max-w-6xl items-center gap-5 lg:grid-cols-2 lg:gap-8">
           {placement === "start" ? imageCol : null}
           <div className={section.style.align === "center" ? "text-center" : ""}>
             {copy}
@@ -271,28 +372,25 @@ function SectionView({
           </div>
           {placement === "end" ? imageCol : null}
         </div>
-      </section>
+      </SectionShell>
     );
   }
 
   return (
-    <section
-      className={`reveal ${placement === "bleed" && showImage ? "" : "px-4 sm:px-6"}`}
-      style={{ ...style, animationDelay: `${index * 80}ms` }}
-    >
+    <SectionShell section={section} index={index} className={placement === "bleed" && showImage ? "" : "px-4 sm:px-6"}>
       {placement === "bleed" && showImage ? (
         <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} />
       ) : null}
       <div className={`mx-auto max-w-6xl ${placement === "bleed" && showImage ? "px-4 sm:px-6" : ""} ${section.style.align === "center" ? "text-center" : ""}`}>
         {copy}
         {placement === "below" && showImage ? (
-          <div className={`mt-6 ${section.style.align === "center" ? "flex justify-center" : ""}`}>
+          <div className={`mt-5 ${section.style.align === "center" ? "flex justify-center" : ""} sm:mt-6`}>
             <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} />
           </div>
         ) : null}
         {actions}
       </div>
-    </section>
+    </SectionShell>
   );
 }
 
@@ -321,7 +419,7 @@ function SectionInspector({
       onClick={() => setSelectedId(null)}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-background shadow-[0_24px_80px_-28px_rgba(10,37,64,0.55)]"
+        className="flex max-h-[min(92vh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-[22px] bg-background shadow-[0_24px_80px_-28px_rgba(10,37,64,0.55)] sm:rounded-[28px]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 border-b border-oxford/10 px-5 py-4">
@@ -378,7 +476,23 @@ function SectionInspector({
           value={section.style.color ?? "#0a2540"}
           onChange={(color) => patchSection(section.id, { style: { color } })}
         />
+        <NumberField
+          label="Section width %"
+          value={section.style.blockWidth ?? 100}
+          onChange={(blockWidth) =>
+            patchSection(section.id, { style: { blockWidth: Math.min(100, Math.max(40, blockWidth)) } })
+          }
+        />
       </div>
+      <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-cream px-3 text-sm">
+        <span>Rounded corners</span>
+        <input
+          type="checkbox"
+          className="size-5"
+          checked={Boolean(section.style.rounded)}
+          onChange={(event) => patchSection(section.id, { style: { rounded: event.target.checked } })}
+        />
+      </label>
       <label className="mt-3 flex items-center gap-2 text-sm">
         <span className="w-24 text-oxford/70">Align</span>
         <select
@@ -486,7 +600,7 @@ function SectionInspector({
           onChange={(imageHeight) => patchSection(section.id, { style: { imageHeight } })}
         />
         <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-cream px-3 text-sm">
-          <span>Rounded corners</span>
+          <span>Rounded images</span>
           <input
             type="checkbox"
             className="size-5"
