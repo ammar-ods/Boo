@@ -54,6 +54,9 @@ async function writeJson(file: string, value: unknown) {
 
 type SafeZonePayload = Product["safe_zone_bounds"] & {
   tagline?: string;
+  taglineAr?: string;
+  nameAr?: string;
+  descriptionAr?: string;
   materials?: string[];
   colors?: string[];
   defaultMaterial?: string;
@@ -65,6 +68,8 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   mugPhoto?: string;
   wrapTemplate?: string;
   views?: ProductView[];
+  priceEgp?: number;
+  customizable?: boolean;
 };
 
 function parseViews(
@@ -146,12 +151,14 @@ function rowToProduct(row: Record<string, unknown>): Product {
   return {
     slug,
     name: String(row.title ?? row.name ?? seed?.name ?? ""),
-    nameAr: String(row.name_ar ?? row.nameAr ?? seed?.nameAr ?? row.title ?? ""),
+    nameAr: String(bounds.nameAr ?? row.name_ar ?? row.nameAr ?? seed?.nameAr ?? row.title ?? ""),
     category: (row.category as Product["category"]) || seed?.category || "Apparel",
     tagline: String(row.tagline ?? bounds.tagline ?? seed?.tagline ?? ""),
-    taglineAr: String(row.tagline_ar ?? row.taglineAr ?? seed?.taglineAr ?? ""),
+    taglineAr: String(bounds.taglineAr ?? row.tagline_ar ?? row.taglineAr ?? seed?.taglineAr ?? ""),
     description: String(row.description ?? seed?.description ?? ""),
-    descriptionAr: String(row.description_ar ?? row.descriptionAr ?? seed?.descriptionAr ?? ""),
+    descriptionAr: String(
+      bounds.descriptionAr ?? row.description_ar ?? row.descriptionAr ?? seed?.descriptionAr ?? "",
+    ),
     is_laser_cut: Boolean(row.is_laser_cut),
     materials: materials.length ? materials : seed?.materials ?? ["Standard"],
     colors: Array.isArray(bounds.colors)
@@ -176,8 +183,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
     mugPhoto: bounds.mugPhoto ? String(bounds.mugPhoto) : wrapPreview ? mockup : undefined,
     wrapTemplate: bounds.wrapTemplate ? String(bounds.wrapTemplate) : undefined,
     views,
-    priceEgp: Number(row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
-    customizable: row.customizable !== false,
+    priceEgp: Number(bounds.priceEgp ?? row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
+    customizable: bounds.customizable !== false && row.customizable !== false,
   };
 }
 
@@ -187,6 +194,9 @@ function productToRow(product: Product) {
   const safe_zone_bounds: SafeZonePayload = {
     ...product.safe_zone_bounds,
     tagline: product.tagline,
+    taglineAr: product.taglineAr,
+    nameAr: product.nameAr,
+    descriptionAr: product.descriptionAr,
     materials: product.materials,
     colors: product.colors,
     defaultMaterial: product.defaultMaterial,
@@ -198,16 +208,15 @@ function productToRow(product: Product) {
     mugPhoto: product.mugPhoto,
     wrapTemplate: product.wrapTemplate,
     views,
+    priceEgp: product.priceEgp,
+    customizable: product.customizable !== false,
   };
 
   return {
     slug: product.slug,
     title: product.name,
-    name_ar: product.nameAr,
     category: product.category,
     description: product.description,
-    description_ar: product.descriptionAr,
-    price_egp: product.priceEgp,
     base_image_url: catalogImage,
     overlay_image_url: views[1]?.mockup || null,
     safe_zone_bounds,
