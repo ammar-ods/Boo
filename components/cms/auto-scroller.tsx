@@ -17,7 +17,7 @@ export function AutoScroller({
   const duration = Math.max(18, items.length * 7);
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden px-5 sm:px-8">
       <div
         className="marquee-track flex w-max gap-5 pe-5"
         style={{ animationDuration: `${duration}s` }}
@@ -28,8 +28,8 @@ export function AutoScroller({
             <img
               src={item.src}
               alt=""
-              className={`w-auto object-contain ${rounded ? "rounded-[24px]" : ""}`}
-              style={{ height: Math.max(64, height) }}
+              className={`cms-marquee-img ${rounded ? "rounded-[20px] sm:rounded-[24px]" : ""}`}
+              style={{ ["--cms-img-h" as string]: `${Math.max(64, height)}px` }}
             />
           );
           const className = "shrink-0";

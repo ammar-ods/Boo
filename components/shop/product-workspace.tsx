@@ -151,7 +151,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-6 sm:px-8 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
       <Link href="/catalog" className="inline-flex min-h-11 items-center text-sm text-oxford lg:col-span-2">
         ← {t("catalogTitle")}
       </Link>

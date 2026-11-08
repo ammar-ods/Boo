@@ -22,9 +22,11 @@ function ConfirmDelete() {
 export function DeleteOrderButton({
   id,
   reference,
+  compact = false,
 }: {
   id: string;
   reference: string;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -34,9 +36,9 @@ export function DeleteOrderButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-9 w-full rounded-full bg-red-50 font-heading text-red-700 ring-1 ring-red-200"
+        className="h-10 w-full rounded-full bg-red-50 px-3 font-heading text-sm text-red-700 ring-1 ring-red-200"
       >
-        Delete order
+        {compact ? "Delete" : "Delete order"}
       </button>
       {open ? (
         <div

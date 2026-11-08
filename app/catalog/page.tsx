@@ -14,7 +14,7 @@ export default async function CatalogPage({
   const { collection, q } = await searchParams;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
       <CatalogIntro query={q} collection={collection} />
       <ProductGrid products={products} collection={collection} query={q} />
     </div>

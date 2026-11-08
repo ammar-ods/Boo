@@ -32,16 +32,18 @@ export default async function InquiriesPage({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
+    <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-xl">
           <p className="font-script text-2xl text-boo-teal">inbox</p>
-          <h1 className="font-heading text-4xl">Orders</h1>
-          <p className="text-sm text-muted-foreground">
-            Tap an order to open the mockup, uploads, and customer details.
+          <h1 className="mt-1 font-heading text-4xl text-oxford">Orders</h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Open an order for the mockup, uploads, and customer details.
           </p>
         </div>
-        <p className="font-heading text-boo-ink">{rows.length} shown</p>
+        <p className="rounded-full bg-white px-4 py-1.5 font-heading text-sm text-oxford ring-1 ring-oxford/10">
+          {rows.length} shown
+        </p>
       </div>
 
       <OrdersFilters status={current} from={from} to={to} />
@@ -50,50 +52,50 @@ export default async function InquiriesPage({
         {rows.map((row) => (
           <div
             key={row.id}
-            className="flex overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10"
+            className="flex flex-col overflow-hidden rounded-[1.6rem] bg-white shadow-[0_12px_32px_-24px_rgba(10,37,64,0.28)] ring-1 ring-oxford/8 sm:flex-row"
           >
             <Link
               href={`/admin/inquiries/${row.id}`}
-              className="flex min-w-0 flex-1 gap-4 transition hover:bg-cream/60"
+              className="flex min-w-0 flex-1 flex-col transition hover:bg-cream/70 sm:flex-row"
             >
-              <div className="h-28 w-28 shrink-0 bg-[#f6f3ee]">
+              <div className="h-36 w-full shrink-0 bg-[#f6f3ee] sm:h-auto sm:w-32">
                 {row.mockup_path ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={row.mockup_path} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                  <div className="flex h-full min-h-28 items-center justify-center px-3 text-center text-xs text-muted-foreground">
                     No preview
                   </div>
                 )}
               </div>
-              <div className="flex min-w-0 flex-1 items-center justify-between gap-4 py-4 pr-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="font-heading text-lg text-boo-teal">
+                  <p className="font-heading text-base text-boo-teal">
                     #{row.reference_code.replace("#", "")}
                   </p>
-                  <p className="truncate font-heading text-xl">{row.product_name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="mt-1 truncate font-heading text-xl text-oxford">{row.product_name}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     {row.customer_name} · {row.customer_phone} · qty {row.quantity}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {row.created_at ? new Date(row.created_at).toLocaleString() : ""}
                   </p>
                 </div>
-                <div className="shrink-0 text-right">
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-heading">
+                <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-heading capitalize">
                     {row.status}
                   </span>
-                  <p className="mt-2 text-sm font-heading text-boo-ink">Open →</p>
+                  <p className="text-sm font-heading text-oxford">Open</p>
                 </div>
               </div>
             </Link>
-            <div className="flex w-36 shrink-0 items-center border-l border-foreground/10 px-3">
-              <DeleteOrderButton id={row.id} reference={row.reference_code} />
+            <div className="flex items-center border-t border-oxford/8 p-4 sm:w-40 sm:border-s sm:border-t-0">
+              <DeleteOrderButton id={row.id} reference={row.reference_code} compact />
             </div>
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="rounded-[1.4rem] bg-white py-10 text-center text-muted-foreground ring-1 ring-foreground/10">
+          <div className="rounded-[1.6rem] bg-white px-6 py-14 text-center text-muted-foreground ring-1 ring-oxford/8">
             No orders in this filter yet. Customizer inquiries land here automatically.
           </div>
         ) : null}

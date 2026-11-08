@@ -28,45 +28,52 @@ export function OrdersFilters({
   }
 
   return (
-    <div className="mb-5 space-y-3">
+    <div className="mb-6 space-y-4">
       <div className="flex flex-wrap gap-2">
         {STATUSES.map((item) => (
           <Link
             key={item}
             href={hrefFor(item)}
-            className={`rounded-full px-3 py-1.5 font-heading text-sm ${
-              status === item ? "bg-boo-ink text-white" : "bg-white ring-1 ring-foreground/10"
+            className={`rounded-full px-4 py-1.5 font-heading text-sm capitalize ${
+              status === item ? "bg-oxford text-white" : "bg-white text-oxford ring-1 ring-oxford/10"
             }`}
           >
             {item}
           </Link>
         ))}
       </div>
-      <form method="get" action="/admin/inquiries" className="flex flex-wrap items-end gap-3 rounded-[1.4rem] bg-white p-4 ring-1 ring-foreground/10">
+      <form
+        method="get"
+        action="/admin/inquiries"
+        className="flex flex-wrap items-end gap-4 rounded-[1.4rem] bg-white p-5 ring-1 ring-oxford/8"
+      >
         {status !== "all" ? <input type="hidden" name="status" value={status} /> : null}
-        <label className="text-sm">
-          <span className="mb-1 block text-muted-foreground">From</span>
+        <label className="min-w-[9rem] flex-1 text-sm">
+          <span className="mb-1.5 block text-muted-foreground">From</span>
           <input
             type="date"
             name="from"
             defaultValue={from}
-            className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm"
+            className="h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm"
           />
         </label>
-        <label className="text-sm">
-          <span className="mb-1 block text-muted-foreground">To</span>
+        <label className="min-w-[9rem] flex-1 text-sm">
+          <span className="mb-1.5 block text-muted-foreground">To</span>
           <input
             type="date"
             name="to"
             defaultValue={to}
-            className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm"
+            className="h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm"
           />
         </label>
-        <button type="submit" className="h-10 rounded-full bg-oxford px-4 font-heading text-sm text-white">
+        <button type="submit" className="h-11 rounded-full bg-oxford px-5 font-heading text-sm text-white">
           Filter dates
         </button>
         {from || to ? (
-          <Link href={status === "all" ? "/admin/inquiries" : `/admin/inquiries?status=${status}`} className="h-10 px-2 font-heading text-sm leading-10 text-boo-teal">
+          <Link
+            href={status === "all" ? "/admin/inquiries" : `/admin/inquiries?status=${status}`}
+            className="h-11 px-2 font-heading text-sm leading-[2.75rem] text-oxford/70"
+          >
             Clear dates
           </Link>
         ) : null}

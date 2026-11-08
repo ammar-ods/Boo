@@ -12,7 +12,7 @@ export function BundlesGrid({ bundles, products }: { bundles: Bundle[]; products
   const addItem = useCart((s) => s.addItem);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
       <h1 className="font-heading text-5xl text-oxford">{t("bundlesTitle")}</h1>
       <p className="mt-3 max-w-xl text-muted-foreground">{t("bundlesBody")}</p>
       <div className="mt-10 grid gap-6 sm:grid-cols-2">

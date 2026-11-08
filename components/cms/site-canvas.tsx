@@ -180,22 +180,17 @@ function SectionMedia({
   rounded?: boolean;
 }) {
   const inset = bleed && rounded;
+  const imgW = bleed ? 100 : Math.min(100, Math.max(20, widthPct));
   return (
     <div
-      className={`mx-auto ${inset ? "px-4 sm:px-6" : ""}`}
-      style={{
-        width: bleed ? "100%" : `${Math.min(100, Math.max(20, widthPct))}%`,
-        maxWidth: "100%",
-      }}
+      className={`cms-media mx-auto ${inset ? "px-3 sm:px-6" : ""}`}
+      style={{ ["--cms-img-w" as string]: `${imgW}%`, ["--cms-img-h" as string]: `${Math.max(48, height)}px` }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt=""
-        className={`mx-auto block h-auto max-w-full object-contain object-top ${
-          rounded ? "rounded-[28px]" : ""
-        }`}
-        style={{ maxHeight: Math.max(48, height), height: "auto" }}
+        className={`cms-media-img ${rounded ? "rounded-[20px] sm:rounded-[28px]" : ""}`}
       />
     </div>
   );
@@ -221,26 +216,23 @@ function SectionShell({
   const marginX = Math.max(0, section.style.marginX ?? 0);
   const marginY = Math.max(0, section.style.marginY ?? 0);
   const rounded = Boolean(section.style.rounded);
+  const resolvedMin = cover ? Math.max(minHeight, cover.height) : minHeight;
   return (
     <div
+      className="cms-block-frame"
       style={{
-        paddingLeft: marginX,
-        paddingRight: marginX,
-        paddingTop: marginY,
-        paddingBottom: marginY,
+        ["--cms-mx" as string]: `${marginX}px`,
+        ["--cms-my" as string]: `${marginY}px`,
       }}
     >
       <section
-        className={`reveal relative overflow-hidden ${rounded ? "rounded-[22px] sm:rounded-[28px]" : ""} ${className}`}
+        className={`cms-block reveal relative overflow-hidden ${cover ? "cms-block-cover" : ""} ${rounded ? "rounded-[22px] sm:rounded-[28px]" : ""} ${className}`}
         style={{
           background: cover ? undefined : surface.background,
           color: surface.color,
-          width: `${width}%`,
-          maxWidth: "100%",
-          marginInline: "auto",
-          paddingTop: pad,
-          paddingBottom: pad,
-          minHeight: cover ? Math.max(minHeight, cover.height) : minHeight || undefined,
+          ["--cms-w" as string]: `${width}%`,
+          ["--cms-pad" as string]: `${pad}px`,
+          ["--cms-min-h" as string]: `${resolvedMin}px`,
           animationDelay: `${index * 80}ms`,
         }}
       >
@@ -299,15 +291,19 @@ function SectionView({
     );
   }
 
+  const centered = section.style.align === "center";
   const copy = (
     <>
       {text("eyebrow", "text-xs font-medium tracking-[0.18em] opacity-70")}
-      {text("title", "mt-2 font-heading leading-tight", "h1")}
-      {text("body", "mx-auto mt-3 max-w-xl text-pretty text-[15px] leading-relaxed opacity-80 sm:mt-4 sm:text-base")}
+      {text("title", "mt-2 font-heading leading-[1.15] text-pretty", "h1")}
+      {text(
+        "body",
+        `mt-3 max-w-xl text-pretty text-[15px] leading-relaxed opacity-80 sm:mt-4 sm:text-base ${centered ? "mx-auto" : ""}`,
+      )}
     </>
   );
   const actions = showPrimary || showSecondary ? (
-    <div className={`mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap ${section.style.align === "center" ? "sm:justify-center" : ""}`}>
+    <div className={`mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap ${centered ? "sm:justify-center" : ""}`}>
       {showPrimary ? (
         <Link href={section.content.ctaHref || "/catalog"} className="btn-press w-full sm:w-auto">
           {pick(section.content.ctaLabel, locale)}
@@ -324,7 +320,9 @@ function SectionView({
   if (section.type === "marquee") {
     return (
       <SectionShell section={section} index={index}>
-        {text("title", "mb-4 px-4 font-heading sm:px-6", "h2")}
+        <div className={`cms-copy mb-4 ${centered ? "text-center" : "text-start"}`}>
+          {text("title", "font-heading", "h2")}
+        </div>
         <AutoScroller
           items={section.content.gallery ?? []}
           height={height}
@@ -337,7 +335,9 @@ function SectionView({
   if (section.type === "collections") {
     return (
       <SectionShell section={section} index={index}>
-        {text("title", "px-4 font-heading sm:px-6", "h2")}
+        <div className={`cms-copy ${centered ? "text-center" : "text-start"}`}>
+          {text("title", "font-heading", "h2")}
+        </div>
         <DisciplineCarousel />
       </SectionShell>
     );
@@ -345,8 +345,8 @@ function SectionView({
 
   if (section.type === "products") {
     return (
-      <SectionShell section={section} index={index} className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div id="creations">
+      <SectionShell section={section} index={index}>
+        <div id="creations" className={`cms-copy ${centered ? "text-center" : "text-start"}`}>
           {text("title", "font-heading", "h2")}
           {text("body", "mt-2 text-muted-foreground")}
           <div className="mt-6 sm:mt-8">
@@ -360,7 +360,7 @@ function SectionView({
   if (placement === "cover" && showImage) {
     return (
       <SectionShell section={section} index={index} cover={{ src: image, height }}>
-        <div className={`relative z-10 mx-auto max-w-6xl px-4 sm:px-6 ${section.style.align === "center" ? "text-center" : ""}`}>
+        <div className={`cms-copy relative z-10 ${centered ? "text-center" : "text-start"}`}>
           {copy}
           {actions}
         </div>
@@ -373,10 +373,10 @@ function SectionView({
       <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} />
     );
     return (
-      <SectionShell section={section} index={index} className="px-4 sm:px-6">
-        <div className="mx-auto grid max-w-6xl items-center gap-5 lg:grid-cols-2 lg:gap-8">
+      <SectionShell section={section} index={index}>
+        <div className="cms-copy grid items-center gap-5 lg:grid-cols-2 lg:gap-8">
           {placement === "start" ? imageCol : null}
-          <div className={section.style.align === "center" ? "text-center" : ""}>
+          <div className={centered ? "text-center" : "text-start"}>
             {copy}
             {actions}
           </div>
@@ -387,14 +387,14 @@ function SectionView({
   }
 
   return (
-    <SectionShell section={section} index={index} className={placement === "bleed" && showImage ? "" : "px-4 sm:px-6"}>
+    <SectionShell section={section} index={index}>
       {placement === "bleed" && showImage ? (
         <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} />
       ) : null}
-      <div className={`mx-auto max-w-6xl ${placement === "bleed" && showImage ? "px-4 sm:px-6" : ""} ${section.style.align === "center" ? "text-center" : ""}`}>
+      <div className={`cms-copy ${placement === "bleed" && showImage ? "pt-5 sm:pt-6" : ""} ${centered ? "text-center" : "text-start"}`}>
         {copy}
         {placement === "below" && showImage ? (
-          <div className={`mt-5 ${section.style.align === "center" ? "flex justify-center" : ""} sm:mt-6`}>
+          <div className={`mt-5 ${centered ? "flex justify-center" : ""} sm:mt-6`}>
             <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} />
           </div>
         ) : null}
@@ -464,8 +464,8 @@ function SectionInspector({
               />
             </div>
           </div>
-          <div className="overflow-y-auto p-5">
-      <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="space-y-4 overflow-y-auto p-5">
+      <div className="grid grid-cols-2 gap-3">
         <NumberField
           label="Font size"
           value={section.style.fontSize ?? 36}

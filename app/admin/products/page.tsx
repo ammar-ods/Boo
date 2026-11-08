@@ -13,7 +13,7 @@ export default async function AdminProductsPage({
   const { error, created } = await searchParams;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">
       {error ? (
         <p className="mb-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
           {decodeURIComponent(error)}

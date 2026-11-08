@@ -91,7 +91,7 @@ export function ProductGrid({
                 type="button"
                 onClick={() => setCategory(item)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-left text-sm font-medium transition",
+                  "rounded-full px-3 py-1.5 text-start text-sm font-medium transition",
                   category === item ? "bg-oxford text-white shadow-[0_3px_0_0_#06182c]" : "text-oxford hover:bg-chip",
                 )}
               >

@@ -63,7 +63,7 @@ export default function CheckoutPage() {
   if (items.length === 0) return null;
 
   return (
-    <div className="mx-auto w-full max-w-xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-xl px-5 py-12 sm:px-8">
       <h1 className="font-heading text-5xl text-oxford">{t("checkout")}</h1>
       <p className="mt-2 text-muted-foreground">
         {t("total")}: {formatPrice(total)}
