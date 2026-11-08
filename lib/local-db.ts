@@ -55,6 +55,7 @@ async function writeJson(file: string, value: unknown) {
 type SafeZonePayload = Product["safe_zone_bounds"] & {
   tagline?: string;
   materials?: string[];
+  colors?: string[];
   defaultMaterial?: string;
   canvasWidth?: number;
   canvasHeight?: number;
@@ -153,7 +154,11 @@ function rowToProduct(row: Record<string, unknown>): Product {
     descriptionAr: String(row.description_ar ?? row.descriptionAr ?? seed?.descriptionAr ?? ""),
     is_laser_cut: Boolean(row.is_laser_cut),
     materials: materials.length ? materials : seed?.materials ?? ["Standard"],
-    colors: Array.isArray(row.colors) ? (row.colors as string[]) : seed?.colors ?? materials,
+    colors: Array.isArray(bounds.colors)
+      ? bounds.colors
+      : Array.isArray(row.colors)
+        ? (row.colors as string[])
+        : seed?.colors ?? materials,
     defaultMaterial: String(row.default_material ?? bounds.defaultMaterial ?? materials[0] ?? "Standard"),
     canvasWidth: Number(row.canvas_width ?? bounds.canvasWidth ?? 800),
     canvasHeight: Number(row.canvas_height ?? bounds.canvasHeight ?? 800),
@@ -183,6 +188,7 @@ function productToRow(product: Product) {
     ...product.safe_zone_bounds,
     tagline: product.tagline,
     materials: product.materials,
+    colors: product.colors,
     defaultMaterial: product.defaultMaterial,
     canvasWidth: product.canvasWidth,
     canvasHeight: product.canvasHeight,
@@ -201,7 +207,6 @@ function productToRow(product: Product) {
     category: product.category,
     description: product.description,
     description_ar: product.descriptionAr,
-    colors: product.colors,
     price_egp: product.priceEgp,
     base_image_url: catalogImage,
     overlay_image_url: views[1]?.mockup || null,
