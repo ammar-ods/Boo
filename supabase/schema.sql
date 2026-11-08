@@ -44,41 +44,10 @@ create trigger inquiries_set_updated_at
 before update on public.inquiries
 for each row execute procedure public.set_updated_at();
 
--- Marks a row for storage cleanup. The Next.js admin action also deletes
--- files immediately. If pg_net is available, the trigger POSTs to the app webhook.
-create or replace function public.flag_inquiry_storage_cleanup()
-returns trigger
-language plpgsql
-security definer
-as $$
-declare
-  webhook_url text := current_setting('app.settings.cleanup_webhook_url', true);
-  webhook_secret text := current_setting('app.settings.cleanup_webhook_secret', true);
-begin
-  if new.status in ('fulfilled', 'cancelled')
-     and old.status is distinct from new.status then
-    new.cleanup_requested_at := now();
-
-    if webhook_url is not null and webhook_secret is not null
-       and exists (select 1 from pg_extension where extname = 'pg_net') then
-      perform net.http_post(
-        url := webhook_url,
-        headers := jsonb_build_object(
-          'Content-Type', 'application/json',
-          'Authorization', 'Bearer ' || webhook_secret
-        ),
-        body := jsonb_build_object('id', new.id, 'status', new.status)
-      );
-    end if;
-  end if;
-  return new;
-end;
-$$;
-
+-- Artwork is kept when an order is fulfilled or cancelled.
+-- Files are removed only when an admin deletes the order from the dashboard.
 drop trigger if exists inquiries_cleanup_on_terminal on public.inquiries;
-create trigger inquiries_cleanup_on_terminal
-before update of status on public.inquiries
-for each row execute procedure public.flag_inquiry_storage_cleanup();
+drop function if exists public.flag_inquiry_storage_cleanup();
 
 alter table public.inquiries enable row level security;
 

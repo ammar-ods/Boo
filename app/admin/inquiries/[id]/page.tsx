@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MediaLightbox } from "@/components/admin/media-lightbox";
+import { DeleteOrderButton } from "@/components/admin/delete-order-button";
 import { OrderSaveForm } from "@/components/admin/order-save-form";
 import { Label } from "@/components/ui/label";
 import { getOrder } from "@/lib/local-db";
@@ -195,9 +196,13 @@ export default async function InquiryDetailPage({
             </select>
           </div>
           <p className="text-xs text-muted-foreground">
-            Fulfilled or cancelled removes stored mockup files from storage.
+            Fulfilled or cancelled keeps mockups and uploads on file. Use Delete order to remove
+            the record and its images.
           </p>
         </OrderSaveForm>
+        <div className="rounded-[1.4rem] bg-white p-5 ring-1 ring-foreground/10">
+          <DeleteOrderButton id={inquiry.id} reference={inquiry.reference_code} />
+        </div>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-auth";
 import { inquiryStatusSchema } from "@/lib/schemas/inquiry";
-import { deleteStoredFile, getOrder, saveOrder } from "@/lib/local-db";
+import { deleteOrder, getOrder, saveOrder } from "@/lib/local-db";
 
 export async function loginAdmin(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -41,26 +41,19 @@ export async function updateInquiryStatus(formData: FormData) {
   const current = await getOrder(id);
   if (!current) throw new Error("Order not found");
 
-  const next = {
+  await saveOrder({
     ...current,
     status,
     quoted_price,
     updated_at: new Date().toISOString(),
-  };
-
-  if (status === "fulfilled" || status === "cancelled") {
-    const files = [current.mockup_path, ...(current.production_paths ?? [])].filter(
-      (file): file is string => Boolean(file),
-    );
-    for (const file of files) {
-      await deleteStoredFile(file);
-    }
-    next.mockup_path = "";
-    next.production_paths = [];
-    next.cleanup_requested_at = new Date().toISOString();
-  }
-
-  await saveOrder(next);
+  });
   revalidatePath("/admin/inquiries");
   revalidatePath(`/admin/inquiries/${id}`);
+}
+
+export async function deleteInquiry(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("Order not found");
+  await deleteOrder(id);
+  revalidatePath("/admin/inquiries");
 }
