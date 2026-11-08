@@ -485,7 +485,7 @@ html.locale-fading body {
     opacity: 1;
     transform: scale(1);
   }
-  72% {
+  70% {
     opacity: 1;
   }
   100% {
@@ -495,7 +495,7 @@ html.locale-fading body {
 }
 
 .saved-toast {
-  animation: saved-pop 1.35s ease forwards;
+  animation: saved-pop 1s ease forwards;
 }
 
 @keyframes boo-fade-up {

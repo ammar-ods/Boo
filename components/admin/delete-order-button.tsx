@@ -59,8 +59,7 @@ export function DeleteOrderButton({
               action={async (formData) => {
                 try {
                   await deleteInquiry(formData);
-                  router.push("/admin/inquiries");
-                  router.refresh();
+                  router.push("/admin/inquiries?deleted=1");
                 } catch (error) {
                   toast.error(error instanceof Error ? error.message : "Could not delete order");
                 }

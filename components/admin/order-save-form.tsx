@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
@@ -21,7 +20,6 @@ function SubmitButton() {
 
 export function OrderSaveForm({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [saved, setSaved] = useState(false);
 
   return (
     <form
@@ -29,10 +27,7 @@ export function OrderSaveForm({ children }: { children: React.ReactNode }) {
       action={async (formData) => {
         try {
           await updateInquiryStatus(formData);
-          setSaved(true);
-          window.setTimeout(() => {
-            router.push("/admin/inquiries");
-          }, 900);
+          router.push("/admin/inquiries?saved=1");
         } catch (error) {
           toast.error(error instanceof Error ? error.message : "Could not save order");
         }
@@ -40,17 +35,6 @@ export function OrderSaveForm({ children }: { children: React.ReactNode }) {
     >
       {children}
       <SubmitButton />
-      {saved ? (
-        <div className="pointer-events-none fixed inset-0 z-[80] grid place-items-center">
-          <div
-            role="status"
-            className="saved-toast flex items-center gap-2 rounded-full bg-oxford px-7 py-4 font-heading text-xl text-white shadow-xl ring-1 ring-white/30"
-          >
-            <span className="grid size-6 place-items-center rounded-full bg-white/20 text-sm">✓</span>
-            Saved
-          </div>
-        </div>
-      ) : null}
     </form>
   );
 }

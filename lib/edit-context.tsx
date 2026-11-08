@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { flashStatus } from "@/components/status-flash";
 import {
   migrateSite,
   newSection,
@@ -116,15 +117,14 @@ export function EditProvider({
     setSite(cloneSite(saved));
     setBaseline(cloneSite(saved));
     router.refresh();
+    flashStatus("Saved");
     if (payload.persist === "memory") {
       toast.error("Saved in this session only. Add Supabase so homepage edits stay on the live site.");
       return;
     }
     if (payload.persist === "local") {
-      toast.success("Saved on this computer. Production needs the Supabase site_content table.");
-      return;
+      toast.message("Saved on this computer. Production needs the Supabase site_content table.");
     }
-    toast.success("Saved to the live site");
   }, [router, site]);
 
   const setChrome = useCallback((chrome: Partial<SiteChrome>) => {
