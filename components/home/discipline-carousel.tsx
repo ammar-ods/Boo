@@ -42,7 +42,7 @@ export function DisciplineCarousel() {
           type="button"
           aria-label="Previous"
           onClick={() => scroll(-1)}
-          className="icon-circle absolute start-2 top-1/2 z-10 -translate-y-1/2 sm:start-6"
+          className="icon-circle absolute start-1 top-1/2 z-10 -translate-y-1/2 sm:start-6"
         >
           <ChevronLeft className="size-5" />
         </button>
@@ -50,17 +50,17 @@ export function DisciplineCarousel() {
           type="button"
           aria-label="Next"
           onClick={() => scroll(1)}
-          className="icon-circle absolute end-2 top-1/2 z-10 -translate-y-1/2 sm:end-6"
+          className="icon-circle absolute end-1 top-1/2 z-10 -translate-y-1/2 sm:end-6"
         >
           <ChevronRight className="size-5" />
         </button>
         <div
           ref={scroller}
-          className="flex gap-5 overflow-x-auto scroll-px-16 px-16 pb-8 sm:px-20"
+          className="flex gap-4 overflow-x-auto scroll-px-12 px-12 pb-6 sm:gap-5 sm:scroll-px-16 sm:px-20 sm:pb-8"
           style={{ scrollbarWidth: "none" }}
         >
           {ITEMS.map((item) => (
-            <Link key={item.href} href={item.href} className="group w-[240px] shrink-0 sm:w-[280px]">
+            <Link key={item.href} href={item.href} className="group w-[min(68vw,240px)] shrink-0 sm:w-[280px]">
               <div className="relative overflow-hidden rounded-[28px] bg-card shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]">
                 <div className="relative aspect-[4/5] bg-chip">
                   <Image

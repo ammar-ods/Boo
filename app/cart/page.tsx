@@ -15,7 +15,7 @@ export default function CartPage() {
   if (!hydrated) return null;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8">
       <h1 className="font-heading text-5xl text-oxford">{t("cart")}</h1>
       {items.length === 0 ? (
         <p className="mt-6 text-muted-foreground">

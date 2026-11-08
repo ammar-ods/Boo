@@ -490,6 +490,61 @@ export async function getOrder(id: string) {
   return orders.find(match);
 }
 
+export function orderAssetUrls(order: InquiryRecord) {
+  const urls = new Set<string>();
+  if (order.mockup_path) urls.add(order.mockup_path);
+  for (const path of order.production_paths ?? []) {
+    if (path) urls.add(path);
+  }
+  const payload = (order.canvas_json ?? {}) as {
+    views?: { url?: string }[];
+    uploads?: { url?: string }[];
+    payment?: { receiptUrl?: string };
+  };
+  for (const view of payload.views ?? []) {
+    if (view.url) urls.add(view.url);
+  }
+  for (const file of payload.uploads ?? []) {
+    if (file.url) urls.add(file.url);
+  }
+  if (payload.payment?.receiptUrl) urls.add(payload.payment.receiptUrl);
+  return [...urls];
+}
+
+export async function deleteOrder(id: string) {
+  const order = await getOrder(id);
+  if (!order) throw new Error("Order not found");
+
+  memoryOrders = memoryOrders.filter((item) => item.id !== order.id);
+  const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
+  await writeJson(
+    ORDERS_FILE,
+    local.filter((item) => item.id !== order.id && item.reference_code !== order.reference_code),
+  );
+
+  if (useSupabase()) {
+    try {
+      if (!supabaseServiceKey()) {
+        throw new Error("Set SUPABASE_SERVICE_ROLE_KEY so orders can be deleted from the dashboard.");
+      }
+      const supabase = createAdminClient();
+      const { error } = await supabase.from("inquiries").delete().eq("id", order.id);
+      if (error) throw new Error(`Could not delete order: ${error.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
+        throw error;
+      }
+    }
+  }
+
+  for (const file of orderAssetUrls(order)) {
+    await deleteStoredFile(file);
+  }
+
+  return order.id;
+}
+
 export async function saveOrder(order: InquiryRecord) {
   memoryOrders = mergeOrders(memoryOrders, [order]);
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);

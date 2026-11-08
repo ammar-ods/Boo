@@ -91,7 +91,7 @@ export function ControlsPanel({
         </p>
         <div
           {...dropzone.getRootProps()}
-          className="cursor-pointer rounded-2xl border border-dashed border-boo-teal bg-white px-4 py-6 text-center"
+          className="min-h-28 cursor-pointer rounded-2xl border border-dashed border-boo-teal bg-white px-4 py-5 text-center sm:min-h-32 sm:py-6"
         >
           <input {...dropzone.getInputProps()} />
           <Upload className="mx-auto mb-2 size-5 text-boo-teal" />

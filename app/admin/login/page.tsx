@@ -10,7 +10,7 @@ export default async function AdminLoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-16">
+    <div className="flex flex-1 items-center justify-center px-5 py-16 sm:px-8">
       <form
         action={loginAdmin}
         className="w-full max-w-sm space-y-4 rounded-[1.6rem] bg-white p-8 ring-1 ring-foreground/10"

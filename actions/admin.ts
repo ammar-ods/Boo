@@ -1,14 +1,16 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   adminCookieName,
   createAdminSessionToken,
+  isValidAdminSession,
   verifyAdminPassword,
 } from "@/lib/admin-auth";
 import { inquiryStatusSchema } from "@/lib/schemas/inquiry";
-import { deleteStoredFile, getOrder, saveOrder } from "@/lib/local-db";
+import { deleteOrder, getOrder, getSite, saveOrder, saveSite } from "@/lib/local-db";
 
 export async function loginAdmin(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -40,25 +42,43 @@ export async function updateInquiryStatus(formData: FormData) {
   const current = await getOrder(id);
   if (!current) throw new Error("Order not found");
 
-  const next = {
+  await saveOrder({
     ...current,
     status,
     quoted_price,
     updated_at: new Date().toISOString(),
-  };
+  });
+  revalidatePath("/admin/inquiries");
+  revalidatePath(`/admin/inquiries/${id}`);
+}
 
-  if (status === "fulfilled" || status === "cancelled") {
-    const files = [current.mockup_path, ...(current.production_paths ?? [])].filter(
-      (file): file is string => Boolean(file),
-    );
-    for (const file of files) {
-      await deleteStoredFile(file);
-    }
-    next.mockup_path = "";
-    next.production_paths = [];
-    next.cleanup_requested_at = new Date().toISOString();
-  }
+export async function deleteInquiry(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("Order not found");
+  await deleteOrder(id);
+  revalidatePath("/admin/inquiries");
+}
 
-  await saveOrder(next);
-  redirect(`/admin/inquiries/${id}?saved=1`);
+export async function savePromo(formData: FormData) {
+  const token = (await cookies()).get(adminCookieName())?.value;
+  if (!(await isValidAdminSession(token))) redirect("/admin/login");
+  const site = await getSite();
+  await saveSite({
+    ...site,
+    chrome: {
+      ...site.chrome,
+      payPhone: String(formData.get("payPhone") ?? "").trim() || site.chrome.payPhone,
+    },
+    promo: {
+      live: formData.get("live") === "on",
+      text: {
+        ar: String(formData.get("textAr") ?? ""),
+        en: String(formData.get("textEn") ?? ""),
+      },
+      image: String(formData.get("image") ?? ""),
+    },
+  });
+  revalidatePath("/");
+  revalidatePath("/checkout");
+  revalidatePath("/admin/promo");
 }

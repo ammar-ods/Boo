@@ -17,6 +17,11 @@ export type SectionStyle = {
   showPrimaryCta?: boolean;
   showSecondaryCta?: boolean;
   imageRounded?: boolean;
+  blockWidth?: number;
+  minHeight?: number;
+  marginX?: number;
+  marginY?: number;
+  rounded?: boolean;
 };
 
 export type GalleryItem = {
@@ -60,11 +65,19 @@ export type SiteChrome = {
   showFooter: boolean;
   footerTagline: Localized;
   footerBlurb: Localized;
+  payPhone: string;
+};
+
+export type PromoPopup = {
+  live: boolean;
+  text: Localized;
+  image: string;
 };
 
 export type SiteDocument = {
   chrome: SiteChrome;
   sections: SiteSection[];
+  promo: PromoPopup;
 };
 
 export const SECTION_TYPES: { type: SectionType; label: string; labelAr: string }[] = [
@@ -82,28 +95,12 @@ export function loc(ar: string, en: string): Localized {
   return { ar, en };
 }
 
-function hex(value?: string) {
-  return (value ?? "").trim().toLowerCase();
-}
-
-function luminance(value: string) {
-  const raw = hex(value).replace("#", "");
-  const full = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
-  if (!/^[0-9a-f]{6}$/.test(full)) return 128;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000;
-}
-
 export function sectionSurface(style: SectionStyle): { background?: string; color?: string } {
-  const background = hex(style.background);
-  const color = hex(style.color);
-  const lightBackground = !background || luminance(background) > 180;
-  const inkText = !color || luminance(color) < 70;
+  const background = style.background?.trim();
+  const color = style.color?.trim();
   return {
-    background: lightBackground ? "var(--background)" : style.background,
-    color: inkText ? "var(--foreground)" : style.color,
+    background: background || "var(--background)",
+    color: color || "var(--foreground)",
   };
 }
 
@@ -134,7 +131,14 @@ export const DEFAULT_CHROME: SiteChrome = {
   ],
   showFooter: true,
   footerTagline: loc("مختار بذوق.", "Selected with taste."),
-  footerBlurb: loc(".", "An Oxford atelier for print and gifting."),
+  footerBlurb: loc("مشغل أكسفورد للطباعة والهدايا.", "An Oxford atelier for print and gifting."),
+  payPhone: "01000000000",
+};
+
+export const DEFAULT_PROMO: PromoPopup = {
+  live: false,
+  text: loc("خصم ١٠٪ على طلبك الجاي.", "10% off your next order."),
+  image: "",
 };
 
 export function newSection(type: SectionType): SiteSection {
@@ -188,7 +192,15 @@ export function newSection(type: SectionType): SiteSection {
       id,
       type,
       visible: true,
-      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 20, paddingY: 48, align: "start" },
+      style: {
+        background: "#f6f3ea",
+        color: "#0a2540",
+        fontSize: 20,
+        paddingY: 48,
+        align: "start",
+        blockWidth: 100,
+        rounded: false,
+      },
       content: {
         title: loc("قسم نص", "Text section"),
         body: loc("اكتب أي محتوى هنا.", "Write any copy here."),
@@ -266,6 +278,7 @@ export function newSection(type: SectionType): SiteSection {
 
 export const DEFAULT_SITE: SiteDocument = {
   chrome: DEFAULT_CHROME,
+  promo: DEFAULT_PROMO,
   sections: [
     newSection("hero"),
     newSection("collections"),
@@ -305,8 +318,13 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
 }
 
 export function migrateSite(raw: unknown): SiteDocument {
-  const data = (raw ?? {}) as { chrome?: Partial<SiteChrome>; sections?: SiteSection[] | Array<Record<string, unknown>> };
+  const data = (raw ?? {}) as {
+    chrome?: Partial<SiteChrome>;
+    promo?: Partial<PromoPopup>;
+    sections?: SiteSection[] | Array<Record<string, unknown>>;
+  };
   const chrome = data.chrome ?? {};
+  const promo = data.promo ?? {};
   return {
     chrome: {
       showAnnouncement: chrome.showAnnouncement !== false,
@@ -325,6 +343,12 @@ export function migrateSite(raw: unknown): SiteDocument {
       showFooter: chrome.showFooter !== false,
       footerTagline: fillLoc(asLoc(chrome.footerTagline, DEFAULT_CHROME.footerTagline.ar), DEFAULT_CHROME.footerTagline) ?? DEFAULT_CHROME.footerTagline,
       footerBlurb: fillLoc(asLoc(chrome.footerBlurb, DEFAULT_CHROME.footerBlurb.ar), DEFAULT_CHROME.footerBlurb) ?? DEFAULT_CHROME.footerBlurb,
+      payPhone: typeof chrome.payPhone === "string" && chrome.payPhone.trim() ? chrome.payPhone.trim() : DEFAULT_CHROME.payPhone,
+    },
+    promo: {
+      live: Boolean(promo.live),
+      text: fillLoc(asLoc(promo.text, DEFAULT_PROMO.text.ar), DEFAULT_PROMO.text) ?? DEFAULT_PROMO.text,
+      image: typeof promo.image === "string" ? promo.image : "",
     },
     sections: Array.isArray(data.sections)
       ? data.sections.map((section, index) => {

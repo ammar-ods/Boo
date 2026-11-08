@@ -9,14 +9,18 @@ import { SavedToast } from "@/components/admin/saved-toast";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   if (pathname.startsWith("/admin/login")) {
-    return <>{children}</>;
+    return (
+      <div dir="ltr" lang="en" className="admin-desk min-h-screen bg-background text-foreground">
+        {children}
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-ivory">
+    <div dir="ltr" lang="en" className="admin-desk min-h-screen bg-background text-foreground">
       <div className="chrome-bar h-2.5" />
       <div className="border-b border-border bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <Link href="/admin/inquiries" className="flex items-center gap-3">
             <BooLogo compact />
             <span className="font-heading text-lg">Studio desk</span>
@@ -27,6 +31,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
             <Link href="/admin/products" className="rounded-full px-3 py-1.5 hover:bg-secondary">
               Products
+            </Link>
+            <Link href="/admin/promo" className="rounded-full px-3 py-1.5 hover:bg-secondary">
+              Promo
             </Link>
             <Link href="/" className="rounded-full px-3 py-1.5 hover:bg-secondary">
               View site

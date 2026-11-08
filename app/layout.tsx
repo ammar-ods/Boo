@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { I18nProvider } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import { AppTheme } from "@/components/app-theme";
+import { PromoPopup } from "@/components/promo-popup";
 import { EditProvider } from "@/lib/edit-context";
 import { getSite } from "@/lib/local-db";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
@@ -32,6 +33,12 @@ export const metadata: Metadata = {
   description: "تيشيرت، مج حراري، وكوستر خشب. كل قطعة بـ ١٠٠ جنيه.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   let isAdmin = false;
   try {
@@ -51,6 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <SiteHeader />
               <main className="flex flex-1 flex-col">{children}</main>
               <SiteFooter />
+              <PromoPopup />
               <Toaster />
             </EditProvider>
           </I18nProvider>

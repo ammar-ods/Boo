@@ -11,7 +11,7 @@ export default async function ThanksPage({
   const reference = ref ? (ref.startsWith("#") ? ref : `#${ref}`) : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-4 py-20 text-center">
+    <div className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-5 py-20 text-center sm:px-8">
       <p className="font-script text-3xl text-oxford/70">selected with taste</p>
       <h1 className="mt-2 font-heading text-5xl text-oxford">شكرًا لطلبك</h1>
       <p className="mt-4 text-muted-foreground">
