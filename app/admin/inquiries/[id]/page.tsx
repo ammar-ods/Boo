@@ -29,11 +29,15 @@ export default async function InquiryDetailPage({
   const inquiry = await getOrder(id);
   if (!inquiry) notFound();
 
-  const extras = (inquiry.production_paths ?? []).filter((path) => path !== inquiry.mockup_path);
   const payload = (inquiry.canvas_json ?? {}) as {
     views?: { id?: string; label?: string; url?: string }[];
     uploads?: { name?: string; url?: string }[];
+    payment?: { method?: string; transferPhone?: string; receiptUrl?: string };
   };
+  const payment = payload.payment;
+  const extras = (inquiry.production_paths ?? []).filter(
+    (path) => path !== inquiry.mockup_path && path !== payment?.receiptUrl,
+  );
   const labeledViews = (payload.views ?? []).filter((item) => item.url);
   const previewImages = (
     labeledViews.length
@@ -167,9 +171,38 @@ export default async function InquiryDetailPage({
               <dd className="mt-0.5 text-oxford">{inquiry.customer_phone}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Email</dt>
-              <dd className="mt-0.5 text-oxford">{inquiry.customer_email || "—"}</dd>
+              <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Payment</dt>
+              <dd className="mt-0.5 text-oxford">
+                {payment?.method === "online" ? "Online transfer" : payment?.method === "cod" ? "Cash on delivery" : "—"}
+              </dd>
             </div>
+            {payment?.method === "online" ? (
+              <div>
+                <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Transfer phone
+                </dt>
+                <dd className="mt-0.5 text-oxford" dir="ltr">
+                  {payment.transferPhone || "—"}
+                </dd>
+              </div>
+            ) : null}
+            {payment?.receiptUrl ? (
+              <div>
+                <dt className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Receipt
+                </dt>
+                <dd>
+                  <MediaLightbox src={payment.receiptUrl} label="Receipt">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={payment.receiptUrl}
+                      alt="Receipt"
+                      className="h-28 w-full rounded-xl bg-[#f6f3ee] object-contain"
+                    />
+                  </MediaLightbox>
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Material</dt>
               <dd className="mt-0.5 text-oxford">{inquiry.material || "—"}</dd>

@@ -17,14 +17,18 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       name?: string;
       phone?: string;
-      email?: string;
       address?: string;
       notes?: string;
+      payment?: { method?: string; transferPhone?: string; receiptUrl?: string };
       items?: CheckoutItem[];
     };
     const items = Array.isArray(body.items) ? body.items : [];
-    if (!body.name?.trim() || !body.phone?.trim() || items.length === 0) {
+    const paymentMethod = body.payment?.method === "online" ? "online" : "cod";
+    if (!body.name?.trim() || !body.phone?.trim() || !body.address?.trim() || items.length === 0) {
       return NextResponse.json({ error: "Missing checkout fields" }, { status: 400 });
+    }
+    if (paymentMethod === "online" && (!body.payment?.transferPhone?.trim() || !body.payment?.receiptUrl)) {
+      return NextResponse.json({ error: "Missing transfer details" }, { status: 400 });
     }
     const reference_code = await nextReferenceCode();
     const summary = items
@@ -58,6 +62,11 @@ export async function POST(request: Request) {
       }
     }
 
+    let receiptUrl = "";
+    if (paymentMethod === "online" && body.payment?.receiptUrl) {
+      receiptUrl = await persistOrderMedia(body.payment.receiptUrl, "receipt.jpg");
+    }
+
     const previewPaths = viewFiles.map((item) => item.url).filter(Boolean);
     const uploadPaths = uploadFiles.map((item) => item.url).filter(Boolean);
     const mockup =
@@ -72,16 +81,34 @@ export async function POST(request: Request) {
       product_slug: first?.slug ?? "cart",
       product_name: summary,
       customer_name: body.name.trim(),
-      customer_email: body.email?.trim() || null,
+      customer_email: null,
       customer_phone: body.phone.trim(),
       material: first?.color ?? null,
       quantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      notes: [body.address, body.notes, `Total ${total} EGP`].filter(Boolean).join("\n"),
+      notes: [
+        body.address,
+        body.notes,
+        `Total ${total} EGP`,
+        paymentMethod === "online"
+          ? `Payment: online transfer from ${body.payment?.transferPhone}`
+          : "Payment: cash on delivery",
+      ]
+        .filter(Boolean)
+        .join("\n"),
       status: "pending",
       quoted_price: total,
       mockup_path: mockup,
-      production_paths: [...previewPaths.slice(1), ...uploadPaths],
-      canvas_json: { items, views: viewFiles, uploads: uploadFiles },
+      production_paths: [...previewPaths.slice(1), ...uploadPaths, receiptUrl].filter(Boolean),
+      canvas_json: {
+        items,
+        views: viewFiles,
+        uploads: uploadFiles,
+        payment: {
+          method: paymentMethod,
+          transferPhone: body.payment?.transferPhone?.trim() || "",
+          receiptUrl,
+        },
+      },
       created_at: now,
       updated_at: now,
       cleanup_requested_at: null,

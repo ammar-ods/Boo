@@ -499,6 +499,7 @@ export function orderAssetUrls(order: InquiryRecord) {
   const payload = (order.canvas_json ?? {}) as {
     views?: { url?: string }[];
     uploads?: { url?: string }[];
+    payment?: { receiptUrl?: string };
   };
   for (const view of payload.views ?? []) {
     if (view.url) urls.add(view.url);
@@ -506,6 +507,7 @@ export function orderAssetUrls(order: InquiryRecord) {
   for (const file of payload.uploads ?? []) {
     if (file.url) urls.add(file.url);
   }
+  if (payload.payment?.receiptUrl) urls.add(payload.payment.receiptUrl);
   return [...urls];
 }
 

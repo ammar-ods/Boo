@@ -376,6 +376,15 @@ function NumberField({
   );
 }
 
+function toColorPickerValue(value: string) {
+  const hex = value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+    return `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+  }
+  return "#f6f3ea";
+}
+
 function ColorField({
   label,
   value,
@@ -392,7 +401,7 @@ function ColorField({
         <input
           type="color"
           className="size-6 cursor-pointer rounded"
-          value={value.startsWith("#") ? value : "#0a2540"}
+          value={toColorPickerValue(value)}
           onChange={(event) => onChange(event.target.value)}
         />
         <input

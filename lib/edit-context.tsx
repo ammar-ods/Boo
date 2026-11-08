@@ -71,6 +71,13 @@ export function EditProvider({
     }
   }, [pathname]);
 
+  useEffect(() => {
+    if (dirty) return;
+    const next = cloneSite(initial);
+    setSite((current) => (JSON.stringify(current) === JSON.stringify(next) ? current : next));
+    setBaseline((current) => (JSON.stringify(current) === JSON.stringify(next) ? current : next));
+  }, [dirty, initial]);
+
   const dirty = useMemo(() => JSON.stringify(site) !== JSON.stringify(baseline), [baseline, site]);
 
   const startEdit = useCallback(() => {
