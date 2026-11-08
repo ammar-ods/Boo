@@ -11,8 +11,8 @@ export default async function PromoPage() {
       <p className="font-script text-2xl text-boo-teal">studio</p>
       <h1 className="mt-1 font-heading text-4xl text-oxford">Promo popup</h1>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Visitors see a short offer card on the storefront. Size, timing, and animation stay the same —
-        you control the copy, optional image, and whether it is live.
+        Visitors see a centered square offer on the storefront until they close it. You control the copy,
+        optional image, and whether it is live.
       </p>
       <PromoForm
         live={site.promo.live}

@@ -5,6 +5,8 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { savePromo } from "@/actions/admin";
+import { PromoDialog } from "@/components/promo-popup";
+import { useI18n } from "@/lib/i18n";
 
 function Submit() {
   const { pending } = useFormStatus();
@@ -29,7 +31,12 @@ export function PromoForm({
   payPhone: string;
 }) {
   const router = useRouter();
-  const [preview, setPreview] = useState(image);
+  const { locale } = useI18n();
+  const [imageUrl, setImageUrl] = useState(image);
+  const [textArValue, setTextArValue] = useState(textAr);
+  const [textEnValue, setTextEnValue] = useState(textEn);
+  const [showPreview, setShowPreview] = useState(false);
+  const previewText = locale === "en" ? textEnValue.trim() || textArValue.trim() : textArValue.trim() || textEnValue.trim();
 
   return (
     <form
@@ -53,7 +60,8 @@ export function PromoForm({
         <textarea
           name="textAr"
           rows={3}
-          defaultValue={textAr}
+          value={textArValue}
+          onChange={(event) => setTextArValue(event.target.value)}
           dir="rtl"
           className="mt-1 w-full rounded-2xl border border-input px-3 py-2 text-sm"
         />
@@ -63,17 +71,18 @@ export function PromoForm({
         <textarea
           name="textEn"
           rows={3}
-          defaultValue={textEn}
+          value={textEnValue}
+          onChange={(event) => setTextEnValue(event.target.value)}
           className="mt-1 w-full rounded-2xl border border-input px-3 py-2 text-sm"
         />
       </label>
       <div className="text-sm">
         <p className="mb-1">Icon or image (optional)</p>
-        {preview ? (
+        {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="" className="mb-2 size-20 rounded-2xl object-cover" />
+          <img src={imageUrl} alt="" className="mb-2 size-20 rounded-2xl object-cover" />
         ) : null}
-        <input type="hidden" name="image" value={preview} />
+        <input type="hidden" name="image" value={imageUrl} />
         <input
           type="file"
           accept="image/*"
@@ -89,11 +98,11 @@ export function PromoForm({
               toast.error(payload.error || "Could not upload");
               return;
             }
-            setPreview(payload.url);
+            setImageUrl(payload.url);
           }}
         />
-        {preview ? (
-          <button type="button" className="mt-2 text-xs font-semibold text-red-700" onClick={() => setPreview("")}>
+        {imageUrl ? (
+          <button type="button" className="mt-2 text-xs font-semibold text-red-700" onClick={() => setImageUrl("")}>
             Remove image
           </button>
         ) : null}
@@ -107,7 +116,25 @@ export function PromoForm({
           className="mt-1 h-11 w-full rounded-full border border-input px-4 text-sm"
         />
       </label>
-      <Submit />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          className="h-11 w-full rounded-full border border-oxford/15 font-heading text-oxford hover:bg-cream"
+          onClick={() => {
+            if (!previewText) {
+              toast.error("Add promo text first");
+              return;
+            }
+            setShowPreview(true);
+          }}
+        >
+          Preview
+        </button>
+        <Submit />
+      </div>
+      {showPreview ? (
+        <PromoDialog text={previewText} image={imageUrl} onClose={() => setShowPreview(false)} />
+      ) : null}
     </form>
   );
 }

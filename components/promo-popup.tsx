@@ -11,6 +11,50 @@ function dismissKey(text: string) {
   return `boo-promo:${text}`;
 }
 
+export function PromoDialog({
+  text,
+  image,
+  onClose,
+}: {
+  text: string;
+  image?: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-oxford/45 p-5 backdrop-blur-[3px]"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="promo-pop relative flex aspect-square w-[min(88vw,26rem)] flex-col overflow-hidden rounded-[2.25rem] bg-white p-5 shadow-[0_28px_80px_-24px_rgba(10,37,64,0.55)] ring-1 ring-oxford/10 sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="absolute end-3 top-3 z-10 grid size-10 place-items-center rounded-full bg-white/90 text-oxford/50 shadow-sm hover:bg-cream hover:text-oxford"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X className="size-5" />
+        </button>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt="" className="h-0 min-h-0 w-full flex-1 rounded-[1.6rem] object-cover" />
+        ) : (
+          <div className="grid min-h-0 flex-1 place-items-center rounded-[1.6rem] bg-oxford">
+            <span className="font-heading text-7xl text-white">%</span>
+          </div>
+        )}
+        <p dir="auto" className="mt-4 text-center font-heading text-xl leading-snug text-oxford sm:text-2xl">
+          {text}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function PromoPopup() {
   const pathname = usePathname();
   const { site } = useEdit();
@@ -24,14 +68,7 @@ export function PromoPopup() {
     if (!promo.live || !text) return;
     if (sessionStorage.getItem(dismissKey(text)) === "1") return;
     const show = window.setTimeout(() => setOpen(true), 600);
-    const hide = window.setTimeout(() => {
-      setOpen(false);
-      sessionStorage.setItem(dismissKey(text), "1");
-    }, 8600);
-    return () => {
-      window.clearTimeout(show);
-      window.clearTimeout(hide);
-    };
+    return () => window.clearTimeout(show);
   }, [pathname, promo.live, text]);
 
   if (pathname.startsWith("/admin") || !open || !promo.live || !text) return null;
@@ -41,27 +78,5 @@ export function PromoPopup() {
     sessionStorage.setItem(dismissKey(text), "1");
   }
 
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[85] flex justify-center px-4">
-      <div className="promo-pop pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-[1.6rem] bg-white p-3 pe-2 shadow-[0_18px_50px_-20px_rgba(10,37,64,0.45)] ring-1 ring-oxford/10">
-        {promo.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={promo.image} alt="" className="size-14 shrink-0 rounded-2xl object-cover" />
-        ) : (
-          <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-oxford font-heading text-lg text-white">
-            %
-          </div>
-        )}
-        <p className="min-w-0 flex-1 text-sm leading-relaxed text-oxford">{text}</p>
-        <button
-          type="button"
-          className="grid size-9 shrink-0 place-items-center rounded-full text-oxford/50 hover:bg-cream hover:text-oxford"
-          onClick={close}
-          aria-label="Close"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-    </div>
-  );
+  return <PromoDialog text={text} image={promo.image} onClose={close} />;
 }
