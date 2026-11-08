@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
 import { FabricCanvas, type CanvasHandle } from "@/components/customizer/fabric-canvas";
 import { ControlsPanel } from "@/components/customizer/controls-panel";
+import { CheckoutForm } from "@/components/shop/checkout-form";
 import { storeOrderAsset } from "@/lib/order-assets";
 import { allRememberedFiles, clearRememberedFiles, uploadRegistry } from "@/lib/upload-registry";
 
@@ -31,6 +32,8 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const [preview, setPreview] = useState<{ id: string; label: string; url: string }[] | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [cartBusy, setCartBusy] = useState(false);
+  const [step, setStep] = useState<"product" | "checkout">("product");
+  const detailsRef = useRef<HTMLDivElement>(null);
   const views = productViews(product);
   const colors = product.colors?.length ? product.colors : product.materials;
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
@@ -91,7 +94,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
     Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(false));
   }
 
-  async function addToCart() {
+  async function addToCart(options?: { quiet?: boolean }) {
     if (cartBusy) return;
     setCartBusy(true);
     try {
@@ -140,7 +143,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
         viewMockups,
         uploads,
       });
-      toast.success(t("added"));
+      if (!options?.quiet) toast.success(t("added"));
       return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save the design");
@@ -155,7 +158,11 @@ export function ProductWorkspace({ product }: { product: Product }) {
       <Link href="/catalog" className="inline-flex min-h-11 items-center text-sm text-oxford lg:col-span-2">
         ← {t("catalogTitle")}
       </Link>
-      <div className="order-1 lg:col-start-2 lg:row-start-2">
+      <div
+        className={`order-1 lg:col-start-2 lg:row-start-2 ${
+          step === "checkout" ? "lg:hidden" : ""
+        }`}
+      >
         <p className="text-xs font-medium text-oxford/60">{product.category}</p>
         <h1 className="mt-1 font-heading text-3xl leading-tight text-oxford sm:text-4xl">{localizedName(product, locale)}</h1>
         <p className="mt-2 text-xl font-semibold text-oxford sm:text-2xl">{formatPrice(product.priceEgp || 100)}</p>
@@ -243,80 +250,97 @@ export function ProductWorkspace({ product }: { product: Product }) {
         </div>
       </div>
 
-      <aside className="order-3 surface-card p-4 sm:p-6 lg:col-start-2 lg:row-start-3">
-        <div className="mt-0">
-          <p className="mb-2 text-sm font-medium">{t("color")}</p>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((color) => (
+      <aside
+        ref={detailsRef}
+        className={`order-3 scroll-mt-28 surface-card p-4 sm:p-6 lg:col-start-2 ${
+          step === "checkout" ? "lg:row-start-2 lg:row-span-2" : "lg:row-start-3"
+        }`}
+      >
+        {step === "checkout" ? (
+          <div key="checkout" className="panel-swap-in">
+            <CheckoutForm embedded onBack={() => setStep("product")} />
+          </div>
+        ) : (
+          <div key="product" className="panel-swap-in">
+            <div>
+              <p className="mb-2 text-sm font-medium">{t("color")}</p>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setMaterial(color)}
+                    className={`rounded-full border-2 px-4 py-2 text-sm ${
+                      (material || colors[0]) === color ? "border-oxford bg-oxford text-white" : "border-oxford/15 bg-white"
+                    }`}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-medium">{t("quantity")}</p>
+              <div className="flex items-center gap-3">
+                <button type="button" className="icon-circle size-10" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                  −
+                </button>
+                <span className="w-8 text-center text-lg">{quantity}</span>
+                <button type="button" className="icon-circle size-10" onClick={() => setQuantity(quantity + 1)}>
+                  +
+                </button>
+              </div>
+            </div>
+
+            {product.customizable ? (
+              <div className="mt-6 border-t border-border pt-5">
+                <p className="mb-3 font-heading text-xl">{t("customize")}</p>
+                <ControlsPanel product={product} canvas={activeCanvas ?? null} />
+              </div>
+            ) : null}
+
+            <div className="mt-6 border-t border-border pt-5">
+              <h2 className="font-heading text-xl">{t("details")}</h2>
+              <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-muted-foreground">
+                <li>{formatPrice(100)}</li>
+                <li>{colors.join(" · ")}</li>
+                <li>{product.category}</li>
+              </ul>
+            </div>
+
+            <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-oxford/10 bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
               <button
-                key={color}
                 type="button"
-                onClick={() => setMaterial(color)}
-                className={`rounded-full border-2 px-4 py-2 text-sm ${
-                  (material || colors[0]) === color ? "border-oxford bg-oxford text-white" : "border-oxford/15 bg-white"
-                }`}
+                disabled={cartBusy}
+                onClick={() => {
+                  void addToCart({ quiet: true }).then((ok) => {
+                    if (!ok) return;
+                    setStep("checkout");
+                    window.requestAnimationFrame(() => {
+                      detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    });
+                  });
+                }}
+                className="btn-press mt-0 w-full sm:mt-8"
               >
-                {color}
+                {cartBusy ? "…" : t("checkoutNow")}
               </button>
-            ))}
+              <button
+                type="button"
+                disabled={cartBusy}
+                onClick={() => {
+                  void addToCart().then((ok) => {
+                    if (ok) router.push("/catalog");
+                  });
+                }}
+                className="btn-press-outline mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold"
+              >
+                {cartBusy ? "…" : t("addAndShop")}
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-5">
-          <p className="mb-2 text-sm font-medium">{t("quantity")}</p>
-          <div className="flex items-center gap-3">
-            <button type="button" className="icon-circle size-10" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-              −
-            </button>
-            <span className="w-8 text-center text-lg">{quantity}</span>
-            <button type="button" className="icon-circle size-10" onClick={() => setQuantity(quantity + 1)}>
-              +
-            </button>
-          </div>
-        </div>
-
-        {product.customizable ? (
-          <div className="mt-6 border-t border-border pt-5">
-            <p className="mb-3 font-heading text-xl">{t("customize")}</p>
-            <ControlsPanel product={product} canvas={activeCanvas ?? null} />
-          </div>
-        ) : null}
-
-        <div className="mt-6 border-t border-border pt-5">
-          <h2 className="font-heading text-xl">{t("details")}</h2>
-          <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-muted-foreground">
-            <li>{formatPrice(100)}</li>
-            <li>{colors.join(" · ")}</li>
-            <li>{product.category}</li>
-          </ul>
-        </div>
-
-        <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-oxford/10 bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-          <button
-            type="button"
-            disabled={cartBusy}
-            onClick={() => {
-              void addToCart().then((ok) => {
-                if (ok) router.push("/checkout");
-              });
-            }}
-            className="btn-press mt-0 w-full sm:mt-8"
-          >
-            {cartBusy ? "…" : t("checkoutNow")}
-          </button>
-          <button
-            type="button"
-            disabled={cartBusy}
-            onClick={() => {
-              void addToCart().then((ok) => {
-                if (ok) router.push("/catalog");
-              });
-            }}
-            className="btn-press-outline mt-3 w-full rounded-full px-4 py-2.5 text-sm font-semibold"
-          >
-            {cartBusy ? "…" : t("addAndShop")}
-          </button>
-        </div>
+        )}
       </aside>
 
       {preview ? (
