@@ -64,6 +64,8 @@ export function EditProvider({
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const dirty = useMemo(() => JSON.stringify(site) !== JSON.stringify(baseline), [baseline, site]);
+
   useEffect(() => {
     if (pathname.startsWith("/admin")) {
       setEditing(false);
@@ -77,8 +79,6 @@ export function EditProvider({
     setSite((current) => (JSON.stringify(current) === JSON.stringify(next) ? current : next));
     setBaseline((current) => (JSON.stringify(current) === JSON.stringify(next) ? current : next));
   }, [dirty, initial]);
-
-  const dirty = useMemo(() => JSON.stringify(site) !== JSON.stringify(baseline), [baseline, site]);
 
   const startEdit = useCallback(() => {
     if (!isAdmin) return;
