@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { Plus, Settings2 } from "lucide-react";
+import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { SECTION_TYPES, loc, type NavLink } from "@/lib/site";
+import { loc, type NavLink, type SectionType } from "@/lib/site";
 
 export function StudioNavButtons() {
   const pathname = usePathname();
@@ -19,7 +21,7 @@ export function StudioNavButtons() {
           <>
             <button
               type="button"
-              className="btn-press btn-press-sm"
+              className="h-9 rounded-full bg-oxford px-3.5 text-sm font-semibold text-white disabled:opacity-40"
               onClick={() => void save()}
               disabled={saving || !dirty}
             >
@@ -27,7 +29,7 @@ export function StudioNavButtons() {
             </button>
             <button
               type="button"
-              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford shadow ring-1 ring-oxford/10"
+              className="h-9 rounded-full bg-white px-3.5 text-sm font-semibold text-oxford ring-1 ring-oxford/10 disabled:opacity-40"
               onClick={discard}
               disabled={!dirty}
             >
@@ -35,14 +37,14 @@ export function StudioNavButtons() {
             </button>
             <button
               type="button"
-              className="rounded-full bg-oxford px-4 py-2 text-sm font-semibold text-white"
+              className="h-9 rounded-full bg-cream px-3.5 text-sm font-semibold text-oxford"
               onClick={stopEdit}
             >
               {t("doneEdit")}
             </button>
           </>
         ) : (
-          <button type="button" className="btn-press btn-press-sm" onClick={startEdit}>
+          <button type="button" className="h-9 rounded-full bg-oxford px-4 text-sm font-semibold text-white" onClick={startEdit}>
             {t("editSite")}
           </button>
         )}
@@ -50,7 +52,7 @@ export function StudioNavButtons() {
           href="/admin/inquiries"
           target="_blank"
           rel="noreferrer"
-          className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford shadow ring-1 ring-oxford/10"
+          className="h-9 rounded-full bg-white px-3.5 text-sm font-semibold leading-9 text-oxford ring-1 ring-oxford/10"
         >
           {t("studio")}
         </a>
@@ -63,139 +65,181 @@ export function StudioChromePanel() {
   const pathname = usePathname();
   const { locale } = useI18n();
   const { isAdmin, editing, dirty, site, setChrome, setNavLinks, addSection } = useEdit();
-  const [open, setOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [chromeTab, setChromeTab] = useState<null | "display" | "nav" | "footer">(null);
   if (!isAdmin || !editing || pathname.startsWith("/admin")) return null;
 
+  function pickType(type: SectionType) {
+    addSection(type);
+    setAddOpen(false);
+  }
+
   return (
-        <div className="border-b border-oxford/10 bg-background">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="me-auto font-heading text-lg text-oxford">
-                {locale === "ar" ? "تحرير هذه الصفحة" : "Editing this page"}
-                {dirty ? <span className="ms-2 text-sm font-normal text-oxford/50">unsaved</span> : null}
-                <span className="mt-1 block text-sm font-normal text-oxford/50">
-                  {locale === "ar" ? "اضغط على أي قسم لفتح نافذة التعديل." : "Click a section to open its editor."}
-                </span>
-              </p>
-              <button
-                type="button"
-                className="h-11 rounded-2xl bg-cream px-4 text-sm font-semibold text-oxford"
-                onClick={() => setOpen((value) => !value)}
-              >
-                {open ? "Hide header / footer" : "Header, nav & footer"}
-              </button>
-              <select
-                className="h-11 rounded-2xl border border-oxford/15 bg-cream px-3 text-sm"
-                defaultValue=""
-                onChange={(event) => {
-                  if (event.target.value) addSection(event.target.value as (typeof SECTION_TYPES)[number]["type"]);
-                  event.target.value = "";
-                }}
-              >
-                <option value="">{locale === "ar" ? "+ أضف قسم" : "+ Add section"}</option>
-                {SECTION_TYPES.map((item) => (
-                  <option key={item.type} value={item.type}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+    <div className="border-b border-oxford/10 bg-background">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-5 py-2.5 sm:px-8">
+        <p className="me-auto min-w-0 text-sm text-oxford">
+          <span className="font-heading text-base">Editing</span>
+          {dirty ? <span className="ms-2 rounded-full bg-oxford/8 px-2 py-0.5 text-[11px]">unsaved</span> : null}
+          <span className="ms-2 hidden text-oxford/45 sm:inline">Click a section to edit it.</span>
+        </p>
+        <div className="relative">
+          <button
+            type="button"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-oxford px-3.5 text-sm font-semibold text-white"
+            onClick={() => {
+              setAddOpen((value) => !value);
+              setChromeTab(null);
+            }}
+          >
+            <Plus className="size-4" />
+            {locale === "ar" ? "قسم" : "Add section"}
+          </button>
+          {addOpen ? (
+            <div className="absolute end-0 top-11 z-40">
+              <SectionTypeMenu onPick={pickType} />
+            </div>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold ${
+            chromeTab ? "bg-oxford text-white" : "bg-cream text-oxford"
+          }`}
+          onClick={() => {
+            setChromeTab((value) => (value ? null : "display"));
+            setAddOpen(false);
+          }}
+        >
+          <Settings2 className="size-4" />
+          Page
+        </button>
+      </div>
+
+      {chromeTab ? (
+        <div className="border-t border-oxford/8 bg-cream/50">
+          <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
+            <div className="mb-3 flex gap-1 rounded-full bg-white p-1 ring-1 ring-oxford/8">
+              {(
+                [
+                  ["display", locale === "ar" ? "عرض" : "Display"],
+                  ["nav", locale === "ar" ? "قائمة" : "Nav"],
+                  ["footer", locale === "ar" ? "فوتر" : "Footer"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`h-8 flex-1 rounded-full text-sm font-medium ${
+                    chromeTab === id ? "bg-oxford text-white" : "text-oxford/60"
+                  }`}
+                  onClick={() => setChromeTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {open ? (
-              <>
-            <div className="grid gap-3 rounded-[24px] bg-cream p-4 md:grid-cols-2">
-              <Toggle
-                label={locale === "ar" ? "شريط الإعلان العلوي" : "Top announcement"}
-                checked={site.chrome.showAnnouncement}
-                onChange={(showAnnouncement) => setChrome({ showAnnouncement })}
-              />
-              <Toggle
-                label={locale === "ar" ? "الهيدر" : "Header"}
-                checked={site.chrome.showHeader}
-                onChange={(showHeader) => setChrome({ showHeader })}
-              />
-              <Toggle
-                label={locale === "ar" ? "قائمة التنقل" : "Navigation"}
-                checked={site.chrome.showNav}
-                onChange={(showNav) => setChrome({ showNav })}
-              />
-              <Toggle
-                label={locale === "ar" ? "الفوتر" : "Footer"}
-                checked={site.chrome.showFooter}
-                onChange={(showFooter) => setChrome({ showFooter })}
-              />
-              <label className="md:col-span-2">
-                <span className="mb-1 block text-sm text-oxford/70">
-                  {locale === "ar" ? "نص الإعلان · عربي" : "Announcement · Arabic"}
-                </span>
-                <input
-                  className="h-10 w-full rounded-xl border border-oxford/15 bg-white px-3"
-                  value={site.chrome.announcement.ar}
-                  onChange={(event) =>
-                    setChrome({ announcement: { ...site.chrome.announcement, ar: event.target.value } })
-                  }
-                />
-              </label>
-              <label className="md:col-span-2">
-                <span className="mb-1 block text-sm text-oxford/70">Announcement · English</span>
-                <input
-                  className="h-10 w-full rounded-xl border border-oxford/15 bg-white px-3"
-                  value={site.chrome.announcement.en}
-                  onChange={(event) =>
-                    setChrome({ announcement: { ...site.chrome.announcement, en: event.target.value } })
-                  }
-                />
-              </label>
-            </div>
+            {chromeTab === "display" ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl bg-white p-3">
+                  <Toggle
+                    label={locale === "ar" ? "شريط الإعلان" : "Announcement bar"}
+                    checked={site.chrome.showAnnouncement}
+                    onChange={(showAnnouncement) => setChrome({ showAnnouncement })}
+                  />
+                  <Toggle
+                    label={locale === "ar" ? "الهيدر" : "Header"}
+                    checked={site.chrome.showHeader}
+                    onChange={(showHeader) => setChrome({ showHeader })}
+                  />
+                  <Toggle
+                    label={locale === "ar" ? "قائمة التنقل" : "Navigation"}
+                    checked={site.chrome.showNav}
+                    onChange={(showNav) => setChrome({ showNav })}
+                  />
+                  <Toggle
+                    label={locale === "ar" ? "الفوتر" : "Footer"}
+                    checked={site.chrome.showFooter}
+                    onChange={(showFooter) => setChrome({ showFooter })}
+                  />
+                </div>
+                <div className="rounded-2xl bg-white p-3">
+                  <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+                    Announcement copy
+                  </p>
+                  <input
+                    className="mb-2 h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+                    dir="rtl"
+                    placeholder="عربي"
+                    value={site.chrome.announcement.ar}
+                    onChange={(event) =>
+                      setChrome({ announcement: { ...site.chrome.announcement, ar: event.target.value } })
+                    }
+                  />
+                  <input
+                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+                    placeholder="English"
+                    value={site.chrome.announcement.en}
+                    onChange={(event) =>
+                      setChrome({ announcement: { ...site.chrome.announcement, en: event.target.value } })
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
 
-            <NavEditor links={site.chrome.navLinks} onChange={setNavLinks} />
+            {chromeTab === "nav" ? <NavEditor links={site.chrome.navLinks} onChange={setNavLinks} /> : null}
 
-            <div className="grid gap-3 rounded-[24px] bg-cream p-4 md:grid-cols-2">
-              <label>
-                <span className="mb-1 block text-sm text-oxford/70">Footer tagline · عربي</span>
-                <input
-                  className="h-10 w-full rounded-xl border border-oxford/15 bg-white px-3"
-                  value={site.chrome.footerTagline.ar}
-                  onChange={(event) =>
-                    setChrome({ footerTagline: { ...site.chrome.footerTagline, ar: event.target.value } })
-                  }
-                />
-              </label>
-              <label>
-                <span className="mb-1 block text-sm text-oxford/70">Footer tagline · English</span>
-                <input
-                  className="h-10 w-full rounded-xl border border-oxford/15 bg-white px-3"
-                  value={site.chrome.footerTagline.en}
-                  onChange={(event) =>
-                    setChrome({ footerTagline: { ...site.chrome.footerTagline, en: event.target.value } })
-                  }
-                />
-              </label>
-              <label className="md:col-span-2">
-                <span className="mb-1 block text-sm text-oxford/70">Footer blurb · عربي</span>
-                <input
-                  className="h-10 w-full rounded-xl border border-oxford/15 bg-white px-3"
-                  value={site.chrome.footerBlurb.ar}
-                  onChange={(event) =>
-                    setChrome({ footerBlurb: { ...site.chrome.footerBlurb, ar: event.target.value } })
-                  }
-                />
-              </label>
-              <label className="md:col-span-2">
-                <span className="mb-1 block text-sm text-oxford/70">Footer blurb · English</span>
-                <input
-                  className="h-10 w-full rounded-xl border border-oxford/15 bg-white px-3"
-                  value={site.chrome.footerBlurb.en}
-                  onChange={(event) =>
-                    setChrome({ footerBlurb: { ...site.chrome.footerBlurb, en: event.target.value } })
-                  }
-                />
-              </label>
-            </div>
-              </>
+            {chromeTab === "footer" ? (
+              <div className="grid gap-2 rounded-2xl bg-white p-3 md:grid-cols-2">
+                <label className="text-xs text-oxford/60">
+                  <span className="mb-1 block">Tagline · عربي</span>
+                  <input
+                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+                    dir="rtl"
+                    value={site.chrome.footerTagline.ar}
+                    onChange={(event) =>
+                      setChrome({ footerTagline: { ...site.chrome.footerTagline, ar: event.target.value } })
+                    }
+                  />
+                </label>
+                <label className="text-xs text-oxford/60">
+                  <span className="mb-1 block">Tagline · English</span>
+                  <input
+                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+                    value={site.chrome.footerTagline.en}
+                    onChange={(event) =>
+                      setChrome({ footerTagline: { ...site.chrome.footerTagline, en: event.target.value } })
+                    }
+                  />
+                </label>
+                <label className="text-xs text-oxford/60 md:col-span-2">
+                  <span className="mb-1 block">Blurb · عربي</span>
+                  <input
+                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+                    dir="rtl"
+                    value={site.chrome.footerBlurb.ar}
+                    onChange={(event) =>
+                      setChrome({ footerBlurb: { ...site.chrome.footerBlurb, ar: event.target.value } })
+                    }
+                  />
+                </label>
+                <label className="text-xs text-oxford/60 md:col-span-2">
+                  <span className="mb-1 block">Blurb · English</span>
+                  <input
+                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+                    value={site.chrome.footerBlurb.en}
+                    onChange={(event) =>
+                      setChrome({ footerBlurb: { ...site.chrome.footerBlurb, en: event.target.value } })
+                    }
+                  />
+                </label>
+              </div>
             ) : null}
           </div>
         </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -209,9 +253,9 @@ function Toggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-white px-3 text-sm">
+    <label className="flex h-10 items-center justify-between gap-3 border-b border-oxford/6 text-sm last:border-0">
       <span>{label}</span>
-      <input type="checkbox" className="size-5" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <input type="checkbox" className="size-4 accent-oxford" checked={checked} onChange={(event) => onChange(event.target.checked)} />
     </label>
   );
 }
@@ -222,12 +266,12 @@ function NavEditor({ links, onChange }: { links: NavLink[]; onChange: (links: Na
   }
 
   return (
-    <div className="rounded-[24px] bg-cream p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="font-heading text-oxford">Navbar links</p>
+    <div className="rounded-2xl bg-white p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">Navbar links</p>
         <button
           type="button"
-          className="rounded-full bg-white px-3 py-2 text-sm font-semibold ring-1 ring-oxford/10"
+          className="h-8 rounded-full bg-cream px-3 text-sm font-semibold text-oxford"
           onClick={() =>
             onChange([
               ...links,
@@ -240,26 +284,27 @@ function NavEditor({ links, onChange }: { links: NavLink[]; onChange: (links: Na
             ])
           }
         >
-          + Add link
+          + Link
         </button>
       </div>
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {links.map((link, index) => (
-          <div key={link.id} className="grid gap-2 rounded-2xl bg-white p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+          <div key={link.id} className="grid gap-2 rounded-xl bg-cream/70 p-2 md:grid-cols-[1fr_1fr_1fr_auto]">
             <input
-              className="h-10 rounded-xl border border-oxford/15 px-3 text-sm"
+              className="h-9 rounded-xl border border-oxford/12 bg-white px-2.5 text-sm"
               value={link.label.ar}
-              placeholder="Label عربي"
+              placeholder="عربي"
+              dir="rtl"
               onChange={(event) => patch(index, { label: { ...link.label, ar: event.target.value } })}
             />
             <input
-              className="h-10 rounded-xl border border-oxford/15 px-3 text-sm"
+              className="h-9 rounded-xl border border-oxford/12 bg-white px-2.5 text-sm"
               value={link.label.en}
-              placeholder="Label English"
+              placeholder="English"
               onChange={(event) => patch(index, { label: { ...link.label, en: event.target.value } })}
             />
             <input
-              className="h-10 rounded-xl border border-oxford/15 px-3 text-sm"
+              className="h-9 rounded-xl border border-oxford/12 bg-white px-2.5 text-sm"
               value={link.href}
               placeholder="/path"
               onChange={(event) => patch(index, { href: event.target.value })}
@@ -268,6 +313,7 @@ function NavEditor({ links, onChange }: { links: NavLink[]; onChange: (links: Na
               <label className="flex items-center gap-1 text-xs">
                 <input
                   type="checkbox"
+                  className="accent-oxford"
                   checked={link.visible}
                   onChange={(event) => patch(index, { visible: event.target.checked })}
                 />
@@ -275,7 +321,7 @@ function NavEditor({ links, onChange }: { links: NavLink[]; onChange: (links: Na
               </label>
               <button
                 type="button"
-                className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700"
+                className="rounded-lg px-2 py-1 text-xs text-red-700"
                 onClick={() => onChange(links.filter((item) => item.id !== link.id))}
               >
                 Delete
