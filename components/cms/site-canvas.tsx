@@ -195,7 +195,7 @@ function SectionMedia({
         className={`mx-auto block h-auto max-w-full object-contain object-top ${
           rounded ? "rounded-[28px]" : ""
         }`}
-        style={{ maxHeight: `min(${Math.max(80, height)}px, 42vh)` }}
+        style={{ maxHeight: Math.max(48, height), height: "auto" }}
       />
     </div>
   );
@@ -215,22 +215,32 @@ function SectionShell({
   cover?: { src: string; height: number };
 }) {
   const surface = sectionSurface(section.style);
-  const pad = section.style.paddingY ?? 48;
-  const width = Math.min(100, Math.max(40, section.style.blockWidth ?? 100));
+  const pad = Math.max(0, section.style.paddingY ?? 48);
+  const width = Math.min(100, Math.max(20, section.style.blockWidth ?? 100));
+  const minHeight = Math.max(0, section.style.minHeight ?? 0);
+  const marginX = Math.max(0, section.style.marginX ?? 0);
+  const marginY = Math.max(0, section.style.marginY ?? 0);
   const rounded = Boolean(section.style.rounded);
-  const inset = width < 100 || rounded;
   return (
-    <div className={inset ? "px-3 py-3 sm:px-6" : ""}>
+    <div
+      style={{
+        paddingLeft: marginX,
+        paddingRight: marginX,
+        paddingTop: marginY,
+        paddingBottom: marginY,
+      }}
+    >
       <section
         className={`reveal relative overflow-hidden ${rounded ? "rounded-[22px] sm:rounded-[28px]" : ""} ${className}`}
         style={{
           background: cover ? undefined : surface.background,
           color: surface.color,
-          paddingTop: cover ? undefined : `clamp(1.15rem, 4.5vw, ${pad}px)`,
-          paddingBottom: cover ? undefined : `clamp(1.15rem, 4.5vw, ${pad}px)`,
-          width: inset ? `${width}%` : undefined,
-          marginInline: inset ? "auto" : undefined,
-          minHeight: cover ? `min(${cover.height}px, 68vh)` : undefined,
+          width: `${width}%`,
+          maxWidth: "100%",
+          marginInline: "auto",
+          paddingTop: pad,
+          paddingBottom: pad,
+          minHeight: cover ? Math.max(minHeight, cover.height) : minHeight || undefined,
           animationDelay: `${index * 80}ms`,
         }}
       >
@@ -350,7 +360,7 @@ function SectionView({
   if (placement === "cover" && showImage) {
     return (
       <SectionShell section={section} index={index} cover={{ src: image, height }}>
-        <div className={`relative z-10 mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16 ${section.style.align === "center" ? "text-center" : ""}`}>
+        <div className={`relative z-10 mx-auto max-w-6xl px-4 sm:px-6 ${section.style.align === "center" ? "text-center" : ""}`}>
           {copy}
           {actions}
         </div>
@@ -444,9 +454,9 @@ function SectionInspector({
           </div>
         </div>
         <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="hidden overflow-y-auto bg-cream lg:block">
+          <div className="max-h-48 overflow-y-auto bg-cream lg:max-h-none">
             <p className="px-4 pt-4 text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">Live preview</p>
-            <div className="origin-top scale-[0.92] p-2">
+            <div className="origin-top p-2 lg:scale-[0.92]">
               <SectionView
                 section={section}
                 products={products}
@@ -464,7 +474,29 @@ function SectionInspector({
         <NumberField
           label="Padding"
           value={section.style.paddingY ?? 48}
-          onChange={(paddingY) => patchSection(section.id, { style: { paddingY } })}
+          onChange={(paddingY) => patchSection(section.id, { style: { paddingY: Math.max(0, paddingY) } })}
+        />
+        <NumberField
+          label="Section width %"
+          value={section.style.blockWidth ?? 100}
+          onChange={(blockWidth) =>
+            patchSection(section.id, { style: { blockWidth: Math.min(100, Math.max(20, blockWidth)) } })
+          }
+        />
+        <NumberField
+          label="Min height (0 = auto)"
+          value={section.style.minHeight ?? 0}
+          onChange={(minHeight) => patchSection(section.id, { style: { minHeight: Math.max(0, minHeight) } })}
+        />
+        <NumberField
+          label="Margin left / right"
+          value={section.style.marginX ?? 0}
+          onChange={(marginX) => patchSection(section.id, { style: { marginX: Math.max(0, marginX) } })}
+        />
+        <NumberField
+          label="Margin top / bottom"
+          value={section.style.marginY ?? 0}
+          onChange={(marginY) => patchSection(section.id, { style: { marginY: Math.max(0, marginY) } })}
         />
         <ColorField
           label="Background"
@@ -475,13 +507,6 @@ function SectionInspector({
           label="Text color"
           value={section.style.color ?? "#0a2540"}
           onChange={(color) => patchSection(section.id, { style: { color } })}
-        />
-        <NumberField
-          label="Section width %"
-          value={section.style.blockWidth ?? 100}
-          onChange={(blockWidth) =>
-            patchSection(section.id, { style: { blockWidth: Math.min(100, Math.max(40, blockWidth)) } })
-          }
         />
       </div>
       <label className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-cream px-3 text-sm">

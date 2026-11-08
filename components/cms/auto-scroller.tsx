@@ -29,7 +29,7 @@ export function AutoScroller({
               src={item.src}
               alt=""
               className={`w-auto object-contain ${rounded ? "rounded-[24px]" : ""}`}
-              style={{ height: `min(${Math.max(96, height)}px, 28vh)` }}
+              style={{ height: Math.max(64, height) }}
             />
           );
           const className = "shrink-0";

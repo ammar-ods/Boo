@@ -18,6 +18,9 @@ export type SectionStyle = {
   showSecondaryCta?: boolean;
   imageRounded?: boolean;
   blockWidth?: number;
+  minHeight?: number;
+  marginX?: number;
+  marginY?: number;
   rounded?: boolean;
 };
 
