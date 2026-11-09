@@ -40,6 +40,7 @@ export type Product = {
   mugPhoto?: string;
   wrapTemplate?: string;
   thumbnail?: string;
+  gallery?: string[];
   views?: ProductView[];
   priceEgp: number;
   customizable?: boolean;
@@ -204,7 +205,20 @@ export function slugify(value: string) {
 }
 
 export function productThumbnail(product: Product) {
-  return product.thumbnail || product.mockup;
+  return product.thumbnail || product.gallery?.[0] || product.mockup;
+}
+
+export function productGallery(product: Product) {
+  if (product.gallery?.length) return product.gallery.filter(Boolean);
+  if (product.customizable === false) {
+    const views = productViews(product)
+      .map((view) => view.mockup)
+      .filter(Boolean);
+    if (views.length) return views;
+    if (product.thumbnail) return [product.thumbnail];
+    if (product.mockup) return [product.mockup];
+  }
+  return [];
 }
 
 export function localizedName(product: Product, locale: string) {

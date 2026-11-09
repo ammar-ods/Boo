@@ -68,6 +68,7 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   mugPhoto?: string;
   wrapTemplate?: string;
   thumbnail?: string;
+  gallery?: string[];
   views?: ProductView[];
   priceEgp?: number;
   customizable?: boolean;
@@ -184,6 +185,9 @@ function rowToProduct(row: Record<string, unknown>): Product {
     mugPhoto: bounds.mugPhoto ? String(bounds.mugPhoto) : wrapPreview ? mockup : undefined,
     wrapTemplate: bounds.wrapTemplate ? String(bounds.wrapTemplate) : undefined,
     thumbnail: bounds.thumbnail ? String(bounds.thumbnail) : undefined,
+    gallery: Array.isArray(bounds.gallery)
+      ? bounds.gallery.filter((item): item is string => typeof item === "string" && Boolean(item))
+      : undefined,
     views,
     priceEgp: Number(bounds.priceEgp ?? row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
     customizable: bounds.customizable !== false && row.customizable !== false,
@@ -192,7 +196,8 @@ function rowToProduct(row: Record<string, unknown>): Product {
 
 function productToRow(product: Product) {
   const views = product.views?.length ? product.views : productViews(product);
-  const catalogImage = product.mugPhoto || product.mockup;
+  const catalogImage =
+    product.thumbnail || product.gallery?.[0] || product.mugPhoto || product.mockup;
   const safe_zone_bounds: SafeZonePayload = {
     ...product.safe_zone_bounds,
     tagline: product.tagline,
@@ -210,6 +215,7 @@ function productToRow(product: Product) {
     mugPhoto: product.mugPhoto,
     wrapTemplate: product.wrapTemplate,
     thumbnail: product.thumbnail,
+    gallery: product.gallery,
     views,
     priceEgp: product.priceEgp,
     customizable: product.customizable !== false,

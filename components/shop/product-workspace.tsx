@@ -6,7 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, X } from "lucide-react";
 import { toast } from "sonner";
-import { productViews, localizedName, localizedDescription, type Product } from "@/lib/products";
+import {
+  productViews,
+  productGallery,
+  productThumbnail,
+  localizedName,
+  localizedDescription,
+  type Product,
+} from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
@@ -35,9 +42,11 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const [step, setStep] = useState<"product" | "checkout">("product");
   const detailsRef = useRef<HTMLDivElement>(null);
   const views = productViews(product);
+  const gallery = productGallery(product);
   const colors = product.colors?.length ? product.colors : product.materials;
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
-  const multiView = views.length > 1;
+  const customizable = product.customizable !== false;
+  const multiView = customizable && views.length > 1;
 
   useEffect(() => {
     hydrateProduct(product);
@@ -98,6 +107,27 @@ export function ProductWorkspace({ product }: { product: Product }) {
     if (cartBusy) return;
     setCartBusy(true);
     try {
+      if (!customizable) {
+        const images = gallery.length ? gallery : [productThumbnail(product)].filter(Boolean);
+        addItem({
+          slug: product.slug,
+          name: product.name,
+          nameAr: product.nameAr,
+          image: images[0] || product.mockup,
+          color: material || colors[0],
+          quantity,
+          priceEgp: product.priceEgp || 100,
+          kind: "product",
+          viewMockups: images.map((url, index) => ({
+            id: `gallery-${index}`,
+            label: `${index + 1}`,
+            url,
+          })),
+          uploads: [],
+        });
+        if (!options?.quiet) toast.success(t("added"));
+        return true;
+      }
       Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(true));
       const viewMockups: { id: string; label: string; url: string }[] = [];
       for (const view of views) {
@@ -169,6 +199,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">{localizedDescription(product, locale)}</p>
       </div>
       <div className="order-2 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
+        {customizable ? (
         <div className="flex flex-wrap items-center gap-2">
           {multiView
             ? views.map((view) => (
@@ -186,22 +217,21 @@ export function ProductWorkspace({ product }: { product: Product }) {
                 </button>
               ))
             : null}
-          {product.customizable ? (
-            <button
-              type="button"
-              className="ms-auto inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford ring-1 ring-oxford/15"
-              onClick={() => void openPreview()}
-              disabled={previewBusy}
-            >
-              <Eye className="size-4" />
-              {previewBusy ? "…" : t("previewProduct")}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="ms-auto inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford ring-1 ring-oxford/15"
+            onClick={() => void openPreview()}
+            disabled={previewBusy}
+          >
+            <Eye className="size-4" />
+            {previewBusy ? "…" : t("previewProduct")}
+          </button>
         </div>
+        ) : null}
+        {customizable ? (
         <div
           className={`grid items-start justify-items-center gap-4 py-2 sm:gap-6 sm:py-4 ${multiView ? "sm:grid-cols-2" : ""}`}
           onClick={(event) => {
-            if (!product.customizable) return;
             if (event.target === event.currentTarget) void openPreview();
           }}
         >
@@ -221,33 +251,30 @@ export function ProductWorkspace({ product }: { product: Product }) {
               >
                 <p className="text-sm font-medium text-oxford">
                   {viewLabel(view)}
-                  {active && product.customizable ? (
+                  {active ? (
                     <span className="ms-2 rounded-full bg-oxford px-2 py-0.5 text-[11px] text-white">
                       {t("editingSide")}
                     </span>
                   ) : null}
                 </p>
                 <div className={active ? "rounded-[1.8rem] ring-4 ring-oxford/30" : "rounded-[1.8rem]"}>
-                  {product.customizable ? (
-                    <div className={active ? "" : "pointer-events-none"}>
-                      <FabricCanvas
-                        product={product}
-                        view={view}
-                        onReady={(handle) => {
-                          onReady(view.id, handle);
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative aspect-square overflow-hidden rounded-[28px] bg-chip">
-                      <Image src={view.mockup} alt="" fill className="object-contain" />
-                    </div>
-                  )}
+                  <div className={active ? "" : "pointer-events-none"}>
+                    <FabricCanvas
+                      product={product}
+                      view={view}
+                      onReady={(handle) => {
+                        onReady(view.id, handle);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+        ) : (
+          <ProductPhotoGallery images={gallery.length ? gallery : [productThumbnail(product)].filter(Boolean)} name={localizedName(product, locale)} />
+        )}
       </div>
 
       <aside
@@ -293,7 +320,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
               </div>
             </div>
 
-            {product.customizable ? (
+            {customizable ? (
               <div className="mt-6 border-t border-border pt-5">
                 <p className="mb-3 font-heading text-xl">{t("customize")}</p>
                 <ControlsPanel product={product} canvas={activeCanvas ?? null} />
@@ -378,6 +405,44 @@ export function ProductWorkspace({ product }: { product: Product }) {
               ))}
             </div>
           </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ProductPhotoGallery({ images, name }: { images: string[]; name: string }) {
+  const [active, setActive] = useState(0);
+  const current = images[active] || images[0];
+
+  if (!current) {
+    return (
+      <div className="grid aspect-square place-items-center rounded-[1.8rem] bg-chip text-sm text-muted-foreground">
+        Photos coming soon
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative aspect-square overflow-hidden rounded-[1.8rem] bg-chip">
+        <Image src={current} alt={name} fill className="object-contain" sizes="(min-width: 1024px) 32rem, 100vw" />
+      </div>
+      {images.length > 1 ? (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {images.map((src, index) => (
+            <button
+              key={`${src}-${index}`}
+              type="button"
+              onClick={() => setActive(index)}
+              className={`relative size-16 shrink-0 overflow-hidden rounded-2xl bg-chip ring-2 transition ${
+                active === index ? "ring-oxford" : "ring-transparent hover:ring-oxford/30"
+              }`}
+              aria-label={`${name} ${index + 1}`}
+            >
+              <Image src={src} alt="" fill className="object-cover" sizes="64px" />
+            </button>
+          ))}
         </div>
       ) : null}
     </div>

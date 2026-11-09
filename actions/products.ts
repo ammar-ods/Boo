@@ -89,6 +89,22 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   const extraWidth = formData.getAll("extra_width").map(Number);
   const extraHeight = formData.getAll("extra_height").map(Number);
 
+  const galleryEnabled = formData.get("gallery_enabled") === "on";
+  const galleryExisting = formData.getAll("gallery_existing").map(String);
+  const galleryFiles = formData.getAll("gallery_file");
+  let gallery = existing?.gallery?.filter(Boolean) ?? [];
+  if (galleryEnabled) {
+    gallery = [];
+    for (let index = 0; index < Math.max(galleryExisting.length, galleryFiles.length); index += 1) {
+      let src = galleryExisting[index] || "";
+      const galleryFile = galleryFiles[index];
+      if (galleryFile instanceof File && galleryFile.size > 0) {
+        src = await uploadViewFile(slug, galleryFile);
+      }
+      if (src) gallery.push(src);
+    }
+  }
+
   for (let index = 0; index < extraLabels.length; index += 1) {
     const extraFile = extraFiles[index];
     let extraMockup = extraExisting[index] || "";
@@ -123,7 +139,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     colors: materials.length ? materials : existing?.colors ?? ["White"],
     defaultMaterial: materials[0] || "Standard",
     priceEgp: Number(formData.get("priceEgp") || existing?.priceEgp || 100),
-    customizable: formData.get("customizable") !== "off",
+    customizable: formData.get("customizable") === "on",
     canvasWidth: 800,
     canvasHeight: 800,
     safe_zone_bounds: safe,
@@ -137,6 +153,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     mugPhoto,
     wrapTemplate,
     thumbnail: thumbnail || undefined,
+    gallery,
     views,
   };
 }
