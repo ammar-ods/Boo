@@ -50,8 +50,6 @@ export function StudioNavButtons() {
         )}
         <a
           href="/admin/inquiries"
-          target="_blank"
-          rel="noreferrer"
           className="h-9 rounded-full bg-white px-3.5 text-sm font-semibold leading-9 text-oxford ring-1 ring-oxford/10"
         >
           {t("studio")}

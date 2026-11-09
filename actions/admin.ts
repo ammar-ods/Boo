@@ -57,6 +57,8 @@ export async function deleteInquiry(formData: FormData) {
   if (!id) throw new Error("Order not found");
   await deleteOrder(id);
   revalidatePath("/admin/inquiries");
+  revalidatePath("/admin/inquiries", "layout");
+  redirect("/admin/inquiries?deleted=1");
 }
 
 export async function savePromo(formData: FormData) {

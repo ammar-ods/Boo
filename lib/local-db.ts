@@ -418,6 +418,11 @@ function normalizeInquiry(row: Record<string, unknown>): InquiryRecord {
 }
 
 let memoryOrders: InquiryRecord[] = [];
+const removedOrderKeys = new Set<string>();
+
+function isRemovedOrder(order: InquiryRecord) {
+  return removedOrderKeys.has(order.id) || removedOrderKeys.has(order.reference_code);
+}
 
 function sortOrders(orders: InquiryRecord[]) {
   return [...orders].sort(
@@ -477,7 +482,7 @@ export async function listOrders(): Promise<InquiryRecord[]> {
       remote = (data ?? []).map((row) => normalizeInquiry(row as Record<string, unknown>));
     }
   }
-  return mergeOrders(memoryOrders, local, remote);
+  return mergeOrders(memoryOrders, local, remote).filter((order) => !isRemovedOrder(order));
 }
 
 export async function getOrder(id: string) {
@@ -490,7 +495,10 @@ export async function getOrder(id: string) {
     try {
       const supabase = createAdminClient();
       const byId = await supabase.from("inquiries").select("*").eq("id", key).maybeSingle();
-      if (byId.data) return normalizeInquiry(byId.data as Record<string, unknown>);
+      if (byId.data) {
+        const order = normalizeInquiry(byId.data as Record<string, unknown>);
+        if (!isRemovedOrder(order)) return order;
+      }
       if (byId.error && !canUseSeedFallback(byId.error)) throw new Error(byId.error.message);
       const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
       if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
@@ -532,26 +540,24 @@ export async function deleteOrder(id: string) {
   const order = await getOrder(id);
   if (!order) throw new Error("Order not found");
 
-  memoryOrders = memoryOrders.filter((item) => item.id !== order.id);
+  removedOrderKeys.add(order.id);
+  if (order.reference_code) removedOrderKeys.add(order.reference_code);
+
+  memoryOrders = memoryOrders.filter((item) => !isRemovedOrder(item));
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
   await writeJson(
     ORDERS_FILE,
-    local.filter((item) => item.id !== order.id && item.reference_code !== order.reference_code),
+    local.filter((item) => !isRemovedOrder(item)),
   );
 
   if (useSupabase()) {
-    try {
-      if (!supabaseServiceKey()) {
-        throw new Error("Set SUPABASE_SERVICE_ROLE_KEY so orders can be deleted from the dashboard.");
-      }
-      const supabase = createAdminClient();
-      const { error } = await supabase.from("inquiries").delete().eq("id", order.id);
-      if (error) throw new Error(`Could not delete order: ${error.message}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
-        throw error;
-      }
+    requireServiceRole();
+    const supabase = createAdminClient();
+    const byId = await supabase.from("inquiries").delete().eq("id", order.id);
+    if (byId.error) throw new Error(`Could not delete order: ${byId.error.message}`);
+    if (order.reference_code) {
+      const byRef = await supabase.from("inquiries").delete().eq("reference_code", order.reference_code);
+      if (byRef.error) throw new Error(`Could not delete order: ${byRef.error.message}`);
     }
   }
 

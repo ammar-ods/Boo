@@ -36,12 +36,7 @@ export function SiteFooter() {
           <p className="mb-3 font-medium text-white">Boo</p>
           <p>100 EGP</p>
           <p>EGP · USD · EUR · GBP</p>
-          <a
-            href="/admin/login"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-block text-white/40 hover:text-white"
-          >
+          <a href="/admin/login" className="mt-4 inline-block text-white/40 hover:text-white">
             {t("studio")}
           </a>
         </div>

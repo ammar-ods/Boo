@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { deleteInquiry } from "@/actions/admin";
 
 function ConfirmDelete() {
@@ -28,7 +26,6 @@ export function DeleteOrderButton({
   reference: string;
   compact?: boolean;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
@@ -55,17 +52,7 @@ export function DeleteOrderButton({
               database, including customer details, mockups, and uploaded images. This cannot be
               undone.
             </p>
-            <form
-              action={async (formData) => {
-                try {
-                  await deleteInquiry(formData);
-                  router.push("/admin/inquiries?deleted=1");
-                } catch (error) {
-                  toast.error(error instanceof Error ? error.message : "Could not delete order");
-                }
-              }}
-              className="mt-6 flex flex-wrap justify-end gap-3"
-            >
+            <form action={deleteInquiry} className="mt-6 flex flex-wrap justify-end gap-3">
               <input type="hidden" name="id" value={id} />
               <button
                 type="button"
