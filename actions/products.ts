@@ -60,6 +60,13 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     wrapTemplate = MUG_WRAP_FLAT.mockup;
   }
 
+  let thumbnail = existing?.thumbnail || "";
+  if (formData.get("thumbnail_clear") === "on") thumbnail = "";
+  const thumbFile = formData.get("thumbnail");
+  if (thumbFile instanceof File && thumbFile.size > 0) {
+    thumbnail = await uploadViewFile(slug, thumbFile);
+  }
+
   if (wrapPreview && mugPhoto) mockup = mugPhoto;
 
   const safe = parseSafe(formData);
@@ -129,6 +136,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     wrapPreview,
     mugPhoto,
     wrapTemplate,
+    thumbnail: thumbnail || undefined,
     views,
   };
 }

@@ -90,6 +90,23 @@ export function ProductForm({
           />
         </div>
         <div className="space-y-1.5">
+          <Label htmlFor="thumbnail">Thumbnail (shop listing)</Label>
+          <p className="text-xs text-muted-foreground">
+            Shown on the website cards. Inside the product page, visitors still see the blank mockups below.
+          </p>
+          <input id="thumbnail" name="thumbnail" type="file" accept="image/*,.svg" />
+          {product?.thumbnail ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={product.thumbnail} alt="" className="mt-2 h-40 rounded-xl object-cover" />
+              <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" name="thumbnail_clear" />
+                Remove thumbnail
+              </label>
+            </>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="mockup">First side image (front / wrap)</Label>
           <input id="mockup" name="mockup" type="file" accept="image/*,.svg" />
           {product?.mockup ? (

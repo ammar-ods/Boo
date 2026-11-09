@@ -67,6 +67,7 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   wrapPreview?: boolean;
   mugPhoto?: string;
   wrapTemplate?: string;
+  thumbnail?: string;
   views?: ProductView[];
   priceEgp?: number;
   customizable?: boolean;
@@ -182,6 +183,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     wrapPreview,
     mugPhoto: bounds.mugPhoto ? String(bounds.mugPhoto) : wrapPreview ? mockup : undefined,
     wrapTemplate: bounds.wrapTemplate ? String(bounds.wrapTemplate) : undefined,
+    thumbnail: bounds.thumbnail ? String(bounds.thumbnail) : undefined,
     views,
     priceEgp: Number(bounds.priceEgp ?? row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
     customizable: bounds.customizable !== false && row.customizable !== false,
@@ -207,6 +209,7 @@ function productToRow(product: Product) {
     wrapPreview: Boolean(product.wrapPreview),
     mugPhoto: product.mugPhoto,
     wrapTemplate: product.wrapTemplate,
+    thumbnail: product.thumbnail,
     views,
     priceEgp: product.priceEgp,
     customizable: product.customizable !== false,

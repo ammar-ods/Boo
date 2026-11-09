@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { localizedName, localizedTagline, type Product } from "@/lib/products";
+import { localizedName, localizedTagline, productThumbnail, type Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 
 export function ProductCard({
@@ -16,12 +16,13 @@ export function ProductCard({
   const { locale, formatPrice } = useI18n();
   const name = localizedName(product, locale);
   const tagline = localizedTagline(product, locale);
+  const image = productThumbnail(product);
 
   if (layout === "list") {
     return (
       <Link href={`/product/${product.slug}`} className="surface-card flex gap-4 p-3 transition hover:-translate-y-0.5">
         <div className="relative size-28 shrink-0 overflow-hidden rounded-2xl bg-chip">
-          <Image src={product.mockup} alt={name} fill className="object-cover" />
+          <Image src={image} alt={name} fill className="object-cover" />
         </div>
         <div className="min-w-0 py-1">
           <p className="text-[11px] tracking-[0.16em] text-oxford/60">{product.category.toUpperCase()}</p>
@@ -38,7 +39,7 @@ export function ProductCard({
       <div className="relative overflow-hidden rounded-[28px] bg-card shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)] transition duration-500 group-hover:-translate-y-1 group-hover:shadow-[0_22px_40px_-20px_rgba(10,37,64,0.4)]">
         <div className="relative aspect-[4/5] overflow-hidden bg-chip">
           <Image
-            src={product.mockup}
+            src={image}
             alt={name}
             fill
             className="object-cover transition duration-500 group-hover:scale-105"

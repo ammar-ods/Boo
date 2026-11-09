@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCatalog } from "@/lib/local-db";
+import { productThumbnail } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,7 +45,7 @@ export default async function AdminProductsPage({
             className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10 transition hover:-translate-y-0.5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={product.mockup} alt="" className="aspect-square w-full object-cover bg-[#f6f3ee]" />
+            <img src={productThumbnail(product)} alt="" className="aspect-square w-full object-cover bg-[#f6f3ee]" />
             <div className="p-4">
               <p className="text-xs text-muted-foreground">{product.category}</p>
               <h2 className="font-heading text-xl">{product.name}</h2>

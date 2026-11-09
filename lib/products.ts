@@ -39,6 +39,7 @@ export type Product = {
   wrapPreview?: boolean;
   mugPhoto?: string;
   wrapTemplate?: string;
+  thumbnail?: string;
   views?: ProductView[];
   priceEgp: number;
   customizable?: boolean;
@@ -200,6 +201,10 @@ export function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 60);
+}
+
+export function productThumbnail(product: Product) {
+  return product.thumbnail || product.mockup;
 }
 
 export function localizedName(product: Product, locale: string) {
