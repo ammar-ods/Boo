@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ProductCard } from "@/components/catalog/product-card";
 import { CATEGORIES, type Product, type ProductCategory } from "@/lib/products";
 import { cn } from "@/lib/utils";
@@ -12,9 +13,15 @@ const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
   "staff-picks": "staff",
 };
 
+const CATEGORY_HREF: Record<ProductCategory | "All", string> = {
+  All: "/catalog?all=1",
+  Apparel: "/catalog?collection=apparel",
+  Drinkware: "/catalog?collection=drinkware",
+  "Laser Cut Wood": "/catalog?collection=wood",
+};
+
 export function ProductGrid({
   products,
-  initialCategory,
   collection,
   query,
   compact = false,
@@ -25,23 +32,19 @@ export function ProductGrid({
   query?: string;
   compact?: boolean;
 }) {
-  const [category, setCategory] = useState<ProductCategory | "All">(
-    initialCategory ?? "All",
-  );
   const [inStock, setInStock] = useState(false);
   const [sort, setSort] = useState<"featured" | "name">("featured");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
+  const mapped = collection ? COLLECTIONS[collection] : undefined;
+  const selectedCategory: ProductCategory | "All" =
+    mapped && mapped !== "staff" ? mapped[0] : "All";
 
   const items = useMemo(() => {
     let next = products;
-    const collectionFilter = collection ? COLLECTIONS[collection] : undefined;
-    if (collectionFilter === "staff") {
+    if (mapped === "staff") {
       next = products.slice(0, 3);
-    } else if (collectionFilter) {
-      next = products.filter((product) => collectionFilter.includes(product.category));
-    }
-    if (category !== "All") {
-      next = next.filter((product) => product.category === category);
+    } else if (mapped) {
+      next = products.filter((product) => mapped.includes(product.category));
     }
     if (query) {
       const needle = query.toLowerCase();
@@ -57,7 +60,7 @@ export function ProductGrid({
       next = [...next].sort((a, b) => a.name.localeCompare(b.name));
     }
     return next;
-  }, [category, collection, inStock, products, query, sort]);
+  }, [collection, inStock, mapped, products, query, sort]);
 
   const grid = (
     <div
@@ -86,17 +89,16 @@ export function ProductGrid({
           <p className="mb-2 text-xs tracking-[0.16em] text-oxford/60">DISCIPLINE</p>
           <div className="flex flex-col gap-1">
             {(["All", ...CATEGORIES] as const).map((item) => (
-              <button
+              <Link
                 key={item}
-                type="button"
-                onClick={() => setCategory(item)}
+                href={CATEGORY_HREF[item]}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-start text-sm font-medium transition",
-                  category === item ? "bg-oxford text-white shadow-[0_3px_0_0_#06182c]" : "text-oxford hover:bg-chip",
+                  selectedCategory === item ? "bg-oxford text-white shadow-[0_3px_0_0_#06182c]" : "text-oxford hover:bg-chip",
                 )}
               >
                 {item}
-              </button>
+              </Link>
             ))}
           </div>
         </div>

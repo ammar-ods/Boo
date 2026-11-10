@@ -54,8 +54,12 @@ export async function updateInquiryStatus(formData: FormData) {
 
 export async function deleteInquiry(formData: FormData) {
   const id = String(formData.get("id") ?? "");
-  if (!id) throw new Error("Order not found");
-  await deleteOrder(id);
+  if (!id) redirect("/admin/inquiries?error=missing");
+  try {
+    await deleteOrder(id);
+  } catch {
+    redirect("/admin/inquiries?error=delete");
+  }
   revalidatePath("/admin/inquiries");
   revalidatePath("/admin/inquiries", "layout");
   revalidatePath("/admin/inquiries", "page");

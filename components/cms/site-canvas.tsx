@@ -22,10 +22,11 @@ import {
 } from "@/lib/site";
 
 export function SiteCanvas({ products }: { products: Product[] }) {
-  const { editing, site, selectedId, setSelectedId, patchSection, moveSection, removeSection, addSection } = useEdit();
+  const { editing, selectedId, setSelectedId, patchSection, moveSection, removeSection, addSection, pageSections } =
+    useEdit();
   const { locale } = useI18n();
   const [insertFor, setInsertFor] = useState<string | null>(null);
-  const visible = editing ? site.sections : site.sections.filter((section) => section.visible);
+  const visible = editing ? pageSections : pageSections.filter((section) => section.visible);
 
   useEffect(() => {
     if (!insertFor) return;
@@ -152,8 +153,13 @@ export function SiteCanvas({ products }: { products: Product[] }) {
           />
         </div>
       ))}
-      {editing && selectedId ? (
-        <SectionInspector section={site.sections.find((item) => item.id === selectedId) ?? null} />
+        {visible.length === 0 ? (
+          <div className="px-5 py-20 text-center text-muted-foreground">
+            {editing ? "Add a section to this page." : null}
+          </div>
+        ) : null}
+        {editing && selectedId ? (
+        <SectionInspector section={pageSections.find((item) => item.id === selectedId) ?? null} />
       ) : null}
     </div>
   );

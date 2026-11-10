@@ -20,5 +20,9 @@ export async function POST(request: Request) {
   }
   const saved = await saveSite(body);
   revalidatePath("/");
+  revalidatePath("/p", "layout");
+  for (const page of saved.site.pages) {
+    revalidatePath(`/p/${page.slug}`);
+  }
   return NextResponse.json(saved);
 }

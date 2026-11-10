@@ -5,8 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { flashStatus } from "@/components/status-flash";
 import {
+  cmsPagePath,
+  loc,
   migrateSite,
   newSection,
+  pageSlugify,
+  pathPageKey,
+  RESERVED_PAGE_SLUGS,
+  type CmsPage,
   type NavLink,
   type SectionContent,
   type SectionStyle,
@@ -37,9 +43,14 @@ type EditContextValue = {
       style?: Partial<SectionStyle>;
     },
   ) => void;
+  pageKey: "home" | string | null;
+  pageSections: SiteSection[];
   addSection: (type: SectionType, beforeId?: string) => void;
   removeSection: (id: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
+  addPage: (input: { titleEn: string; titleAr: string; slug?: string; addToNav?: boolean }) => string | null;
+  updatePage: (id: string, next: Partial<Pick<CmsPage, "slug" | "title" | "visible">>) => void;
+  removePage: (id: string) => void;
 };
 
 const EditContext = createContext<EditContextValue | null>(null);
@@ -65,6 +76,11 @@ export function EditProvider({
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const pageKey = pathPageKey(pathname);
+  const pageSections = useMemo(() => {
+    if (!pageKey || pageKey === "home") return site.sections;
+    return (site.pages ?? []).find((page) => page.slug === pageKey)?.sections ?? [];
+  }, [pageKey, site.pages, site.sections]);
   const dirty = useMemo(() => JSON.stringify(site) !== JSON.stringify(baseline), [baseline, site]);
 
   useEffect(() => {
@@ -135,6 +151,22 @@ export function EditProvider({
     setSite((current) => ({ ...current, chrome: { ...current.chrome, navLinks } }));
   }, []);
 
+  const mapSections = useCallback(
+    (current: SiteDocument, mapper: (sections: SiteSection[]) => SiteSection[]) => {
+      const key = pathPageKey(pathname);
+      if (!key || key === "home") {
+        return { ...current, sections: mapper(current.sections) };
+      }
+      return {
+        ...current,
+        pages: current.pages.map((page) =>
+          page.slug === key ? { ...page, sections: mapper(page.sections) } : page,
+        ),
+      };
+    },
+    [pathname],
+  );
+
   const patchSection = useCallback(
     (
       id: string,
@@ -143,53 +175,145 @@ export function EditProvider({
         style?: Partial<SectionStyle>;
       },
     ) => {
-      setSite((current) => ({
-        ...current,
-        sections: current.sections.map((section) => {
-          if (section.id !== id) return section;
-          return {
-            ...section,
-            ...next,
-            content: { ...section.content, ...next.content },
-            style: { ...section.style, ...next.style },
-          };
-        }),
-      }));
+      setSite((current) =>
+        mapSections(current, (sections) =>
+          sections.map((section) => {
+            if (section.id !== id) return section;
+            return {
+              ...section,
+              ...next,
+              content: { ...section.content, ...next.content },
+              style: { ...section.style, ...next.style },
+            };
+          }),
+        ),
+      );
     },
-    [],
+    [mapSections],
   );
 
-  const addSection = useCallback((type: SectionType, beforeId?: string) => {
-    const section = newSection(type);
+  const addSection = useCallback(
+    (type: SectionType, beforeId?: string) => {
+      const section = newSection(type);
+      setSite((current) =>
+        mapSections(current, (sections) => {
+          if (!beforeId) return [...sections, section];
+          const index = sections.findIndex((item) => item.id === beforeId);
+          const next = [...sections];
+          next.splice(index < 0 ? next.length : index, 0, section);
+          return next;
+        }),
+      );
+      setSelectedId(section.id);
+    },
+    [mapSections],
+  );
+
+  const removeSection = useCallback(
+    (id: string) => {
+      setSite((current) => mapSections(current, (sections) => sections.filter((section) => section.id !== id)));
+      setSelectedId((current) => (current === id ? null : current));
+    },
+    [mapSections],
+  );
+
+  const moveSection = useCallback(
+    (id: string, dir: -1 | 1) => {
+      setSite((current) =>
+        mapSections(current, (sections) => {
+          const index = sections.findIndex((item) => item.id === id);
+          const nextIndex = index + dir;
+          if (index < 0 || nextIndex < 0 || nextIndex >= sections.length) return sections;
+          const next = [...sections];
+          const [row] = next.splice(index, 1);
+          next.splice(nextIndex, 0, row);
+          return next;
+        }),
+      );
+    },
+    [mapSections],
+  );
+
+  const addPage = useCallback(
+    (input: { titleEn: string; titleAr: string; slug?: string; addToNav?: boolean }) => {
+      const titleEn = input.titleEn.trim() || "New page";
+      const titleAr = input.titleAr.trim() || titleEn;
+      let slug = pageSlugify(input.slug || titleEn || titleAr);
+      if (!slug) slug = `page-${Math.random().toString(36).slice(2, 7)}`;
+      if (RESERVED_PAGE_SLUGS.has(slug) || site.pages.some((page) => page.slug === slug)) {
+        slug = `${slug}-${Math.random().toString(36).slice(2, 5)}`;
+      }
+      if (RESERVED_PAGE_SLUGS.has(slug)) {
+        toast.error("That URL is reserved.");
+        return null;
+      }
+      const page: CmsPage = {
+        id: `page-${Math.random().toString(36).slice(2, 8)}`,
+        slug,
+        title: loc(titleAr, titleEn),
+        visible: true,
+        sections: [newSection("text")],
+      };
+      setSite((current) => ({
+        ...current,
+        pages: [...current.pages, page],
+        chrome: input.addToNav
+          ? {
+              ...current.chrome,
+              navLinks: [
+                ...current.chrome.navLinks,
+                {
+                  id: `nav-${page.id}`,
+                  href: cmsPagePath(slug),
+                  label: page.title,
+                  visible: true,
+                },
+              ],
+            }
+          : current.chrome,
+      }));
+      router.push(cmsPagePath(slug));
+      setEditing(true);
+      return slug;
+    },
+    [router, site.pages],
+  );
+
+  const updatePage = useCallback((id: string, next: Partial<Pick<CmsPage, "slug" | "title" | "visible">>) => {
     setSite((current) => {
-      if (!beforeId) return { ...current, sections: [...current.sections, section] };
-      const index = current.sections.findIndex((item) => item.id === beforeId);
-      const sections = [...current.sections];
-      sections.splice(index < 0 ? sections.length : index, 0, section);
-      return { ...current, sections };
+      const currentPage = current.pages.find((page) => page.id === id);
+      if (!currentPage) return current;
+      const slug = next.slug ? pageSlugify(next.slug) : currentPage.slug;
+      if (!slug || RESERVED_PAGE_SLUGS.has(slug)) return current;
+      const title = next.title ? { ...currentPage.title, ...next.title } : currentPage.title;
+      return {
+        ...current,
+        pages: current.pages.map((page) => (page.id === id ? { ...page, ...next, slug, title } : page)),
+        chrome: {
+          ...current.chrome,
+          navLinks: current.chrome.navLinks.map((link) =>
+            link.href === cmsPagePath(currentPage.slug) ? { ...link, href: cmsPagePath(slug), label: title } : link,
+          ),
+        },
+      };
     });
-    setSelectedId(section.id);
   }, []);
 
-  const removeSection = useCallback((id: string) => {
-    setSite((current) => ({
-      ...current,
-      sections: current.sections.filter((section) => section.id !== id),
-    }));
-    setSelectedId((current) => (current === id ? null : current));
-  }, []);
-
-  const moveSection = useCallback((id: string, dir: -1 | 1) => {
-    setSite((current) => {
-      const index = current.sections.findIndex((item) => item.id === id);
-      const nextIndex = index + dir;
-      if (index < 0 || nextIndex < 0 || nextIndex >= current.sections.length) return current;
-      const sections = [...current.sections];
-      const [row] = sections.splice(index, 1);
-      sections.splice(nextIndex, 0, row);
-      return { ...current, sections };
-    });
-  }, []);
+  const removePage = useCallback(
+    (id: string) => {
+      const page = site.pages.find((item) => item.id === id);
+      setSite((current) => ({
+        ...current,
+        pages: current.pages.filter((item) => item.id !== id),
+        chrome: {
+          ...current.chrome,
+          navLinks: current.chrome.navLinks.filter((link) => link.href !== (page ? cmsPagePath(page.slug) : "")),
+        },
+      }));
+      if (page && pathPageKey(pathname) === page.slug) router.push("/");
+    },
+    [pathname, router, site.pages],
+  );
 
   const value = useMemo<EditContextValue>(
     () => ({
@@ -207,18 +331,27 @@ export function EditProvider({
       setChrome,
       setNavLinks,
       patchSection,
+      pageKey,
+      pageSections,
       addSection,
       removeSection,
       moveSection,
+      addPage,
+      updatePage,
+      removePage,
     }),
     [
+      addPage,
       addSection,
       discard,
       dirty,
       editing,
       isAdmin,
       moveSection,
+      pageKey,
+      pageSections,
       patchSection,
+      removePage,
       removeSection,
       save,
       saving,
@@ -228,6 +361,7 @@ export function EditProvider({
       site,
       startEdit,
       stopEdit,
+      updatePage,
     ],
   );
 

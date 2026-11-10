@@ -610,23 +610,33 @@ export async function deleteOrder(id: string) {
     local.filter((item) => !isRemovedOrder(item)),
   );
 
-  if (useSupabase()) {
-    requireServiceRole();
+  if (useSupabase() && supabaseServiceKey()) {
     const supabase = createAdminClient();
-    const keys = [...new Set([order.id, order.reference_code].filter(Boolean))];
-    for (const key of keys) {
-      const byId = await supabase.from("inquiries").delete().eq("id", key).select("id");
-      if (byId.error) throw new Error(`Could not delete order: ${byId.error.message}`);
-      const byRef = await supabase.from("inquiries").delete().eq("reference_code", key).select("id");
-      if (byRef.error) throw new Error(`Could not delete order: ${byRef.error.message}`);
+    const byId = await supabase.from("inquiries").delete().eq("id", order.id);
+    if (byId.error && !isIgnorableDeleteError(byId.error.message)) {
+      console.error("Could not delete order from Supabase:", byId.error.message);
+    }
+    if (order.reference_code) {
+      const byRef = await supabase.from("inquiries").delete().eq("reference_code", order.reference_code);
+      if (byRef.error && !isIgnorableDeleteError(byRef.error.message)) {
+        console.error("Could not delete order from Supabase:", byRef.error.message);
+      }
     }
   }
 
   for (const file of orderAssetUrls(order)) {
-    await deleteStoredFile(file);
+    try {
+      await deleteStoredFile(file);
+    } catch {
+      /* row is already gone from the inbox */
+    }
   }
 
   return order.id;
+}
+
+function isIgnorableDeleteError(message: string) {
+  return /invalid input syntax/i.test(message) || /uuid/i.test(message);
 }
 
 export async function saveOrder(order: InquiryRecord) {

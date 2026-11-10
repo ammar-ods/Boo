@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus, Settings2 } from "lucide-react";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { loc, type CatalogSection, type NavLink, type SectionType } from "@/lib/site";
+import { cmsPagePath, loc, type CatalogSection, type NavLink, type SectionType } from "@/lib/site";
 
 export function StudioNavButtons() {
   const pathname = usePathname();
@@ -62,9 +63,10 @@ export function StudioNavButtons() {
 export function StudioChromePanel() {
   const pathname = usePathname();
   const { locale } = useI18n();
-  const { isAdmin, editing, dirty, site, setChrome, setNavLinks, addSection } = useEdit();
+  const { isAdmin, editing, dirty, site, setChrome, setNavLinks, addSection, pageKey } = useEdit();
   const [addOpen, setAddOpen] = useState(false);
-  const [chromeTab, setChromeTab] = useState<null | "display" | "nav" | "shop" | "footer">(null);
+  const [chromeTab, setChromeTab] = useState<null | "display" | "nav" | "pages" | "shop" | "footer">(null);
+  const canEditSections = pageKey !== null;
   if (!isAdmin || !editing || pathname.startsWith("/admin")) return null;
 
   function pickType(type: SectionType) {
@@ -78,8 +80,11 @@ export function StudioChromePanel() {
         <p className="me-auto min-w-0 text-sm text-oxford">
           <span className="font-heading text-base">Editing</span>
           {dirty ? <span className="ms-2 rounded-full bg-oxford/8 px-2 py-0.5 text-[11px]">unsaved</span> : null}
-          <span className="ms-2 hidden text-oxford/45 sm:inline">Click a section to edit it.</span>
+          <span className="ms-2 hidden text-oxford/45 sm:inline">
+            {canEditSections ? "Click a section to edit it." : "Open a page to add sections, or create a new page."}
+          </span>
         </p>
+        {canEditSections ? (
         <div className="relative">
           <button
             type="button"
@@ -98,6 +103,7 @@ export function StudioChromePanel() {
             </div>
           ) : null}
         </div>
+        ) : null}
         <button
           type="button"
           className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold ${
@@ -120,6 +126,7 @@ export function StudioChromePanel() {
               {(
                 [
                   ["display", locale === "ar" ? "عرض" : "Display"],
+                  ["pages", locale === "ar" ? "صفحات" : "Pages"],
                   ["nav", locale === "ar" ? "قائمة" : "Nav"],
                   ["shop", locale === "ar" ? "المتجر" : "Shop"],
                   ["footer", locale === "ar" ? "فوتر" : "Footer"],
@@ -196,6 +203,8 @@ export function StudioChromePanel() {
               </div>
             ) : null}
 
+            {chromeTab === "pages" ? <PagesEditor /> : null}
+
             {chromeTab === "nav" ? <NavEditor links={site.chrome.navLinks} onChange={setNavLinks} /> : null}
 
             {chromeTab === "shop" ? (
@@ -254,6 +263,121 @@ export function StudioChromePanel() {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function PagesEditor() {
+  const { locale } = useI18n();
+  const { site, pageKey, addPage, updatePage, removePage } = useEdit();
+  const [titleEn, setTitleEn] = useState("");
+  const [titleAr, setTitleAr] = useState("");
+  const [slug, setSlug] = useState("");
+  const [addToNav, setAddToNav] = useState(true);
+
+  return (
+    <div className="grid gap-3 md:grid-cols-[1fr_1.2fr]">
+      <div className="rounded-2xl bg-white p-3">
+        <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+          New page
+        </p>
+        <label className="mb-2 block text-xs text-oxford/60">
+          <span className="mb-1 block">Title · English</span>
+          <input
+            className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+            value={titleEn}
+            onChange={(event) => setTitleEn(event.target.value)}
+            placeholder="About"
+          />
+        </label>
+        <label className="mb-2 block text-xs text-oxford/60">
+          <span className="mb-1 block">Title · عربي</span>
+          <input
+            className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+            dir="rtl"
+            value={titleAr}
+            onChange={(event) => setTitleAr(event.target.value)}
+            placeholder="عنّا"
+          />
+        </label>
+        <label className="mb-2 block text-xs text-oxford/60">
+          <span className="mb-1 block">URL /p/…</span>
+          <input
+            className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
+            value={slug}
+            onChange={(event) => setSlug(event.target.value)}
+            placeholder="about"
+          />
+        </label>
+        <label className="mb-3 flex items-center gap-2 text-sm">
+          <input type="checkbox" className="accent-oxford" checked={addToNav} onChange={(event) => setAddToNav(event.target.checked)} />
+          Add to navbar
+        </label>
+        <button
+          type="button"
+          className="h-9 w-full rounded-full bg-oxford text-sm font-semibold text-white"
+          onClick={() => {
+            const created = addPage({ titleEn, titleAr, slug, addToNav });
+            if (created) {
+              setTitleEn("");
+              setTitleAr("");
+              setSlug("");
+            }
+          }}
+        >
+          Create page
+        </button>
+      </div>
+      <div className="rounded-2xl bg-white p-3">
+        <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+          Pages
+        </p>
+        <Link
+          href="/"
+          className={`mb-2 flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
+            pageKey === "home" ? "bg-oxford text-white" : "bg-cream text-oxford"
+          }`}
+        >
+          {locale === "ar" ? "الرئيسية" : "Home"}
+          <span className="text-[11px] opacity-70">/</span>
+        </Link>
+        {site.pages.map((page) => (
+          <div key={page.id} className="mb-2 rounded-xl bg-cream/80 p-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <Link
+                href={cmsPagePath(page.slug)}
+                className={`text-sm font-medium ${pageKey === page.slug ? "text-oxford underline" : "text-oxford"}`}
+              >
+                {locale === "ar" ? page.title.ar || page.title.en : page.title.en || page.title.ar}
+              </Link>
+              <button type="button" className="text-xs text-red-700" onClick={() => removePage(page.id)}>
+                Delete
+              </button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <input
+                className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+                value={page.title.en}
+                onChange={(event) => updatePage(page.id, { title: { ...page.title, en: event.target.value } })}
+              />
+              <input
+                className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+                dir="rtl"
+                value={page.title.ar}
+                onChange={(event) => updatePage(page.id, { title: { ...page.title, ar: event.target.value } })}
+              />
+              <input
+                className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+                value={page.slug}
+                onChange={(event) => updatePage(page.id, { slug: event.target.value })}
+              />
+            </div>
+          </div>
+        ))}
+        {site.pages.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No extra pages yet. Create one, then add sections on it.</p>
+        ) : null}
+      </div>
     </div>
   );
 }

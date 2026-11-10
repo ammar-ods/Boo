@@ -99,11 +99,58 @@ export type PromoPopup = {
   image: string;
 };
 
+export type CmsPage = {
+  id: string;
+  slug: string;
+  title: Localized;
+  visible: boolean;
+  sections: SiteSection[];
+};
+
 export type SiteDocument = {
   chrome: SiteChrome;
   sections: SiteSection[];
+  pages: CmsPage[];
   promo: PromoPopup;
 };
+
+export const RESERVED_PAGE_SLUGS = new Set([
+  "admin",
+  "api",
+  "bundles",
+  "cart",
+  "catalog",
+  "checkout",
+  "contact",
+  "customize",
+  "login",
+  "p",
+  "product",
+  "thanks",
+]);
+
+export function pageSlugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 48);
+}
+
+export function cmsPagePath(slug: string) {
+  return `/p/${slug}`;
+}
+
+export function pathPageKey(pathname: string): "home" | string | null {
+  if (pathname === "/") return "home";
+  const match = pathname.match(/^\/p\/([^/]+)\/?$/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function getPageSections(site: SiteDocument, key: "home" | string | null) {
+  if (!key || key === "home") return site.sections;
+  return site.pages.find((page) => page.slug === key)?.sections ?? [];
+}
 
 export const SECTION_TYPES: { type: SectionType; label: string; labelAr: string }[] = [
   { type: "hero", label: "Hero", labelAr: "هيرو" },
@@ -352,6 +399,7 @@ export function newSection(type: SectionType): SiteSection {
 export const DEFAULT_SITE: SiteDocument = {
   chrome: DEFAULT_CHROME,
   promo: DEFAULT_PROMO,
+  pages: [],
   sections: [
     newSection("hero"),
     newSection("collections"),
@@ -363,6 +411,18 @@ export const DEFAULT_SITE: SiteDocument = {
     id: ["hero", "collections", "products", "cta", "about"][index] ?? section.id,
   })),
 };
+
+export function migrateSection(section: SiteSection | Record<string, unknown>, index: number): SiteSection {
+  const row = section as SiteSection & { content?: Record<string, unknown> };
+  const migrated: SiteSection = {
+    id: String(row.id || `section-${index}`),
+    type: (row.type as SectionType) || "text",
+    visible: row.visible !== false,
+    style: row.style ?? {},
+    content: migrateContent(row.content as Record<string, unknown>),
+  };
+  return fillMissingEnglish(migrated);
+}
 
 function migrateContent(raw: Record<string, unknown> | undefined): SectionContent {
   const src = raw ?? {};
@@ -396,6 +456,7 @@ export function migrateSite(raw: unknown): SiteDocument {
     chrome?: Partial<SiteChrome>;
     promo?: Partial<PromoPopup>;
     sections?: SiteSection[] | Array<Record<string, unknown>>;
+    pages?: CmsPage[] | Array<Record<string, unknown>>;
   };
   const chrome = data.chrome ?? {};
   const promo = data.promo ?? {};
@@ -435,18 +496,24 @@ export function migrateSite(raw: unknown): SiteDocument {
       image: typeof promo.image === "string" ? promo.image : "",
     },
     sections: Array.isArray(data.sections)
-      ? data.sections.map((section, index) => {
-          const row = section as SiteSection & { content?: Record<string, unknown> };
-          const migrated: SiteSection = {
-            id: String(row.id || `section-${index}`),
-            type: (row.type as SectionType) || "text",
-            visible: row.visible !== false,
-            style: row.style ?? {},
-            content: migrateContent(row.content as Record<string, unknown>),
-          };
-          return fillMissingEnglish(migrated);
-        })
+      ? data.sections.map((section, index) => migrateSection(section, index))
       : DEFAULT_SITE.sections,
+    pages: Array.isArray(data.pages)
+      ? data.pages
+          .map((page, index) => {
+            const row = page as CmsPage & { sections?: Array<Record<string, unknown>> };
+            const slug = pageSlugify(String(row.slug || row.title?.en || row.title?.ar || `page-${index}`));
+            if (!slug || RESERVED_PAGE_SLUGS.has(slug)) return null;
+            return {
+              id: String(row.id || `page-${index}`),
+              slug,
+              title: asLoc(row.title, slug),
+              visible: row.visible !== false,
+              sections: Array.isArray(row.sections) ? row.sections.map((section, i) => migrateSection(section, i)) : [],
+            } satisfies CmsPage;
+          })
+          .filter((page): page is CmsPage => Boolean(page))
+      : [],
   };
 }
 
