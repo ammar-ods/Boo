@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { flashStatus } from "@/components/status-flash";
 import {
+  blankCmsPage,
   cmsPagePath,
   loc,
   migrateSite,
@@ -49,6 +50,7 @@ type EditContextValue = {
   removeSection: (id: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
   addPage: (input: { titleEn: string; titleAr: string; slug?: string; addToNav?: boolean }) => string | null;
+  ensurePage: (slug: string, title?: { ar: string; en: string }) => void;
   updatePage: (id: string, next: Partial<Pick<CmsPage, "slug" | "title" | "visible">>) => void;
   removePage: (id: string) => void;
 };
@@ -113,22 +115,17 @@ export function EditProvider({
     toast.message("Changes discarded");
   }, [baseline]);
 
-  const save = useCallback(async () => {
-    setSaving(true);
+  const persistDocument = useCallback(async (document: SiteDocument) => {
     const response = await fetch("/api/site", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(site),
+      body: JSON.stringify(document),
     });
-    setSaving(false);
     if (!response.ok) {
       toast.error("Could not save changes");
-      return;
+      return null;
     }
-    const payload = (await response.json()) as {
-      site?: unknown;
-      persist?: string;
-    };
+    const payload = (await response.json()) as { site?: unknown; persist?: string };
     const saved = migrateSite(payload.site ?? payload);
     setSite(cloneSite(saved));
     setBaseline(cloneSite(saved));
@@ -136,12 +133,17 @@ export function EditProvider({
     flashStatus("Saved");
     if (payload.persist === "memory") {
       toast.error("Saved in this session only. Add Supabase so homepage edits stay on the live site.");
-      return;
-    }
-    if (payload.persist === "local") {
+    } else if (payload.persist === "local") {
       toast.message("Saved on this computer. Production needs the Supabase site_content table.");
     }
-  }, [router, site]);
+    return saved;
+  }, [router]);
+
+  const save = useCallback(async () => {
+    setSaving(true);
+    await persistDocument(site);
+    setSaving(false);
+  }, [persistDocument, site]);
 
   const setChrome = useCallback((chrome: Partial<SiteChrome>) => {
     setSite((current) => ({ ...current, chrome: { ...current.chrome, ...chrome } }));
@@ -156,6 +158,10 @@ export function EditProvider({
       const key = pathPageKey(pathname);
       if (!key || key === "home") {
         return { ...current, sections: mapper(current.sections) };
+      }
+      if (!current.pages.some((page) => page.slug === key)) {
+        const page = blankCmsPage(key);
+        return { ...current, pages: [...current.pages, { ...page, sections: mapper([]) }] };
       }
       return {
         ...current,
@@ -247,37 +253,49 @@ export function EditProvider({
         toast.error("That URL is reserved.");
         return null;
       }
-      const page: CmsPage = {
-        id: `page-${Math.random().toString(36).slice(2, 8)}`,
-        slug,
-        title: loc(titleAr, titleEn),
-        visible: true,
-        sections: [newSection("text")],
-      };
-      setSite((current) => ({
-        ...current,
-        pages: [...current.pages, page],
-        chrome: input.addToNav
-          ? {
-              ...current.chrome,
-              navLinks: [
-                ...current.chrome.navLinks,
-                {
-                  id: `nav-${page.id}`,
-                  href: cmsPagePath(slug),
-                  label: page.title,
-                  visible: true,
-                },
-              ],
-            }
-          : current.chrome,
-      }));
-      router.push(cmsPagePath(slug));
+      const page = blankCmsPage(slug, loc(titleAr, titleEn));
+      page.slug = slug;
+      let nextSite: SiteDocument | null = null;
+      setSite((current) => {
+        nextSite = {
+          ...current,
+          pages: [...current.pages, page],
+          chrome: input.addToNav
+            ? {
+                ...current.chrome,
+                navLinks: [
+                  ...current.chrome.navLinks,
+                  {
+                    id: `nav-${page.id}`,
+                    href: cmsPagePath(slug),
+                    label: page.title,
+                    visible: true,
+                  },
+                ],
+              }
+            : current.chrome,
+        };
+        return nextSite;
+      });
       setEditing(true);
+      if (nextSite) void persistDocument(nextSite);
+      router.push(cmsPagePath(slug));
       return slug;
     },
-    [router, site.pages],
+    [persistDocument, router, site.pages],
   );
+
+  const ensurePage = useCallback((slug: string, title?: { ar: string; en: string }) => {
+    const safe = pageSlugify(slug);
+    if (!safe || RESERVED_PAGE_SLUGS.has(safe)) return;
+    setSite((current) => {
+      if (current.pages.some((page) => page.slug === safe)) return current;
+      return {
+        ...current,
+        pages: [...current.pages, blankCmsPage(safe, title ? loc(title.ar, title.en) : undefined)],
+      };
+    });
+  }, []);
 
   const updatePage = useCallback((id: string, next: Partial<Pick<CmsPage, "slug" | "title" | "visible">>) => {
     setSite((current) => {
@@ -337,6 +355,7 @@ export function EditProvider({
       removeSection,
       moveSection,
       addPage,
+      ensurePage,
       updatePage,
       removePage,
     }),
@@ -346,6 +365,7 @@ export function EditProvider({
       discard,
       dirty,
       editing,
+      ensurePage,
       isAdmin,
       moveSection,
       pageKey,

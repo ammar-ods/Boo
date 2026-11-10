@@ -9,7 +9,7 @@ import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { FOOTER_ICON_OPTIONS } from "@/components/layout/footer-icons";
-import { cmsPagePath, loc, type CatalogSection, type FooterIcon, type NavLink, type SectionType } from "@/lib/site";
+import { cmsPagePath, loc, normalizeNavHref, type CatalogSection, type FooterIcon, type NavLink, type SectionType } from "@/lib/site";
 
 export function StudioNavButtons() {
   const pathname = usePathname();
@@ -643,6 +643,7 @@ function emptyLink(labelAr = "رابط جديد", labelEn = "New link"): NavLink
 }
 
 function NavEditor({ links, onChange }: { links: NavLink[]; onChange: (links: NavLink[]) => void }) {
+  const { addPage } = useEdit();
   function patch(index: number, next: Partial<NavLink>) {
     onChange(
       links.map((link, i) =>
@@ -660,7 +661,7 @@ function NavEditor({ links, onChange }: { links: NavLink[]; onChange: (links: Na
         <button
           type="button"
           className="h-8 rounded-full bg-cream px-3 text-sm font-semibold text-oxford"
-          onClick={() => onChange([...links, emptyLink()])}
+          onClick={() => addPage({ titleEn: "New page", titleAr: "صفحة جديدة", addToNav: true })}
         >
           + Link
         </button>
@@ -742,8 +743,9 @@ function NavLinkFields({
       <input
         className="h-9 rounded-xl border border-oxford/12 bg-white px-2.5 text-sm"
         value={link.href}
-        placeholder="/path"
+        placeholder="/p/about"
         onChange={(event) => onPatch({ href: event.target.value })}
+        onBlur={(event) => onPatch({ href: normalizeNavHref(event.target.value) })}
       />
       <div className="flex items-center gap-2">
         <label className="flex items-center gap-1 text-xs">

@@ -155,8 +155,18 @@ export function SiteCanvas({ products }: { products: Product[] }) {
         </div>
       ))}
         {visible.length === 0 ? (
-          <div className="px-5 py-20 text-center text-muted-foreground">
-            {editing ? "Add a section to this page." : null}
+          <div className="flex flex-col items-center px-5 py-20 text-center">
+            {editing ? (
+              <>
+                <p className="font-heading text-3xl text-oxford">This page is empty.</p>
+                <p className="mt-2 max-w-md text-sm text-oxford/60">
+                  Add a hero, product cards, banners, or any other section — then save.
+                </p>
+                <div className="mt-6">
+                  <SectionTypeMenu heading="Add a section" onPick={(type) => addSection(type)} />
+                </div>
+              </>
+            ) : null}
           </div>
         ) : null}
         {editing && selectedId ? (

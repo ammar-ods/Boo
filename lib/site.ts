@@ -158,10 +158,46 @@ export function cmsPagePath(slug: string) {
   return `/p/${slug}`;
 }
 
+const APP_PATHS = new Set(["/", "/catalog", "/bundles", "/contact", "/cart", "/checkout", "/thanks"]);
+
+export function normalizeNavHref(href: string) {
+  const raw = href.trim() || "/";
+  if (/^(https?:|mailto:|tel:|#)/i.test(raw)) return raw;
+  const withSlash = raw.startsWith("/") ? raw : `/${raw}`;
+  const [pathPart, query = ""] = withSlash.split("?");
+  const path = pathPart.replace(/\/+$/, "") || "/";
+  if (APP_PATHS.has(path) || path.startsWith("/catalog") || path.startsWith("/product/") || path.startsWith("/customize/") || path.startsWith("/admin")) {
+    return query ? `${path}?${query}` : path;
+  }
+  if (path.startsWith("/p/")) {
+    const slug = pageSlugify(decodeURIComponent(path.slice(3)));
+    return slug ? cmsPagePath(slug) : "/";
+  }
+  const slug = pageSlugify(decodeURIComponent(path.slice(1)));
+  if (!slug || RESERVED_PAGE_SLUGS.has(slug)) return query ? `${withSlash}` : withSlash;
+  return cmsPagePath(slug);
+}
+
 export function pathPageKey(pathname: string): "home" | string | null {
   if (pathname === "/") return "home";
-  const match = pathname.match(/^\/p\/([^/]+)\/?$/);
-  return match ? decodeURIComponent(match[1]) : null;
+  const nested = pathname.match(/^\/p\/([^/]+)\/?$/);
+  if (nested) return pageSlugify(decodeURIComponent(nested[1]));
+  const loose = pathname.match(/^\/([^/]+)\/?$/);
+  if (!loose) return null;
+  const slug = pageSlugify(decodeURIComponent(loose[1]));
+  if (!slug || RESERVED_PAGE_SLUGS.has(slug) || APP_PATHS.has(`/${slug}`)) return null;
+  return slug;
+}
+
+export function blankCmsPage(slug: string, title?: Localized): CmsPage {
+  const safe = pageSlugify(slug) || `page-${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    id: `page-${Math.random().toString(36).slice(2, 8)}`,
+    slug: safe,
+    title: title ?? loc(safe, safe),
+    visible: true,
+    sections: [newSection("hero"), newSection("products")],
+  };
 }
 
 export function getPageSections(site: SiteDocument, key: "home" | string | null) {
@@ -630,7 +666,7 @@ function migrateNavLink(link: Partial<NavLink> | undefined, index: number): NavL
   const row = link ?? {};
   return {
     id: String(row.id || `link-${index}`),
-    href: String(row.href || "/"),
+    href: normalizeNavHref(String(row.href || "/")),
     label: asLoc(row.label),
     visible: row.visible !== false,
     children: Array.isArray(row.children)
