@@ -1,5 +1,14 @@
 export type Locale = "ar" | "en";
-export type SectionType = "hero" | "banner" | "text" | "products" | "collections" | "cta" | "faq" | "marquee";
+export type SectionType =
+  | "hero"
+  | "banner"
+  | "slideshow"
+  | "text"
+  | "products"
+  | "collections"
+  | "cta"
+  | "faq"
+  | "marquee";
 
 export type Localized = { ar: string; en: string };
 
@@ -16,7 +25,12 @@ export type SectionStyle = {
   imageWidth?: number;
   showPrimaryCta?: boolean;
   showSecondaryCta?: boolean;
+  ctaBackground?: string;
+  ctaColor?: string;
+  secondaryCtaBackground?: string;
+  secondaryCtaColor?: string;
   imageRounded?: boolean;
+  intervalMs?: number;
   blockWidth?: number;
   minHeight?: number;
   marginX?: number;
@@ -38,6 +52,7 @@ export type SectionContent = {
   secondaryCtaLabel?: Localized;
   secondaryCtaHref?: string;
   image?: Localized;
+  imageHref?: string;
   gallery?: GalleryItem[];
 };
 
@@ -54,6 +69,14 @@ export type NavLink = {
   href: string;
   label: Localized;
   visible: boolean;
+  children?: NavLink[];
+};
+
+export type CatalogSection = {
+  id: string;
+  href: string;
+  image: string;
+  label: Localized;
 };
 
 export type SiteChrome = {
@@ -62,10 +85,12 @@ export type SiteChrome = {
   showHeader: boolean;
   showNav: boolean;
   navLinks: NavLink[];
+  catalogSections: CatalogSection[];
   showFooter: boolean;
   footerTagline: Localized;
   footerBlurb: Localized;
   payPhone: string;
+  whatsappPhone: string;
 };
 
 export type PromoPopup = {
@@ -83,6 +108,7 @@ export type SiteDocument = {
 export const SECTION_TYPES: { type: SectionType; label: string; labelAr: string }[] = [
   { type: "hero", label: "Hero", labelAr: "هيرو" },
   { type: "banner", label: "Banner", labelAr: "بانر" },
+  { type: "slideshow", label: "Auto banner", labelAr: "بانر متحرك" },
   { type: "text", label: "Text", labelAr: "نص" },
   { type: "products", label: "Products", labelAr: "منتجات" },
   { type: "collections", label: "Collections", labelAr: "أقسام" },
@@ -129,10 +155,31 @@ export const DEFAULT_CHROME: SiteChrome = {
     { id: "bundles", href: "/bundles", label: loc("الباقات", "Bundles"), visible: true },
     { id: "contact", href: "/contact", label: loc("تواصل معنا", "Contact"), visible: true },
   ],
+  catalogSections: [
+    {
+      id: "apparel",
+      href: "/catalog?collection=apparel",
+      image: "/products/white-tee-front.jpg",
+      label: loc("ملابس", "Apparel"),
+    },
+    {
+      id: "drinkware",
+      href: "/catalog?collection=drinkware",
+      image: "/products/thermal-tumbler.jpg",
+      label: loc("مشروبات", "Drinkware"),
+    },
+    {
+      id: "wood",
+      href: "/catalog?collection=wood",
+      image: "/products/wood-coaster.png",
+      label: loc("خشب", "Laser Cut Wood"),
+    },
+  ],
   showFooter: true,
   footerTagline: loc("مختار بذوق.", "Selected with taste."),
   footerBlurb: loc("مشغل أكسفورد للطباعة والهدايا.", "An Oxford atelier for print and gifting."),
   payPhone: "01000000000",
+  whatsappPhone: "01000000000",
 };
 
 export const DEFAULT_PROMO: PromoPopup = {
@@ -186,6 +233,32 @@ export function newSection(type: SectionType): SiteSection {
         ctaLabel: loc("تسوق", "Shop"),
         ctaHref: "/catalog",
         image: loc("/products/white-tee-front.jpg", "/products/white-tee-front.jpg"),
+      },
+    },
+    slideshow: {
+      id,
+      type,
+      visible: true,
+      style: {
+        background: "#0a2540",
+        color: "#ffffff",
+        fontSize: 32,
+        paddingY: 0,
+        align: "center",
+        imageHeight: 420,
+        imagePlacement: "bleed",
+        imageWidth: 100,
+        imageRounded: false,
+        intervalMs: 2000,
+        showPrimaryCta: false,
+        showSecondaryCta: false,
+      },
+      content: {
+        gallery: [
+          { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
+          { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
+          { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
+        ],
       },
     },
     text: {
@@ -302,6 +375,7 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
     secondaryCtaLabel: src.secondaryCtaLabel ? asLoc(src.secondaryCtaLabel) : undefined,
     secondaryCtaHref: typeof src.secondaryCtaHref === "string" ? src.secondaryCtaHref : undefined,
     image: src.image ? asLoc(src.image) : undefined,
+    imageHref: typeof src.imageHref === "string" ? src.imageHref : undefined,
     gallery: Array.isArray(src.gallery)
       ? src.gallery
           .map((item) => {
@@ -333,17 +407,27 @@ export function migrateSite(raw: unknown): SiteDocument {
       showNav: chrome.showNav !== false,
       navLinks:
         Array.isArray(chrome.navLinks) && chrome.navLinks.length
-          ? chrome.navLinks.map((link, index) => ({
-              id: String(link.id || `link-${index}`),
-              href: String(link.href || "/"),
-              label: asLoc(link.label),
-              visible: link.visible !== false,
-            }))
+          ? chrome.navLinks.map((link, index) => migrateNavLink(link, index))
           : DEFAULT_CHROME.navLinks,
+      catalogSections:
+        Array.isArray(chrome.catalogSections) && chrome.catalogSections.length
+          ? chrome.catalogSections.map((section, index) => ({
+              id: String(section.id || `section-${index}`),
+              href: String(section.href || "/catalog"),
+              image: String(section.image || ""),
+              label: asLoc(section.label),
+            }))
+          : DEFAULT_CHROME.catalogSections,
       showFooter: chrome.showFooter !== false,
       footerTagline: fillLoc(asLoc(chrome.footerTagline, DEFAULT_CHROME.footerTagline.ar), DEFAULT_CHROME.footerTagline) ?? DEFAULT_CHROME.footerTagline,
       footerBlurb: fillLoc(asLoc(chrome.footerBlurb, DEFAULT_CHROME.footerBlurb.ar), DEFAULT_CHROME.footerBlurb) ?? DEFAULT_CHROME.footerBlurb,
       payPhone: typeof chrome.payPhone === "string" && chrome.payPhone.trim() ? chrome.payPhone.trim() : DEFAULT_CHROME.payPhone,
+      whatsappPhone:
+        typeof chrome.whatsappPhone === "string" && chrome.whatsappPhone.trim()
+          ? chrome.whatsappPhone.trim()
+          : typeof chrome.payPhone === "string" && chrome.payPhone.trim()
+            ? chrome.payPhone.trim()
+            : DEFAULT_CHROME.whatsappPhone,
     },
     promo: {
       live: Boolean(promo.live),
@@ -363,6 +447,19 @@ export function migrateSite(raw: unknown): SiteDocument {
           return fillMissingEnglish(migrated);
         })
       : DEFAULT_SITE.sections,
+  };
+}
+
+function migrateNavLink(link: Partial<NavLink> | undefined, index: number): NavLink {
+  const row = link ?? {};
+  return {
+    id: String(row.id || `link-${index}`),
+    href: String(row.href || "/"),
+    label: asLoc(row.label),
+    visible: row.visible !== false,
+    children: Array.isArray(row.children)
+      ? row.children.map((child, childIndex) => migrateNavLink(child, childIndex))
+      : undefined,
   };
 }
 

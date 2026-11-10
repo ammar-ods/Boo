@@ -26,11 +26,22 @@ export function SiteFooter() {
         </div>
         <div className="text-sm text-white/70">
           <p className="mb-3 font-medium text-white">{t("shop")}</p>
-          {links.map((link) => (
+          {links.flatMap((link) => [
             <Link key={link.id} href={link.href} className="flex min-h-11 items-center hover:text-white">
               {pick(link.label, locale)}
-            </Link>
-          ))}
+            </Link>,
+            ...(link.children ?? [])
+              .filter((child) => child.visible)
+              .map((child) => (
+                <Link
+                  key={child.id}
+                  href={child.href}
+                  className="flex min-h-10 items-center ps-3 text-white/55 hover:text-white"
+                >
+                  {pick(child.label, locale)}
+                </Link>
+              )),
+          ])}
         </div>
         <div className="text-sm text-white/70">
           <p className="mb-3 font-medium text-white">Boo</p>

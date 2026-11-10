@@ -139,6 +139,28 @@ function CopyTab({
           value={section.content.secondaryCtaHref ?? ""}
           onChange={(secondaryCtaHref) => patch(section.id, { content: { secondaryCtaHref } })}
         />
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <ColorField
+            label="Primary color"
+            value={section.style.ctaBackground ?? "#0a2540"}
+            onChange={(ctaBackground) => patch(section.id, { style: { ctaBackground } })}
+          />
+          <ColorField
+            label="Primary text"
+            value={section.style.ctaColor ?? "#ffffff"}
+            onChange={(ctaColor) => patch(section.id, { style: { ctaColor } })}
+          />
+          <ColorField
+            label="Second color"
+            value={section.style.secondaryCtaBackground ?? "#0a2540"}
+            onChange={(secondaryCtaBackground) => patch(section.id, { style: { secondaryCtaBackground } })}
+          />
+          <ColorField
+            label="Second text"
+            value={section.style.secondaryCtaColor ?? "#0a2540"}
+            onChange={(secondaryCtaColor) => patch(section.id, { style: { secondaryCtaColor } })}
+          />
+        </div>
       </div>
     </div>
   );
@@ -236,6 +258,15 @@ function LayoutTab({
           checked={section.style.showSecondaryCta !== false}
           onChange={(showSecondaryCta) => patch(section.id, { style: { showSecondaryCta } })}
         />
+        {section.type === "slideshow" ? (
+          <NumberField
+            label="Seconds per image"
+            value={Math.round((section.style.intervalMs ?? 2000) / 1000)}
+            onChange={(seconds) =>
+              patch(section.id, { style: { intervalMs: Math.max(1, seconds) * 1000 } })
+            }
+          />
+        ) : null}
       </Group>
     </div>
   );
@@ -277,6 +308,11 @@ function MediaTab({
           onChange={(imageHeight) => patch(section.id, { style: { imageHeight } })}
         />
       </div>
+      <TextField
+        label="Image link"
+        value={section.content.imageHref ?? ""}
+        onChange={(imageHref) => patch(section.id, { content: { imageHref } })}
+      />
       <SwitchRow
         label="Rounded images"
         checked={
@@ -335,10 +371,11 @@ function MediaTab({
       >
         Remove all images
       </button>
-      {section.type === "marquee" ? (
+      {section.type === "marquee" || section.type === "slideshow" ? (
         <GalleryEditor
           items={section.content.gallery ?? []}
           onChange={(gallery) => patch(section.id, { content: { gallery } })}
+          heading={section.type === "slideshow" ? "Banner slides" : "Scrolling images"}
         />
       ) : null}
     </div>
@@ -527,14 +564,16 @@ function BilingualField({
 function GalleryEditor({
   items,
   onChange,
+  heading = "Scrolling images",
 }: {
   items: GalleryItem[];
   onChange: (items: GalleryItem[]) => void;
+  heading?: string;
 }) {
   return (
     <div className="rounded-2xl bg-cream/80 p-3">
       <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
-        Scrolling images
+        {heading}
       </p>
       {items.map((item, index) => (
         <div key={`${item.src}-${index}`} className="mb-3 rounded-xl bg-white p-2.5">

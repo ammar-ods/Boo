@@ -42,18 +42,34 @@ export function ProductForm({
         <section className="space-y-4 rounded-[1.4rem] bg-white p-5 ring-1 ring-foreground/10">
           <h2 className="font-heading text-xl text-oxford">Details</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name" name="name" defaultValue={product?.name} required />
-            <Field label="Slug" name="slug" defaultValue={product?.slug} placeholder="classic-tee" />
+            <Field label="Name · English" name="name" defaultValue={product?.name} required />
+            <Field label="Name · عربي" name="nameAr" defaultValue={product?.nameAr} dir="rtl" />
           </div>
-          <Field label="Tagline" name="tagline" defaultValue={product?.tagline} />
-          <div className="space-y-1.5">
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              name="description"
-              defaultValue={product?.description}
-              className="min-h-24 w-full rounded-lg border border-input px-2.5 py-2 text-sm"
-            />
+          <Field label="Slug" name="slug" defaultValue={product?.slug} placeholder="classic-tee" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Tagline · English" name="tagline" defaultValue={product?.tagline} />
+            <Field label="Tagline · عربي" name="taglineAr" defaultValue={product?.taglineAr} dir="rtl" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Description · English</Label>
+              <textarea
+                id="description"
+                name="description"
+                defaultValue={product?.description}
+                className="min-h-24 w-full rounded-lg border border-input px-2.5 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="descriptionAr">Description · عربي</Label>
+              <textarea
+                id="descriptionAr"
+                name="descriptionAr"
+                dir="rtl"
+                defaultValue={product?.descriptionAr}
+                className="min-h-24 w-full rounded-lg border border-input px-2.5 py-2 text-sm"
+              />
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -404,6 +420,7 @@ function Field({
   type = "text",
   required,
   placeholder,
+  dir,
 }: {
   label: string;
   name: string;
@@ -411,6 +428,7 @@ function Field({
   type?: string;
   required?: boolean;
   placeholder?: string;
+  dir?: "rtl" | "ltr";
 }) {
   return (
     <div className="space-y-1.5">
@@ -422,6 +440,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         defaultValue={defaultValue ?? ""}
+        dir={dir}
         className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
       />
     </div>

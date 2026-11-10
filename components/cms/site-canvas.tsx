@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { AutoScroller } from "@/components/cms/auto-scroller";
+import { BannerSlideshow } from "@/components/cms/banner-slideshow";
 import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
@@ -164,16 +165,18 @@ function SectionMedia({
   widthPct,
   bleed,
   rounded,
+  href,
 }: {
   src: string;
   height: number;
   widthPct: number;
   bleed?: boolean;
   rounded?: boolean;
+  href?: string;
 }) {
   const inset = bleed && rounded;
   const imgW = bleed ? 100 : Math.min(100, Math.max(20, widthPct));
-  return (
+  const image = (
     <div
       className={`cms-media mx-auto ${inset ? "px-3 sm:px-6" : ""}`}
       style={{ ["--cms-img-w" as string]: `${imgW}%`, ["--cms-img-h" as string]: `${Math.max(48, height)}px` }}
@@ -185,6 +188,45 @@ function SectionMedia({
         className={`cms-media-img ${rounded ? "rounded-[20px] sm:rounded-[28px]" : ""}`}
       />
     </div>
+  );
+  if (!href) return image;
+  return (
+    <Link href={href} className="block">
+      {image}
+    </Link>
+  );
+}
+
+function CmsButton({
+  href,
+  children,
+  outline,
+  background,
+  color,
+}: {
+  href: string;
+  children: React.ReactNode;
+  outline?: boolean;
+  background?: string;
+  color?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`btn-press w-full sm:w-auto ${outline ? "btn-press-outline" : ""}`}
+      style={
+        background || color
+          ? {
+              background: outline ? undefined : background,
+              color,
+              borderColor: outline ? background || color : undefined,
+              boxShadow: outline || !background ? undefined : `0 6px 0 0 ${background}`,
+            }
+          : undefined
+      }
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -199,7 +241,7 @@ function SectionShell({
   index: number;
   children: React.ReactNode;
   className?: string;
-  cover?: { src: string; height: number };
+  cover?: { src: string; height: number; href?: string };
 }) {
   const surface = sectionSurface(section.style);
   const pad = Math.max(0, section.style.paddingY ?? 48);
@@ -231,10 +273,17 @@ function SectionShell({
         {cover ? (
           <>
             <div className="absolute inset-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={cover.src} alt="" className="h-full w-full object-cover object-top" />
+              {cover.href ? (
+                <Link href={cover.href} className="absolute inset-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cover.src} alt="" className="h-full w-full object-cover object-top" />
+                </Link>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={cover.src} alt="" className="h-full w-full object-cover object-top" />
+              )}
             </div>
-            <div className="absolute inset-0 bg-oxford/35" />
+            <div className="pointer-events-none absolute inset-0 bg-oxford/35" />
           </>
         ) : null}
         {children}
@@ -294,20 +343,43 @@ function SectionView({
       )}
     </>
   );
+  const imageHref = section.content.imageHref;
   const actions = showPrimary || showSecondary ? (
     <div className={`mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap ${centered ? "sm:justify-center" : ""}`}>
       {showPrimary ? (
-        <Link href={section.content.ctaHref || "/catalog"} className="btn-press w-full sm:w-auto">
+        <CmsButton
+          href={section.content.ctaHref || "/catalog"}
+          background={section.style.ctaBackground}
+          color={section.style.ctaColor}
+        >
           {pick(section.content.ctaLabel, locale)}
-        </Link>
+        </CmsButton>
       ) : null}
       {showSecondary ? (
-        <Link href={section.content.secondaryCtaHref || "/bundles"} className="btn-press btn-press-outline w-full sm:w-auto">
+        <CmsButton
+          href={section.content.secondaryCtaHref || "/bundles"}
+          outline
+          background={section.style.secondaryCtaBackground}
+          color={section.style.secondaryCtaColor}
+        >
           {pick(section.content.secondaryCtaLabel, locale)}
-        </Link>
+        </CmsButton>
       ) : null}
     </div>
   ) : null;
+
+  if (section.type === "slideshow") {
+    return (
+      <SectionShell section={section} index={index}>
+        <BannerSlideshow
+          items={section.content.gallery ?? []}
+          height={height}
+          rounded={Boolean(section.style.imageRounded)}
+          intervalMs={section.style.intervalMs ?? 2000}
+        />
+      </SectionShell>
+    );
+  }
 
   if (section.type === "marquee") {
     return (
@@ -351,7 +423,7 @@ function SectionView({
 
   if (placement === "cover" && showImage) {
     return (
-      <SectionShell section={section} index={index} cover={{ src: image, height }}>
+      <SectionShell section={section} index={index} cover={{ src: image, height, href: imageHref }}>
         <div className={`cms-copy relative z-10 ${centered ? "text-center" : "text-start"}`}>
           {copy}
           {actions}
@@ -362,7 +434,7 @@ function SectionView({
 
   if ((placement === "start" || placement === "end") && showImage) {
     const imageCol = (
-      <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} />
+      <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} href={imageHref} />
     );
     return (
       <SectionShell section={section} index={index}>
@@ -381,13 +453,13 @@ function SectionView({
   return (
     <SectionShell section={section} index={index}>
       {placement === "bleed" && showImage ? (
-        <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} />
+        <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} />
       ) : null}
       <div className={`cms-copy ${placement === "bleed" && showImage ? "pt-5 sm:pt-6" : ""} ${centered ? "text-center" : "text-start"}`}>
         {copy}
         {placement === "below" && showImage ? (
           <div className={`mt-5 ${centered ? "flex justify-center" : ""} sm:mt-6`}>
-            <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} />
+            <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} href={imageHref} />
           </div>
         ) : null}
         {actions}

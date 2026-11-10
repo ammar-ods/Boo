@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n, type Currency } from "@/lib/i18n";
 import { cartCount, useCart } from "@/lib/cart";
+import { NavMenu } from "@/components/layout/nav-menu";
 import { pick } from "@/lib/site";
 
 const CURRENCIES: Currency[] = ["EGP", "USD", "EUR", "GBP"];
@@ -75,15 +76,7 @@ export function SiteHeader() {
             <Link href="/" className="shrink-0">
               <BooLogo />
             </Link>
-            {site.chrome.showNav ? (
-              <nav className="hidden items-center gap-7 text-[15px] font-medium text-oxford md:flex">
-                {links.map((link) => (
-                  <Link key={link.id} href={link.href} className="hover:text-oxford/55">
-                    {pick(link.label, locale)}
-                  </Link>
-                ))}
-              </nav>
-            ) : null}
+            {site.chrome.showNav ? <NavMenu links={links} locale={locale} /> : null}
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -107,17 +100,8 @@ export function SiteHeader() {
             </div>
           </div>
           {open && site.chrome.showNav ? (
-            <div className="flex flex-col border-t border-oxford/8 px-5 py-2 sm:px-8 md:hidden">
-              {links.map((link) => (
-                <Link
-                  key={link.id}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="flex min-h-12 items-center text-base font-medium text-oxford"
-                >
-                  {pick(link.label, locale)}
-                </Link>
-              ))}
+            <div className="border-t border-oxford/8 px-5 py-2 sm:px-8 md:hidden">
+              <NavMenu links={links} locale={locale} variant="mobile" onNavigate={() => setOpen(false)} />
             </div>
           ) : null}
           <StudioNavButtons />

@@ -1,6 +1,7 @@
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { getLiveCatalog } from "@/lib/local-db";
 import { CatalogIntro } from "@/components/shop/catalog-intro";
+import { CatalogSections } from "@/components/shop/catalog-sections";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,11 +13,18 @@ export default async function CatalogPage({
 }) {
   const products = await getLiveCatalog();
   const { collection, q } = await searchParams;
+  const showSections = !collection && !q;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
-      <CatalogIntro query={q} collection={collection} />
-      <ProductGrid products={products} collection={collection} query={q} />
+      {showSections ? (
+        <CatalogSections />
+      ) : (
+        <>
+          <CatalogIntro query={q} collection={collection} />
+          <ProductGrid products={products} collection={collection} query={q} />
+        </>
+      )}
     </div>
   );
 }

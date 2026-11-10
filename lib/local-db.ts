@@ -425,9 +425,54 @@ function normalizeInquiry(row: Record<string, unknown>): InquiryRecord {
 
 let memoryOrders: InquiryRecord[] = [];
 const removedOrderKeys = new Set<string>();
+const DELETED_ORDERS_FILE = path.join(DATA_DIR, "deleted-orders.json");
+const DELETED_ORDERS_OBJECT = "cms/deleted-orders.json";
+let deletedKeysLoaded = false;
 
 function isRemovedOrder(order: InquiryRecord) {
-  return removedOrderKeys.has(order.id) || removedOrderKeys.has(order.reference_code);
+  return (
+    removedOrderKeys.has(order.id) ||
+    (order.reference_code ? removedOrderKeys.has(order.reference_code) : false)
+  );
+}
+
+async function loadDeletedOrderKeys() {
+  if (deletedKeysLoaded) return;
+  deletedKeysLoaded = true;
+  const local = await readJson<string[]>(DELETED_ORDERS_FILE, []);
+  for (const key of local) {
+    if (key) removedOrderKeys.add(String(key));
+  }
+  if (!useSupabase()) return;
+  try {
+    const supabase = createAdminClient();
+    const file = await supabase.storage.from(UPLOADS_BUCKET).download(DELETED_ORDERS_OBJECT);
+    if (!file.data) return;
+    const keys = JSON.parse(await file.data.text()) as unknown;
+    if (!Array.isArray(keys)) return;
+    for (const key of keys) {
+      if (key) removedOrderKeys.add(String(key));
+    }
+  } catch {
+    /* first run or missing file */
+  }
+}
+
+async function persistDeletedOrderKeys() {
+  const keys = [...removedOrderKeys];
+  await writeJson(DELETED_ORDERS_FILE, keys);
+  if (!useSupabase()) return;
+  try {
+    const supabase = createAdminClient();
+    await ensureUploadsBucket();
+    await supabase.storage.from(UPLOADS_BUCKET).upload(
+      DELETED_ORDERS_OBJECT,
+      Buffer.from(JSON.stringify(keys), "utf8"),
+      { contentType: "application/json", upsert: true },
+    );
+  } catch {
+    /* local + in-memory still hide the row on this instance */
+  }
 }
 
 function sortOrders(orders: InquiryRecord[]) {
@@ -472,6 +517,7 @@ function orderToRow(order: InquiryRecord) {
 
 export async function listOrders(): Promise<InquiryRecord[]> {
   noStore();
+  await loadDeletedOrderKeys();
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
   let remote: InquiryRecord[] = [];
   if (useSupabase()) {
@@ -492,6 +538,7 @@ export async function listOrders(): Promise<InquiryRecord[]> {
 }
 
 export async function getOrder(id: string) {
+  await loadDeletedOrderKeys();
   const key = decodeURIComponent(id).trim();
   const ref = key.startsWith("#") ? key : `#${key.replace(/^#/, "")}`;
   const match = (order: InquiryRecord) =>
@@ -507,9 +554,15 @@ export async function getOrder(id: string) {
       }
       if (byId.error && !canUseSeedFallback(byId.error)) throw new Error(byId.error.message);
       const byRef = await supabase.from("inquiries").select("*").eq("reference_code", ref).maybeSingle();
-      if (byRef.data) return normalizeInquiry(byRef.data as Record<string, unknown>);
+      if (byRef.data) {
+        const order = normalizeInquiry(byRef.data as Record<string, unknown>);
+        if (!isRemovedOrder(order)) return order;
+      }
       const byBare = await supabase.from("inquiries").select("*").eq("reference_code", key).maybeSingle();
-      if (byBare.data) return normalizeInquiry(byBare.data as Record<string, unknown>);
+      if (byBare.data) {
+        const order = normalizeInquiry(byBare.data as Record<string, unknown>);
+        if (!isRemovedOrder(order)) return order;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (!/invalid api key/i.test(message) && !/jwt/i.test(message) && !/service_role/i.test(message)) {
@@ -548,6 +601,7 @@ export async function deleteOrder(id: string) {
 
   removedOrderKeys.add(order.id);
   if (order.reference_code) removedOrderKeys.add(order.reference_code);
+  await persistDeletedOrderKeys();
 
   memoryOrders = memoryOrders.filter((item) => !isRemovedOrder(item));
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
@@ -559,10 +613,11 @@ export async function deleteOrder(id: string) {
   if (useSupabase()) {
     requireServiceRole();
     const supabase = createAdminClient();
-    const byId = await supabase.from("inquiries").delete().eq("id", order.id);
-    if (byId.error) throw new Error(`Could not delete order: ${byId.error.message}`);
-    if (order.reference_code) {
-      const byRef = await supabase.from("inquiries").delete().eq("reference_code", order.reference_code);
+    const keys = [...new Set([order.id, order.reference_code].filter(Boolean))];
+    for (const key of keys) {
+      const byId = await supabase.from("inquiries").delete().eq("id", key).select("id");
+      if (byId.error) throw new Error(`Could not delete order: ${byId.error.message}`);
+      const byRef = await supabase.from("inquiries").delete().eq("reference_code", key).select("id");
       if (byRef.error) throw new Error(`Could not delete order: ${byRef.error.message}`);
     }
   }
@@ -575,6 +630,8 @@ export async function deleteOrder(id: string) {
 }
 
 export async function saveOrder(order: InquiryRecord) {
+  await loadDeletedOrderKeys();
+  if (isRemovedOrder(order)) return order;
   memoryOrders = mergeOrders(memoryOrders, [order]);
   const local = await readJson<InquiryRecord[]>(ORDERS_FILE, []);
   const wroteLocal = await writeJson(ORDERS_FILE, mergeOrders(local, memoryOrders, [order]));

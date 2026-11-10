@@ -58,6 +58,7 @@ export async function deleteInquiry(formData: FormData) {
   await deleteOrder(id);
   revalidatePath("/admin/inquiries");
   revalidatePath("/admin/inquiries", "layout");
+  revalidatePath("/admin/inquiries", "page");
   redirect("/admin/inquiries?deleted=1");
 }
 
