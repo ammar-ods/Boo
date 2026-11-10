@@ -208,6 +208,19 @@ html.locale-fading body {
   object-position: top;
 }
 
+.cms-media.is-ratio {
+  aspect-ratio: var(--cms-img-aspect, 5 / 2);
+  overflow: hidden;
+}
+
+.cms-media.is-ratio .cms-media-img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
+}
+
 .cms-marquee-img {
   height: var(--cms-img-h, 220px);
   width: auto;
@@ -244,12 +257,20 @@ html.locale-fading body {
     max-height: min(var(--cms-img-h, 280px), 42vh);
   }
 
+  .cms-media.is-ratio {
+    width: var(--cms-img-w, 100%);
+  }
+
+  .cms-media.is-ratio .cms-media-img {
+    max-height: none;
+  }
+
   .cms-marquee-img {
     height: min(var(--cms-img-h, 220px), 28vh);
   }
 }
 
-.dark header img[alt="Boo"] {
+.dark header img[alt="Boo"][data-default="1"] {
   filter: brightness(0) invert(1);
 }
 

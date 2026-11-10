@@ -15,6 +15,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Product } from "@/lib/products";
 import {
   pick,
+  sectionGallery,
   sectionSurface,
   type ImagePlacement,
   type Localized,
@@ -165,6 +166,12 @@ export function SiteCanvas({ products }: { products: Product[] }) {
   );
 }
 
+function imageAspect(section: SiteSection) {
+  if (section.style.aspect && section.style.aspect !== "auto") return section.style.aspect;
+  if (section.type === "banner" || section.type === "slideshow") return "5 / 2";
+  return "";
+}
+
 function SectionMedia({
   src,
   height,
@@ -172,6 +179,7 @@ function SectionMedia({
   bleed,
   rounded,
   href,
+  aspect,
 }: {
   src: string;
   height: number;
@@ -179,13 +187,19 @@ function SectionMedia({
   bleed?: boolean;
   rounded?: boolean;
   href?: string;
+  aspect?: string;
 }) {
   const inset = bleed && rounded;
   const imgW = bleed ? 100 : Math.min(100, Math.max(20, widthPct));
+  const ratio = aspect && aspect !== "auto";
   const image = (
     <div
-      className={`cms-media mx-auto ${inset ? "px-3 sm:px-6" : ""}`}
-      style={{ ["--cms-img-w" as string]: `${imgW}%`, ["--cms-img-h" as string]: `${Math.max(48, height)}px` }}
+      className={`cms-media mx-auto ${ratio ? "is-ratio" : ""} ${inset ? "px-3 sm:px-6" : ""}`}
+      style={{
+        ["--cms-img-w" as string]: `${imgW}%`,
+        ["--cms-img-h" as string]: `${Math.max(48, height)}px`,
+        ["--cms-img-aspect" as string]: aspect || "5 / 2",
+      }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -374,12 +388,16 @@ function SectionView({
     </div>
   ) : null;
 
+  const aspect = imageAspect(section);
+
   if (section.type === "slideshow") {
     return (
       <SectionShell section={section} index={index}>
         <BannerSlideshow
-          items={section.content.gallery ?? []}
+          items={sectionGallery(section, locale)}
           height={height}
+          widthPct={widthPct}
+          aspect={aspect || "5 / 2"}
           rounded={Boolean(section.style.imageRounded)}
           intervalMs={section.style.intervalMs ?? 2000}
         />
@@ -440,7 +458,7 @@ function SectionView({
 
   if ((placement === "start" || placement === "end") && showImage) {
     const imageCol = (
-      <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} href={imageHref} />
+      <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} href={imageHref} aspect={aspect} />
     );
     return (
       <SectionShell section={section} index={index}>
@@ -459,13 +477,13 @@ function SectionView({
   return (
     <SectionShell section={section} index={index}>
       {placement === "bleed" && showImage ? (
-        <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} />
+        <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} aspect={aspect} />
       ) : null}
       <div className={`cms-copy ${placement === "bleed" && showImage ? "pt-5 sm:pt-6" : ""} ${centered ? "text-center" : "text-start"}`}>
         {copy}
         {placement === "below" && showImage ? (
           <div className={`mt-5 ${centered ? "flex justify-center" : ""} sm:mt-6`}>
-            <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} href={imageHref} />
+            <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} href={imageHref} aspect={aspect} />
           </div>
         ) : null}
         {actions}

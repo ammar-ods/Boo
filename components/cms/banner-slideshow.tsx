@@ -7,16 +7,21 @@ import type { GalleryItem } from "@/lib/site";
 export function BannerSlideshow({
   items,
   height,
+  widthPct,
+  aspect,
   rounded,
   intervalMs,
 }: {
   items: GalleryItem[];
   height: number;
+  widthPct: number;
+  aspect: string;
   rounded: boolean;
   intervalMs: number;
 }) {
   const slides = items.filter((item) => item.src);
   const [active, setActive] = useState(0);
+  const useRatio = aspect && aspect !== "auto";
 
   useEffect(() => {
     if (slides.length < 2) return;
@@ -31,15 +36,18 @@ export function BannerSlideshow({
   const current = slides[Math.min(active, slides.length - 1)];
   const image = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={current.src}
-      alt=""
-      className={`h-full w-full object-cover ${rounded ? "rounded-[20px] sm:rounded-[28px]" : ""}`}
-    />
+    <img src={current.src} alt="" className="h-full w-full object-cover" />
   );
 
   return (
-    <div className="relative overflow-hidden" style={{ height: `${Math.max(160, height)}px` }}>
+    <div
+      className={`relative mx-auto overflow-hidden ${rounded ? "rounded-[20px] sm:rounded-[28px]" : ""}`}
+      style={{
+        width: `${Math.min(100, Math.max(20, widthPct || 100))}%`,
+        aspectRatio: useRatio ? aspect : undefined,
+        height: useRatio ? undefined : `${Math.max(160, height || 360)}px`,
+      }}
+    >
       {current.href ? (
         <Link href={current.href} className="absolute inset-0 block">
           {image}

@@ -7,7 +7,9 @@ import { Plus, Settings2 } from "lucide-react";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { cmsPagePath, loc, type CatalogSection, type NavLink, type SectionType } from "@/lib/site";
+import { toast } from "sonner";
+import { FOOTER_ICON_OPTIONS } from "@/components/layout/footer-icons";
+import { cmsPagePath, loc, type CatalogSection, type FooterIcon, type NavLink, type SectionType } from "@/lib/site";
 
 export function StudioNavButtons() {
   const pathname = usePathname();
@@ -199,6 +201,14 @@ export function StudioChromePanel() {
                     value={site.chrome.whatsappPhone}
                     onChange={(event) => setChrome({ whatsappPhone: event.target.value })}
                   />
+                  <p className="mb-1 mt-4 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+                    Logo
+                  </p>
+                  <ChromeImageField
+                    label="Header logo"
+                    value={site.chrome.logo}
+                    onChange={(logo) => setChrome({ logo, footerLogo: site.chrome.footerLogo || logo })}
+                  />
                 </div>
               </div>
             ) : null}
@@ -214,52 +224,7 @@ export function StudioChromePanel() {
               />
             ) : null}
 
-            {chromeTab === "footer" ? (
-              <div className="grid gap-2 rounded-2xl bg-white p-3 md:grid-cols-2">
-                <label className="text-xs text-oxford/60">
-                  <span className="mb-1 block">Tagline · عربي</span>
-                  <input
-                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
-                    dir="rtl"
-                    value={site.chrome.footerTagline.ar}
-                    onChange={(event) =>
-                      setChrome({ footerTagline: { ...site.chrome.footerTagline, ar: event.target.value } })
-                    }
-                  />
-                </label>
-                <label className="text-xs text-oxford/60">
-                  <span className="mb-1 block">Tagline · English</span>
-                  <input
-                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
-                    value={site.chrome.footerTagline.en}
-                    onChange={(event) =>
-                      setChrome({ footerTagline: { ...site.chrome.footerTagline, en: event.target.value } })
-                    }
-                  />
-                </label>
-                <label className="text-xs text-oxford/60 md:col-span-2">
-                  <span className="mb-1 block">Blurb · عربي</span>
-                  <input
-                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
-                    dir="rtl"
-                    value={site.chrome.footerBlurb.ar}
-                    onChange={(event) =>
-                      setChrome({ footerBlurb: { ...site.chrome.footerBlurb, ar: event.target.value } })
-                    }
-                  />
-                </label>
-                <label className="text-xs text-oxford/60 md:col-span-2">
-                  <span className="mb-1 block">Blurb · English</span>
-                  <input
-                    className="h-9 w-full rounded-xl border border-oxford/12 px-3 text-sm"
-                    value={site.chrome.footerBlurb.en}
-                    onChange={(event) =>
-                      setChrome({ footerBlurb: { ...site.chrome.footerBlurb, en: event.target.value } })
-                    }
-                  />
-                </label>
-              </div>
-            ) : null}
+            {chromeTab === "footer" ? <FooterEditor /> : null}
           </div>
         </div>
       ) : null}
@@ -377,6 +342,275 @@ function PagesEditor() {
         {site.pages.length === 0 ? (
           <p className="text-xs text-muted-foreground">No extra pages yet. Create one, then add sections on it.</p>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+async function uploadChromeFile(file: File) {
+  const data = new FormData();
+  data.set("file", file);
+  const response = await fetch("/api/site/upload", { method: "POST", body: data });
+  const payload = (await response.json()) as { url?: string; error?: string };
+  if (!response.ok || !payload.url) {
+    toast.error(payload.error || "Could not upload image");
+    return "";
+  }
+  return payload.url;
+}
+
+function ChromeImageField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  onChange: (url: string) => void;
+}) {
+  return (
+    <label className="mt-2 block text-xs text-oxford/60">
+      <span className="mb-1 block">{label}</span>
+      {value ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="" className="mb-2 max-h-16 w-auto rounded-lg bg-cream object-contain" />
+      ) : null}
+      <input
+        type="file"
+        accept="image/*"
+        className="block w-full text-xs"
+        onChange={async (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          const url = await uploadChromeFile(file);
+          if (url) onChange(url);
+        }}
+      />
+    </label>
+  );
+}
+
+function FooterEditor() {
+  const { site, setChrome } = useEdit();
+  const icons = site.chrome.footerIcons ?? [];
+  const lines = site.chrome.footerMetaLines ?? [];
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <div className="space-y-3 rounded-2xl bg-white p-3">
+        <p className="text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">Brand</p>
+        <ChromeImageField
+          label="Footer logo"
+          value={site.chrome.footerLogo || site.chrome.logo}
+          onChange={(footerLogo) => setChrome({ footerLogo })}
+        />
+        <BilingualInputs
+          label="Tagline"
+          ar={site.chrome.footerTagline.ar}
+          en={site.chrome.footerTagline.en}
+          onAr={(ar) => setChrome({ footerTagline: { ...site.chrome.footerTagline, ar } })}
+          onEn={(en) => setChrome({ footerTagline: { ...site.chrome.footerTagline, en } })}
+        />
+        <BilingualInputs
+          label="Blurb"
+          ar={site.chrome.footerBlurb.ar}
+          en={site.chrome.footerBlurb.en}
+          onAr={(ar) => setChrome({ footerBlurb: { ...site.chrome.footerBlurb, ar } })}
+          onEn={(en) => setChrome({ footerBlurb: { ...site.chrome.footerBlurb, en } })}
+        />
+      </div>
+      <div className="space-y-3 rounded-2xl bg-white p-3">
+        <p className="text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">Columns</p>
+        <BilingualInputs
+          label="Shop column title"
+          ar={site.chrome.footerShopTitle.ar}
+          en={site.chrome.footerShopTitle.en}
+          onAr={(ar) => setChrome({ footerShopTitle: { ...site.chrome.footerShopTitle, ar } })}
+          onEn={(en) => setChrome({ footerShopTitle: { ...site.chrome.footerShopTitle, en } })}
+        />
+        <BilingualInputs
+          label="Right column title"
+          ar={site.chrome.footerMetaTitle.ar}
+          en={site.chrome.footerMetaTitle.en}
+          onAr={(ar) => setChrome({ footerMetaTitle: { ...site.chrome.footerMetaTitle, ar } })}
+          onEn={(en) => setChrome({ footerMetaTitle: { ...site.chrome.footerMetaTitle, en } })}
+        />
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <p className="text-xs text-oxford/60">Right column lines</p>
+            <button
+              type="button"
+              className="text-xs font-semibold text-oxford"
+              onClick={() => setChrome({ footerMetaLines: [...lines, loc("", "")] })}
+            >
+              + Line
+            </button>
+          </div>
+          {lines.map((line, index) => (
+            <div key={index} className="mb-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+              <input
+                className="h-8 rounded-lg border border-oxford/12 px-2 text-xs"
+                dir="rtl"
+                value={line.ar}
+                onChange={(event) =>
+                  setChrome({
+                    footerMetaLines: lines.map((item, i) => (i === index ? { ...item, ar: event.target.value } : item)),
+                  })
+                }
+              />
+              <input
+                className="h-8 rounded-lg border border-oxford/12 px-2 text-xs"
+                value={line.en}
+                onChange={(event) =>
+                  setChrome({
+                    footerMetaLines: lines.map((item, i) => (i === index ? { ...item, en: event.target.value } : item)),
+                  })
+                }
+              />
+              <button
+                type="button"
+                className="text-xs text-red-700"
+                onClick={() => setChrome({ footerMetaLines: lines.filter((_, i) => i !== index) })}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-oxford"
+            checked={site.chrome.footerShowStudio !== false}
+            onChange={(event) => setChrome({ footerShowStudio: event.target.checked })}
+          />
+          Studio login link
+        </label>
+      </div>
+      <div className="rounded-2xl bg-white p-3 md:col-span-2">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+            Icon row
+          </p>
+          <button
+            type="button"
+            className="h-8 rounded-full bg-cream px-3 text-sm font-semibold text-oxford"
+            onClick={() =>
+              setChrome({
+                footerIcons: [
+                  ...icons,
+                  {
+                    id: `icon-${Math.random().toString(36).slice(2, 7)}`,
+                    icon: "instagram",
+                    href: "",
+                    label: loc("", ""),
+                  } satisfies FooterIcon,
+                ],
+              })
+            }
+          >
+            + Icon
+          </button>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          A row under the blurb. Each item can have an icon, optional text, and a link.
+        </p>
+        {icons.map((item, index) => (
+          <div key={item.id} className="mb-2 grid gap-2 rounded-xl bg-cream/70 p-2 sm:grid-cols-[9rem_1fr_1fr_1fr_auto]">
+            <select
+              className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+              value={item.icon}
+              onChange={(event) =>
+                setChrome({
+                  footerIcons: icons.map((row, i) => (i === index ? { ...row, icon: event.target.value } : row)),
+                })
+              }
+            >
+              {FOOTER_ICON_OPTIONS.map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <input
+              className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+              placeholder="عربي"
+              dir="rtl"
+              value={item.label.ar}
+              onChange={(event) =>
+                setChrome({
+                  footerIcons: icons.map((row, i) =>
+                    i === index ? { ...row, label: { ...row.label, ar: event.target.value } } : row,
+                  ),
+                })
+              }
+            />
+            <input
+              className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+              placeholder="English"
+              value={item.label.en}
+              onChange={(event) =>
+                setChrome({
+                  footerIcons: icons.map((row, i) =>
+                    i === index ? { ...row, label: { ...row.label, en: event.target.value } } : row,
+                  ),
+                })
+              }
+            />
+            <input
+              className="h-8 rounded-lg border border-oxford/12 bg-white px-2 text-xs"
+              placeholder="https://…"
+              value={item.href}
+              onChange={(event) =>
+                setChrome({
+                  footerIcons: icons.map((row, i) => (i === index ? { ...row, href: event.target.value } : row)),
+                })
+              }
+            />
+            <button
+              type="button"
+              className="text-xs text-red-700"
+              onClick={() => setChrome({ footerIcons: icons.filter((row) => row.id !== item.id) })}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BilingualInputs({
+  label,
+  ar,
+  en,
+  onAr,
+  onEn,
+}: {
+  label: string;
+  ar: string;
+  en: string;
+  onAr: (value: string) => void;
+  onEn: (value: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-1 text-xs text-oxford/60">{label}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input
+          className="h-9 rounded-xl border border-oxford/12 px-3 text-sm"
+          dir="rtl"
+          placeholder="عربي"
+          value={ar}
+          onChange={(event) => onAr(event.target.value)}
+        />
+        <input
+          className="h-9 rounded-xl border border-oxford/12 px-3 text-sm"
+          placeholder="English"
+          value={en}
+          onChange={(event) => onEn(event.target.value)}
+        />
       </div>
     </div>
   );

@@ -74,7 +74,7 @@ export function SiteHeader() {
         <div className="relative border-b border-oxford/8 bg-cream">
           <div className={`mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:gap-4 sm:px-8 sm:py-5 ${isAdmin ? "md:pe-44" : ""}`}>
             <Link href="/" className="shrink-0">
-              <BooLogo />
+              <BooLogo src={site.chrome.logo} />
             </Link>
             {site.chrome.showNav ? <NavMenu links={links} locale={locale} /> : null}
             <div className="flex items-center gap-1">

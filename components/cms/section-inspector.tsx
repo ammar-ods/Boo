@@ -267,6 +267,20 @@ function LayoutTab({
             }
           />
         ) : null}
+        {section.type === "banner" || section.type === "slideshow" ? (
+          <SelectField
+            label="Image ratio"
+            value={section.style.aspect ?? "5 / 2"}
+            onChange={(aspect) => patch(section.id, { style: { aspect } })}
+            options={[
+              ["5 / 2", "5:2"],
+              ["16 / 9", "16:9"],
+              ["2 / 1", "2:1"],
+              ["1 / 1", "1:1"],
+              ["auto", "Free / max height"],
+            ]}
+          />
+        ) : null}
       </Group>
     </div>
   );
@@ -279,6 +293,33 @@ function MediaTab({
   section: SiteSection;
   patch: ReturnType<typeof useEdit>["patchSection"];
 }) {
+  if (section.type === "slideshow") {
+    return (
+      <div className="space-y-4">
+        <NumberField
+          label="Width %"
+          value={section.style.imageWidth ?? 100}
+          onChange={(imageWidth) => patch(section.id, { style: { imageWidth } })}
+        />
+        <SwitchRow
+          label="Rounded images"
+          checked={Boolean(section.style.imageRounded)}
+          onChange={(imageRounded) => patch(section.id, { style: { imageRounded } })}
+        />
+        <GalleryEditor
+          items={section.content.galleryAr ?? []}
+          onChange={(galleryAr) => patch(section.id, { content: { galleryAr } })}
+          heading="Arabic slides"
+        />
+        <GalleryEditor
+          items={section.content.galleryEn ?? []}
+          onChange={(galleryEn) => patch(section.id, { content: { galleryEn } })}
+          heading="English slides"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <SelectField
@@ -371,11 +412,11 @@ function MediaTab({
       >
         Remove all images
       </button>
-      {section.type === "marquee" || section.type === "slideshow" ? (
+      {section.type === "marquee" ? (
         <GalleryEditor
           items={section.content.gallery ?? []}
           onChange={(gallery) => patch(section.id, { content: { gallery } })}
-          heading={section.type === "slideshow" ? "Banner slides" : "Scrolling images"}
+          heading="Scrolling images"
         />
       ) : null}
     </div>
@@ -561,6 +602,15 @@ function BilingualField({
   );
 }
 
+function moveItem<T>(items: T[], index: number, dir: -1 | 1) {
+  const next = index + dir;
+  if (next < 0 || next >= items.length) return items;
+  const copy = [...items];
+  const [row] = copy.splice(index, 1);
+  copy.splice(next, 0, row);
+  return copy;
+}
+
 function GalleryEditor({
   items,
   onChange,
@@ -587,13 +637,33 @@ function GalleryEditor({
               onChange(items.map((row, i) => (i === index ? { ...row, href: event.target.value } : row)))
             }
           />
-          <button
-            type="button"
-            className="text-xs font-semibold text-red-700"
-            onClick={() => onChange(items.filter((_, i) => i !== index))}
-          >
-            Remove
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-1">
+              <button
+                type="button"
+                className="h-7 rounded-full bg-cream px-2 text-xs font-semibold text-oxford disabled:opacity-30"
+                disabled={index === 0}
+                onClick={() => onChange(moveItem(items, index, -1))}
+              >
+                Up
+              </button>
+              <button
+                type="button"
+                className="h-7 rounded-full bg-cream px-2 text-xs font-semibold text-oxford disabled:opacity-30"
+                disabled={index === items.length - 1}
+                onClick={() => onChange(moveItem(items, index, 1))}
+              >
+                Down
+              </button>
+            </div>
+            <button
+              type="button"
+              className="text-xs font-semibold text-red-700"
+              onClick={() => onChange(items.filter((_, i) => i !== index))}
+            >
+              Remove
+            </button>
+          </div>
         </div>
       ))}
       <ImageUpload label="Add image" onChange={(url) => onChange([...items, { src: url }])} />

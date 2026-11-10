@@ -31,6 +31,7 @@ export type SectionStyle = {
   secondaryCtaColor?: string;
   imageRounded?: boolean;
   intervalMs?: number;
+  aspect?: string;
   blockWidth?: number;
   minHeight?: number;
   marginX?: number;
@@ -54,6 +55,8 @@ export type SectionContent = {
   image?: Localized;
   imageHref?: string;
   gallery?: GalleryItem[];
+  galleryAr?: GalleryItem[];
+  galleryEn?: GalleryItem[];
 };
 
 export type SiteSection = {
@@ -79,6 +82,13 @@ export type CatalogSection = {
   label: Localized;
 };
 
+export type FooterIcon = {
+  id: string;
+  icon: string;
+  href: string;
+  label: Localized;
+};
+
 export type SiteChrome = {
   showAnnouncement: boolean;
   announcement: Localized;
@@ -86,9 +96,16 @@ export type SiteChrome = {
   showNav: boolean;
   navLinks: NavLink[];
   catalogSections: CatalogSection[];
+  logo: string;
+  footerLogo: string;
   showFooter: boolean;
   footerTagline: Localized;
   footerBlurb: Localized;
+  footerShopTitle: Localized;
+  footerMetaTitle: Localized;
+  footerMetaLines: Localized[];
+  footerShowStudio: boolean;
+  footerIcons: FooterIcon[];
   payPhone: string;
   whatsappPhone: string;
 };
@@ -177,6 +194,31 @@ export function sectionSurface(style: SectionStyle): { background?: string; colo
   };
 }
 
+export function parseGalleryItems(value: unknown): GalleryItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === "string") return { src: item };
+      if (item && typeof item === "object" && "src" in item && typeof (item as GalleryItem).src === "string") {
+        const row = item as GalleryItem;
+        return { src: row.src, href: row.href };
+      }
+      return null;
+    })
+    .filter((item): item is GalleryItem => Boolean(item?.src));
+}
+
+export function sectionGallery(section: SiteSection, locale: string) {
+  if (locale === "ar") {
+    if (section.content.galleryAr?.length) return section.content.galleryAr;
+    if (section.content.gallery?.length) return section.content.gallery;
+    return section.content.galleryEn ?? [];
+  }
+  if (section.content.galleryEn?.length) return section.content.galleryEn;
+  if (section.content.gallery?.length) return section.content.gallery;
+  return section.content.galleryAr ?? [];
+}
+
 export function pick(value: Localized | string | undefined, locale: string): string {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -222,9 +264,16 @@ export const DEFAULT_CHROME: SiteChrome = {
       label: loc("خشب", "Laser Cut Wood"),
     },
   ],
+  logo: "/brand/boo-mark.png",
+  footerLogo: "/brand/boo-mark.png",
   showFooter: true,
   footerTagline: loc("مختار بذوق.", "Selected with taste."),
   footerBlurb: loc("مشغل أكسفورد للطباعة والهدايا.", "An Oxford atelier for print and gifting."),
+  footerShopTitle: loc("المتجر", "Shop"),
+  footerMetaTitle: loc("Boo", "Boo"),
+  footerMetaLines: [loc("١٠٠ جنيه", "100 EGP"), loc("جنيه · دولار · يورو · إسترليني", "EGP · USD · EUR · GBP")],
+  footerShowStudio: true,
+  footerIcons: [],
   payPhone: "01000000000",
   whatsappPhone: "01000000000",
 };
@@ -266,7 +315,8 @@ export function newSection(type: SectionType): SiteSection {
         fontSize: 32,
         paddingY: 48,
         align: "start",
-        imageHeight: 360,
+        imageHeight: 0,
+        aspect: "5 / 2",
         imagePlacement: "bleed",
         imageWidth: 100,
         imageRounded: false,
@@ -292,7 +342,8 @@ export function newSection(type: SectionType): SiteSection {
         fontSize: 32,
         paddingY: 0,
         align: "center",
-        imageHeight: 420,
+        imageHeight: 0,
+        aspect: "5 / 2",
         imagePlacement: "bleed",
         imageWidth: 100,
         imageRounded: false,
@@ -301,7 +352,12 @@ export function newSection(type: SectionType): SiteSection {
         showSecondaryCta: false,
       },
       content: {
-        gallery: [
+        galleryAr: [
+          { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
+          { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
+          { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
+        ],
+        galleryEn: [
           { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
           { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
           { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
@@ -414,11 +470,16 @@ export const DEFAULT_SITE: SiteDocument = {
 
 export function migrateSection(section: SiteSection | Record<string, unknown>, index: number): SiteSection {
   const row = section as SiteSection & { content?: Record<string, unknown> };
+  const type = (row.type as SectionType) || "text";
+  const style = { ...(row.style ?? {}) };
+  if ((type === "banner" || type === "slideshow") && (!style.aspect || style.aspect === "3 / 2")) {
+    style.aspect = "5 / 2";
+  }
   const migrated: SiteSection = {
     id: String(row.id || `section-${index}`),
-    type: (row.type as SectionType) || "text",
+    type,
     visible: row.visible !== false,
-    style: row.style ?? {},
+    style,
     content: migrateContent(row.content as Record<string, unknown>),
   };
   return fillMissingEnglish(migrated);
@@ -436,18 +497,9 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
     secondaryCtaHref: typeof src.secondaryCtaHref === "string" ? src.secondaryCtaHref : undefined,
     image: src.image ? asLoc(src.image) : undefined,
     imageHref: typeof src.imageHref === "string" ? src.imageHref : undefined,
-    gallery: Array.isArray(src.gallery)
-      ? src.gallery
-          .map((item) => {
-            if (typeof item === "string") return { src: item };
-            if (item && typeof item === "object" && "src" in item && typeof (item as GalleryItem).src === "string") {
-              const row = item as GalleryItem;
-              return { src: row.src, href: row.href };
-            }
-            return null;
-          })
-          .filter((item): item is GalleryItem => Boolean(item?.src))
-      : undefined,
+    gallery: parseGalleryItems(src.gallery),
+    galleryAr: parseGalleryItems(src.galleryAr).length ? parseGalleryItems(src.galleryAr) : parseGalleryItems(src.gallery),
+    galleryEn: parseGalleryItems(src.galleryEn).length ? parseGalleryItems(src.galleryEn) : parseGalleryItems(src.gallery),
   };
 }
 
@@ -479,9 +531,34 @@ export function migrateSite(raw: unknown): SiteDocument {
               label: asLoc(section.label),
             }))
           : DEFAULT_CHROME.catalogSections,
+      logo: typeof chrome.logo === "string" && chrome.logo.trim() ? chrome.logo.trim() : DEFAULT_CHROME.logo,
+      footerLogo:
+        typeof chrome.footerLogo === "string" && chrome.footerLogo.trim()
+          ? chrome.footerLogo.trim()
+          : typeof chrome.logo === "string" && chrome.logo.trim()
+            ? chrome.logo.trim()
+            : DEFAULT_CHROME.footerLogo,
       showFooter: chrome.showFooter !== false,
       footerTagline: fillLoc(asLoc(chrome.footerTagline, DEFAULT_CHROME.footerTagline.ar), DEFAULT_CHROME.footerTagline) ?? DEFAULT_CHROME.footerTagline,
       footerBlurb: fillLoc(asLoc(chrome.footerBlurb, DEFAULT_CHROME.footerBlurb.ar), DEFAULT_CHROME.footerBlurb) ?? DEFAULT_CHROME.footerBlurb,
+      footerShopTitle:
+        fillLoc(asLoc(chrome.footerShopTitle, DEFAULT_CHROME.footerShopTitle.ar), DEFAULT_CHROME.footerShopTitle) ??
+        DEFAULT_CHROME.footerShopTitle,
+      footerMetaTitle:
+        fillLoc(asLoc(chrome.footerMetaTitle, DEFAULT_CHROME.footerMetaTitle.ar), DEFAULT_CHROME.footerMetaTitle) ??
+        DEFAULT_CHROME.footerMetaTitle,
+      footerMetaLines: Array.isArray(chrome.footerMetaLines) && chrome.footerMetaLines.length
+        ? chrome.footerMetaLines.map((line) => asLoc(line))
+        : DEFAULT_CHROME.footerMetaLines,
+      footerShowStudio: chrome.footerShowStudio !== false,
+      footerIcons: Array.isArray(chrome.footerIcons)
+        ? chrome.footerIcons.map((item, index) => ({
+            id: String(item.id || `icon-${index}`),
+            icon: String(item.icon || "instagram"),
+            href: String(item.href || ""),
+            label: asLoc(item.label),
+          }))
+        : [],
       payPhone: typeof chrome.payPhone === "string" && chrome.payPhone.trim() ? chrome.payPhone.trim() : DEFAULT_CHROME.payPhone,
       whatsappPhone:
         typeof chrome.whatsappPhone === "string" && chrome.whatsappPhone.trim()
