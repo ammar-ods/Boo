@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ImagePlus, LayoutGrid, Type, X } from "lucide-react";
 import { toast } from "sonner";
 import { useEdit } from "@/lib/edit-context";
+import { ProductShelfEditor } from "@/components/cms/page-products";
+import type { Product } from "@/lib/products";
 import {
   SECTION_TYPES,
   type GalleryItem,
@@ -14,7 +16,13 @@ import {
 
 type Tab = "copy" | "layout" | "media";
 
-export function SectionInspector({ section }: { section: SiteSection | null }) {
+export function SectionInspector({
+  section,
+  products = [],
+}: {
+  section: SiteSection | null;
+  products?: Product[];
+}) {
   const { patchSection, setSelectedId, save, saving, dirty } = useEdit();
   const [tab, setTab] = useState<Tab>("copy");
 
@@ -86,7 +94,7 @@ export function SectionInspector({ section }: { section: SiteSection | null }) {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {tab === "copy" ? <CopyTab section={section} patch={patchSection} /> : null}
         {tab === "layout" ? <LayoutTab section={section} patch={patchSection} /> : null}
-        {tab === "media" ? <MediaTab section={section} patch={patchSection} /> : null}
+        {tab === "media" ? <MediaTab section={section} patch={patchSection} products={products} /> : null}
       </div>
     </aside>
   );
@@ -289,10 +297,15 @@ function LayoutTab({
 function MediaTab({
   section,
   patch,
+  products = [],
 }: {
   section: SiteSection;
   patch: ReturnType<typeof useEdit>["patchSection"];
+  products?: Product[];
 }) {
+  if (section.type === "products") {
+    return <ProductShelfEditor section={section} products={products} patch={patch} />;
+  }
   if (section.type === "slideshow") {
     return (
       <div className="space-y-4">

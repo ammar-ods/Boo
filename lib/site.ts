@@ -57,6 +57,8 @@ export type SectionContent = {
   gallery?: GalleryItem[];
   galleryAr?: GalleryItem[];
   galleryEn?: GalleryItem[];
+  productSlugs?: string[];
+  collection?: string;
 };
 
 export type SiteSection = {
@@ -454,10 +456,12 @@ export function newSection(type: SectionType): SiteSection {
       id,
       type,
       visible: true,
-      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 40, paddingY: 56, align: "center" },
+      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 32, paddingY: 56, align: "start" },
       content: {
-        title: loc(" الاستوديو", "Staff picks"),
-        body: loc(" الثلاثة  بسعر ١٠٠ جنيه.", "The three current pieces, 100 EGP each."),
+        title: loc("المنتجات", "Products"),
+        body: loc("أضف قطع من الكتالوج.", "Add pieces from the catalog."),
+        productSlugs: [],
+        collection: "all",
       },
     },
     collections: {
@@ -530,10 +534,21 @@ export const DEFAULT_SITE: SiteDocument = {
     newSection("products"),
     newSection("cta"),
     newSection("faq"),
-  ].map((section, index) => ({
-    ...section,
-    id: ["hero", "collections", "products", "cta", "about"][index] ?? section.id,
-  })),
+  ].map((section, index) => {
+    const id = ["hero", "collections", "products", "cta", "about"][index] ?? section.id;
+    if (section.type !== "products") return { ...section, id };
+    const { productSlugs: _unused, collection: _collection, ...content } = section.content;
+    return {
+      ...section,
+      id,
+      style: { ...section.style, align: "center", fontSize: 40 },
+      content: {
+        ...content,
+        title: loc(" الاستوديو", "Staff picks"),
+        body: loc(" الثلاثة  بسعر ١٠٠ جنيه.", "The three current pieces, 100 EGP each."),
+      },
+    };
+  }),
 };
 
 export function migrateSection(section: SiteSection | Record<string, unknown>, index: number): SiteSection {
@@ -568,6 +583,10 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
     gallery: parseGalleryItems(src.gallery),
     galleryAr: parseGalleryItems(src.galleryAr).length ? parseGalleryItems(src.galleryAr) : parseGalleryItems(src.gallery),
     galleryEn: parseGalleryItems(src.galleryEn).length ? parseGalleryItems(src.galleryEn) : parseGalleryItems(src.gallery),
+    productSlugs: Array.isArray(src.productSlugs)
+      ? src.productSlugs.map((item) => String(item)).filter(Boolean)
+      : undefined,
+    collection: typeof src.collection === "string" ? src.collection : undefined,
   };
 }
 

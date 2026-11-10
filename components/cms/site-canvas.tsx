@@ -8,6 +8,7 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { AutoScroller } from "@/components/cms/auto-scroller";
 import { BannerSlideshow } from "@/components/cms/banner-slideshow";
+import { PageProducts } from "@/components/cms/page-products";
 import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
@@ -170,7 +171,10 @@ export function SiteCanvas({ products }: { products: Product[] }) {
           </div>
         ) : null}
         {editing && selectedId ? (
-        <SectionInspector section={pageSections.find((item) => item.id === selectedId) ?? null} />
+        <SectionInspector
+          section={pageSections.find((item) => item.id === selectedId) ?? null}
+          products={products}
+        />
       ) : null}
     </div>
   );
@@ -333,6 +337,7 @@ function SectionView({
   locale: string;
   index?: number;
 }) {
+  const { pageKey } = useEdit();
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
   const placement: ImagePlacement =
@@ -444,11 +449,21 @@ function SectionView({
   if (section.type === "products") {
     return (
       <SectionShell section={section} index={index}>
-        <div id="creations" className={`cms-copy ${centered ? "text-center" : "text-start"}`}>
+        <div id="creations" className="cms-copy text-start">
           {text("title", "font-heading", "h2")}
           {text("body", "mt-2 text-muted-foreground")}
           <div className="mt-6 sm:mt-8">
-            <ProductGrid products={products} compact />
+            {pageKey && pageKey !== "home" ? (
+              <PageProducts
+                section={{
+                  ...section,
+                  content: { ...section.content, productSlugs: section.content.productSlugs ?? [] },
+                }}
+                products={products}
+              />
+            ) : (
+              <ProductGrid products={products} compact />
+            )}
           </div>
         </div>
       </SectionShell>
