@@ -185,12 +185,44 @@ export function loc(ar: string, en: string): Localized {
   return { ar, en };
 }
 
+function isThemePageFill(value?: string) {
+  const key = (value || "").trim().toLowerCase();
+  return (
+    !key ||
+    key === "var(--background)" ||
+    key === "var(--cream)" ||
+    key === "#f6f3ea" ||
+    key === "#faf9f6" ||
+    key === "#f4f3f0"
+  );
+}
+
+function isThemeCardFill(value?: string) {
+  const key = (value || "").trim().toLowerCase();
+  return key === "#ffffff" || key === "#fff" || key === "var(--card)";
+}
+
+function isThemeInk(value?: string) {
+  const key = (value || "").trim().toLowerCase();
+  return (
+    !key ||
+    key === "var(--foreground)" ||
+    key === "#0a2540" ||
+    key === "#121214" ||
+    key === "#002147"
+  );
+}
+
 export function sectionSurface(style: SectionStyle): { background?: string; color?: string } {
   const background = style.background?.trim();
   const color = style.color?.trim();
   return {
-    background: background || "var(--background)",
-    color: color || "var(--foreground)",
+    background: isThemePageFill(background)
+      ? "var(--background)"
+      : isThemeCardFill(background)
+        ? "var(--card)"
+        : background,
+    color: isThemeInk(color) ? "var(--foreground)" : color,
   };
 }
 

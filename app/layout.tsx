@@ -52,8 +52,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const site = await getSite();
 
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning className={`${cairo.variable} ${playfair.variable} ${geistMono.variable} h-full`}>
-      <body className="flex min-h-full flex-col font-sans">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body className={`${cairo.variable} ${playfair.variable} ${geistMono.variable} flex min-h-full flex-col font-sans`}>
         <AppTheme>
           <I18nProvider>
             <EditProvider initial={site} isAdmin={isAdmin}>
