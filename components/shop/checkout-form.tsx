@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cartTotal, useCart, useCartHydrated } from "@/lib/cart";
@@ -143,7 +144,7 @@ export function CheckoutForm({
   if (items.length === 0) return null;
 
   return (
-    <div className={embedded ? "" : "mx-auto w-full max-w-xl px-5 py-12 sm:px-8"}>
+    <div className={embedded ? "" : "mx-auto w-full max-w-2xl px-5 py-12 sm:px-8"}>
       {onBack ? (
         <button
           type="button"
@@ -156,7 +157,27 @@ export function CheckoutForm({
       <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-5xl"}`}>
         {t("checkout")}
       </h1>
-      <dl className={`space-y-1 text-sm ${embedded ? "mt-2" : "mt-4"}`}>
+      <div className={embedded ? "mt-4 space-y-3" : "mt-6 space-y-3"}>
+        <p className="text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">{t("yourOrder")}</p>
+        {items.map((item) => {
+          const name = locale === "ar" ? item.nameAr || item.name : item.name;
+          const line = item.priceEgp * item.quantity;
+          const detail = [item.color, `${t("quantity")}: ${item.quantity}`].filter(Boolean).join(" · ");
+          return (
+            <div key={item.id} className="flex gap-3 rounded-2xl bg-white/70 p-3 ring-1 ring-oxford/8">
+              <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-chip sm:size-20">
+                <Image src={item.image} alt="" fill className="object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-heading text-lg leading-tight text-oxford">{name}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
+                <p className="mt-1 text-sm font-semibold text-oxford">{formatPrice(line)}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <dl className={`space-y-1 text-sm ${embedded ? "mt-4" : "mt-5"}`}>
         <div className="flex justify-between">
           <dt>{t("subtotal")}</dt>
           <dd>{formatPrice(breakdown.subtotal)}</dd>

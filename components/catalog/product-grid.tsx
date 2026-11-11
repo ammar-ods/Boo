@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/catalog/product-card";
-import { ShopSidebar } from "@/components/shop/shop-sidebar";
 import { type Product, type ProductCategory } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
@@ -72,9 +71,7 @@ export function ProductGrid({
   }
 
   return (
-    <div className="flex gap-8 lg:gap-10">
-      <ShopSidebar activeId={collection || (query ? undefined : "all")} />
-      <div className="min-w-0 flex-1 space-y-5">
+      <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">{items.length} pieces</p>
           <div className="flex items-center gap-2">
@@ -106,6 +103,5 @@ export function ProductGrid({
         </div>
         {grid}
       </div>
-    </div>
   );
 }

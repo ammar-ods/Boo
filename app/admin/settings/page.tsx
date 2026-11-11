@@ -17,6 +17,7 @@ export default async function AdminSettingsPage() {
         commerce={site.commerce}
         whatsappPhone={site.chrome.whatsappPhone}
         payPhone={site.chrome.payPhone}
+        showDiscipline={site.chrome.showDiscipline !== false}
       />
     </div>
   );

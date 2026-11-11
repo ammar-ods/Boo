@@ -2,6 +2,7 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 import { getLiveCatalog } from "@/lib/local-db";
 import { CatalogIntro } from "@/components/shop/catalog-intro";
 import { CatalogSections } from "@/components/shop/catalog-sections";
+import { ShopRail } from "@/components/shop/shop-sidebar";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,16 +16,22 @@ export default async function CatalogPage({
   const { collection, q, all } = await searchParams;
   const showSections = !collection && !q && all !== "1";
 
-  return (
-    <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
-      {showSections ? (
+  if (showSections) {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
         <CatalogSections />
-      ) : (
-        <>
-          <CatalogIntro query={q} collection={collection} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-12">
+      <ShopRail activeId={collection || (q ? undefined : "all")}>
+        <CatalogIntro query={q} collection={collection} />
+        <div className="mt-8">
           <ProductGrid products={products} collection={collection} query={q} />
-        </>
-      )}
+        </div>
+      </ShopRail>
     </div>
   );
 }

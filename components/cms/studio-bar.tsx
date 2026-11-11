@@ -166,6 +166,11 @@ export function StudioChromePanel() {
                     onChange={(showNav) => setChrome({ showNav })}
                   />
                   <Toggle
+                    label={locale === "ar" ? "قائمة الأقسام (Discipline)" : "Discipline menu"}
+                    checked={site.chrome.showDiscipline !== false}
+                    onChange={(showDiscipline) => setChrome({ showDiscipline })}
+                  />
+                  <Toggle
                     label={locale === "ar" ? "الفوتر" : "Footer"}
                     checked={site.chrome.showFooter}
                     onChange={(showFooter) => setChrome({ showFooter })}

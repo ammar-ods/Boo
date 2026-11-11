@@ -96,6 +96,7 @@ export type SiteChrome = {
   announcement: Localized;
   showHeader: boolean;
   showNav: boolean;
+  showDiscipline: boolean;
   navLinks: NavLink[];
   catalogSections: CatalogSection[];
   logo: string;
@@ -337,6 +338,7 @@ export const DEFAULT_CHROME: SiteChrome = {
   announcement: loc("شحن داخل مصر · كل القطع بـ ١٠٠ جنيه", "Shipping in Egypt · every piece is 100 EGP"),
   showHeader: true,
   showNav: true,
+  showDiscipline: true,
   navLinks: [
     { id: "shop", href: "/catalog", label: loc("المتجر", "Shop"), visible: true },
     { id: "bundles", href: "/bundles", label: loc("الباقات", "Bundles"), visible: true },
@@ -661,6 +663,7 @@ export function migrateSite(raw: unknown): SiteDocument {
       announcement: fillLoc(asLoc(chrome.announcement, DEFAULT_CHROME.announcement.ar), DEFAULT_CHROME.announcement) ?? DEFAULT_CHROME.announcement,
       showHeader: chrome.showHeader !== false,
       showNav: chrome.showNav !== false,
+      showDiscipline: chrome.showDiscipline !== false,
       navLinks:
         Array.isArray(chrome.navLinks) && chrome.navLinks.length
           ? chrome.navLinks.map((link, index) => migrateNavLink(link, index))

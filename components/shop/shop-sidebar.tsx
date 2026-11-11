@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEdit } from "@/lib/edit-context";
@@ -66,9 +66,28 @@ export function useShopNavItems(): ShopNavItem[] {
   return items;
 }
 
-export function ShopSidebar({ activeId }: { activeId?: string }) {
+export function ShopRail({
+  children,
+  activeId,
+}: {
+  children: ReactNode;
+  activeId?: string;
+}) {
+  const { site } = useEdit();
+  const show = site.chrome.showDiscipline !== false;
   return (
-    <Suspense fallback={<aside className="hidden w-52 shrink-0 lg:block xl:w-56" />}>
+    <div className="mx-auto flex w-full max-w-[86rem] items-start justify-center px-5 sm:px-8">
+      {show ? <ShopSidebar activeId={activeId} /> : null}
+      <div className="w-full min-w-0 max-w-6xl">{children}</div>
+    </div>
+  );
+}
+
+export function ShopSidebar({ activeId }: { activeId?: string }) {
+  const { site } = useEdit();
+  if (site.chrome.showDiscipline === false) return null;
+  return (
+    <Suspense fallback={<aside className="hidden w-44 shrink-0 xl:block xl:w-52" />}>
       <ShopSidebarNav activeId={activeId} />
     </Suspense>
   );
@@ -85,7 +104,7 @@ function ShopSidebarNav({ activeId }: { activeId?: string }) {
     items[0]?.id;
 
   return (
-    <aside className="sticky top-28 hidden w-52 shrink-0 self-start lg:block xl:w-56">
+    <aside className="sticky top-28 hidden w-44 shrink-0 self-start border-e border-oxford/15 pe-5 me-6 xl:block xl:w-52 xl:pe-6 xl:me-8">
       <div>
         <p className="mb-2 text-xs tracking-[0.16em] text-oxford/60">DISCIPLINE</p>
         <div className="flex flex-col gap-1">

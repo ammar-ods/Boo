@@ -21,10 +21,12 @@ export function ShopSettingsForm({
   commerce,
   whatsappPhone,
   payPhone,
+  showDiscipline,
 }: {
   commerce: Commerce;
   whatsappPhone: string;
   payPhone: string;
+  showDiscipline: boolean;
 }) {
   const router = useRouter();
   const [contactFields, setContactFields] = useState(commerce.contactFields);
@@ -45,6 +47,13 @@ export function ShopSettingsForm({
       }}
       className="mt-8 space-y-8"
     >
+      <section className="space-y-4 rounded-[1.6rem] bg-white p-6 ring-1 ring-oxford/8">
+        <h2 className="font-heading text-2xl text-oxford">Shop</h2>
+        <label className="flex h-12 items-center justify-between gap-3 rounded-2xl bg-cream px-4 text-sm">
+          <span>Show Discipline menu next to product cards</span>
+          <input type="checkbox" name="showDiscipline" defaultChecked={showDiscipline} className="size-4 accent-oxford" />
+        </label>
+      </section>
       <section className="space-y-4 rounded-[1.6rem] bg-white p-6 ring-1 ring-oxford/8">
         <h2 className="font-heading text-2xl text-oxford">Contact & shipping</h2>
         <label className="block text-sm">

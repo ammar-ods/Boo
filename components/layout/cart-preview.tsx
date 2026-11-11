@@ -50,17 +50,26 @@ export function CartPreview() {
             ))}
           </div>
         )}
-        <div className="mt-4 flex items-center justify-between border-t border-oxford/10 pt-3">
+        <div className="mt-4 border-t border-oxford/10 pt-3">
           <p className="text-sm font-semibold text-oxford">
             {t("total")}: {formatPrice(total)}
           </p>
-          <Link
-            href="/checkout"
-            className="btn-press btn-press-sm"
-            onClick={() => setCartOpen(false)}
-          >
-            {t("checkoutNow")}
-          </Link>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link
+              href="/cart"
+              className="btn-press btn-press-outline btn-press-sm text-center"
+              onClick={() => setCartOpen(false)}
+            >
+              {t("viewCart")}
+            </Link>
+            <Link
+              href="/checkout"
+              className="btn-press btn-press-sm text-center"
+              onClick={() => setCartOpen(false)}
+            >
+              {t("checkoutNow")}
+            </Link>
+          </div>
         </div>
       </div>
     </div>

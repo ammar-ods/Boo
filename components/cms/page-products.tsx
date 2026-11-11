@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
-import { ShopSidebar } from "@/components/shop/shop-sidebar";
+import { ShopRail } from "@/components/shop/shop-sidebar";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { localizedName, productThumbnail, type Product } from "@/lib/products";
@@ -31,9 +31,8 @@ export function PageProducts({
   }
 
   return (
-    <div className="flex gap-8 lg:gap-10">
-      <ShopSidebar activeId={section.content.collection} />
-      <div className="min-w-0 flex-1 space-y-5">
+    <ShopRail activeId={section.content.collection}>
+      <div className="space-y-5">
         <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
           {selected.map((product) => (
             <div key={product.slug} className="relative">
@@ -92,7 +91,7 @@ export function PageProducts({
           <p className="text-sm text-oxford/50">No products on this page yet.</p>
         ) : null}
       </div>
-    </div>
+    </ShopRail>
   );
 }
 

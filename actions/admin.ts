@@ -108,6 +108,7 @@ export async function saveShopSettings(formData: FormData) {
       ...site.chrome,
       whatsappPhone: String(formData.get("whatsappPhone") ?? "").trim(),
       payPhone: String(formData.get("payPhone") ?? "").trim() || site.chrome.payPhone,
+      showDiscipline: formData.get("showDiscipline") === "on",
     },
     commerce: {
       shippingPrice: Math.max(0, Number(formData.get("shippingPrice") || 0)),
@@ -126,6 +127,7 @@ export async function saveShopSettings(formData: FormData) {
     },
   });
   revalidatePath("/");
+  revalidatePath("/catalog");
   revalidatePath("/checkout");
   revalidatePath("/contact");
   revalidatePath("/admin/settings");
