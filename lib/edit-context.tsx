@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { flashStatus } from "@/components/status-flash";
+import { upsertNavCategory } from "@/lib/categories";
 import {
   blankCmsPage,
   cmsPagePath,
@@ -49,7 +50,13 @@ type EditContextValue = {
   addSection: (type: SectionType, beforeId?: string) => void;
   removeSection: (id: string) => void;
   moveSection: (id: string, dir: -1 | 1) => void;
-  addPage: (input: { titleEn: string; titleAr: string; slug?: string; addToNav?: boolean }) => string | null;
+  addPage: (input: {
+    titleEn: string;
+    titleAr: string;
+    slug?: string;
+    addToNav?: boolean;
+    underCategories?: boolean;
+  }) => string | null;
   ensurePage: (slug: string, title?: { ar: string; en: string }) => void;
   updatePage: (id: string, next: Partial<Pick<CmsPage, "slug" | "title" | "visible">>) => void;
   removePage: (id: string) => void;
@@ -59,6 +66,14 @@ const EditContext = createContext<EditContextValue | null>(null);
 
 function cloneSite(site: SiteDocument): SiteDocument {
   return structuredClone(migrateSite(site));
+}
+
+function mapNavTree(links: NavLink[], map: (link: NavLink) => NavLink | null): NavLink[] {
+  return links.flatMap((link) => {
+    const next = map(link);
+    if (!next) return [];
+    return [{ ...next, children: next.children ? mapNavTree(next.children, map) : undefined }];
+  });
 }
 
 export function EditProvider({
@@ -241,7 +256,7 @@ export function EditProvider({
   );
 
   const addPage = useCallback(
-    (input: { titleEn: string; titleAr: string; slug?: string; addToNav?: boolean }) => {
+    (input: { titleEn: string; titleAr: string; slug?: string; addToNav?: boolean; underCategories?: boolean }) => {
       const titleEn = input.titleEn.trim() || "New page";
       const titleAr = input.titleAr.trim() || titleEn;
       let slug = pageSlugify(input.slug || titleEn || titleAr);
@@ -263,15 +278,23 @@ export function EditProvider({
           chrome: input.addToNav
             ? {
                 ...current.chrome,
-                navLinks: [
-                  ...current.chrome.navLinks,
-                  {
-                    id: `nav-${page.id}`,
-                    href: cmsPagePath(slug),
-                    label: page.title,
-                    visible: true,
-                  },
-                ],
+                navLinks: input.underCategories
+                  ? upsertNavCategory(current.chrome.navLinks, {
+                      id: slug,
+                      href: cmsPagePath(slug),
+                      image: "",
+                      label: page.title,
+                      visible: true,
+                    })
+                  : [
+                      ...current.chrome.navLinks,
+                      {
+                        id: `nav-${page.id}`,
+                        href: cmsPagePath(slug),
+                        label: page.title,
+                        visible: true,
+                      },
+                    ],
               }
             : current.chrome,
         };
@@ -309,7 +332,7 @@ export function EditProvider({
         pages: current.pages.map((page) => (page.id === id ? { ...page, ...next, slug, title } : page)),
         chrome: {
           ...current.chrome,
-          navLinks: current.chrome.navLinks.map((link) =>
+          navLinks: mapNavTree(current.chrome.navLinks, (link) =>
             link.href === cmsPagePath(currentPage.slug) ? { ...link, href: cmsPagePath(slug), label: title } : link,
           ),
         },
@@ -325,7 +348,9 @@ export function EditProvider({
         pages: current.pages.filter((item) => item.id !== id),
         chrome: {
           ...current.chrome,
-          navLinks: current.chrome.navLinks.filter((link) => link.href !== (page ? cmsPagePath(page.slug) : "")),
+          navLinks: mapNavTree(current.chrome.navLinks, (link) =>
+            link.href === (page ? cmsPagePath(page.slug) : "") ? null : link,
+          ),
         },
       }));
       if (page && pathPageKey(pathname) === page.slug) router.push("/");

@@ -56,16 +56,9 @@ export function useShopNavItems(): ShopNavItem[] {
   }
 
   push("all", "/catalog?all=1", locale === "ar" ? "الكل" : "All");
-  const categoryIds = new Set<string>();
   for (const section of site.chrome.catalogSections ?? []) {
     if (section.visible === false) continue;
-    categoryIds.add(section.id);
     push(section.id, section.href, pick(section.label, locale) || section.id);
-  }
-  for (const page of site.pages ?? []) {
-    if (!page.visible) continue;
-    if (categoryIds.has(page.slug)) continue;
-    push(page.slug, cmsPagePath(page.slug), pick(page.title, locale) || page.slug);
   }
   return items;
 }

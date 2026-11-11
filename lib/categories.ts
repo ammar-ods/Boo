@@ -14,6 +14,16 @@ export function categoryPath(id: string) {
   return cmsPagePath(id);
 }
 
+export function isShopNavParent(link: NavLink) {
+  const href = (link.href || "").split("?")[0];
+  return (
+    link.id === "shop" ||
+    link.id === "categories" ||
+    href === "/catalog" ||
+    href.startsWith("/catalog/")
+  );
+}
+
 export function upsertNavCategory(navLinks: NavLink[], section: CatalogSection): NavLink[] {
   const child: NavLink = {
     id: `cat-${section.id}`,
@@ -21,9 +31,7 @@ export function upsertNavCategory(navLinks: NavLink[], section: CatalogSection):
     label: section.label,
     visible: section.visible !== false,
   };
-  const parentIndex = navLinks.findIndex(
-    (link) => link.id === "shop" || link.href === "/catalog" || link.href.startsWith("/catalog"),
-  );
+  const parentIndex = navLinks.findIndex((link) => isShopNavParent(link));
   if (parentIndex < 0) {
     return [
       {

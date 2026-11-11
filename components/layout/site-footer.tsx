@@ -75,22 +75,50 @@ function FooterAccordion({ title, children }: { title: string; children: ReactNo
 }
 
 function FooterLinkTree({ link, locale }: { link: NavLink; locale: string }) {
-  return (
-    <>
+  const children = (link.children ?? []).filter((child) => child.visible);
+  const [open, setOpen] = useState(false);
+
+  if (!children.length) {
+    return (
       <Link href={link.href} className="flex min-h-11 items-center hover:text-white">
         {pick(link.label, locale)}
       </Link>
-      {(link.children ?? [])
-        .filter((child) => child.visible)
-        .map((child) => (
-          <Link
-            key={child.id}
-            href={child.href}
-            className="flex min-h-10 items-center ps-3 text-white/55 hover:text-white"
-          >
-            {pick(child.label, locale)}
-          </Link>
-        ))}
-    </>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex min-h-11 items-center gap-1">
+        <Link href={link.href} className="flex-1 hover:text-white">
+          {pick(link.label, locale)}
+        </Link>
+        <button
+          type="button"
+          className="grid size-9 place-items-center text-white/70"
+          aria-expanded={open}
+          aria-label={pick(link.label, locale)}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <ChevronDown className={`size-4 transition duration-300 ${open ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      <div
+        className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          {children.map((child) => (
+            <Link
+              key={child.id}
+              href={child.href}
+              className="flex min-h-10 items-center ps-3 text-white/55 hover:text-white"
+            >
+              {pick(child.label, locale)}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

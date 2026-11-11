@@ -244,6 +244,7 @@ function PagesEditor() {
   const [titleAr, setTitleAr] = useState("");
   const [slug, setSlug] = useState("");
   const [addToNav, setAddToNav] = useState(true);
+  const [underCategories, setUnderCategories] = useState(true);
 
   return (
     <div className="grid gap-3 md:grid-cols-[1fr_1.2fr]">
@@ -279,15 +280,25 @@ function PagesEditor() {
             placeholder="about"
           />
         </label>
-        <label className="mb-3 flex items-center gap-2 text-sm">
+        <label className="mb-2 flex items-center gap-2 text-sm">
           <input type="checkbox" className="accent-oxford" checked={addToNav} onChange={(event) => setAddToNav(event.target.checked)} />
           Add to navbar
+        </label>
+        <label className="mb-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-oxford"
+            checked={underCategories}
+            disabled={!addToNav}
+            onChange={(event) => setUnderCategories(event.target.checked)}
+          />
+          Place under Categories
         </label>
         <button
           type="button"
           className="h-9 w-full rounded-full bg-oxford text-sm font-semibold text-white"
           onClick={() => {
-            const created = addPage({ titleEn, titleAr, slug, addToNav });
+            const created = addPage({ titleEn, titleAr, slug, addToNav, underCategories: addToNav && underCategories });
             if (created) {
               setTitleEn("");
               setTitleAr("");
@@ -396,7 +407,7 @@ function ChromeImageField({
 }
 
 function FooterEditor() {
-  const { site, setChrome } = useEdit();
+  const { site, setChrome, setNavLinks } = useEdit();
   const icons = site.chrome.footerIcons ?? [];
   const lines = site.chrome.footerMetaLines ?? [];
 
@@ -491,6 +502,18 @@ function FooterEditor() {
           />
           Studio login link
         </label>
+      </div>
+      <div className="md:col-span-2">
+        <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+          Nav and pages
+        </p>
+        <p className="mb-3 px-1 text-xs text-muted-foreground">
+          Same links as the header. Hide, rename, or nest them here — subsections sit under Categories.
+        </p>
+        <NavEditor links={site.chrome.navLinks} onChange={setNavLinks} />
+      </div>
+      <div className="md:col-span-2">
+        <PagesEditor />
       </div>
       <div className="rounded-2xl bg-white p-3 md:col-span-2">
         <div className="mb-2 flex items-center justify-between">
