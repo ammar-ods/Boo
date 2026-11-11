@@ -28,6 +28,8 @@ export type Product = {
   is_laser_cut: boolean;
   materials: string[];
   colors: string[];
+  optionLabel?: { ar: string; en: string };
+  optionChoices?: string[];
   defaultMaterial: string;
   canvasWidth: number;
   canvasHeight: number;
@@ -94,6 +96,23 @@ export function productViews(product: Product): ProductView[] {
 
 export const CATEGORIES: ProductCategory[] = ["Apparel", "Drinkware", "Laser Cut Wood"];
 
+export function productOptions(product: Product) {
+  const choices = (
+    product.optionChoices?.filter(Boolean).length
+      ? product.optionChoices
+      : product.colors?.length
+        ? product.colors
+        : product.materials
+  ).filter(Boolean);
+  return {
+    label: {
+      ar: product.optionLabel?.ar?.trim() || "اللون",
+      en: product.optionLabel?.en?.trim() || "Color",
+    },
+    choices: choices.length ? choices : ["Standard"],
+  };
+}
+
 export const SEED_PRODUCTS: Product[] = [
   {
     slug: "white-tee",
@@ -109,6 +128,8 @@ export const SEED_PRODUCTS: Product[] = [
     is_laser_cut: false,
     materials: ["White", "Black", "Navy"],
     colors: ["White", "Black", "Navy"],
+    optionLabel: { ar: "اللون", en: "Color" },
+    optionChoices: ["White", "Black", "Navy"],
     defaultMaterial: "White",
     canvasWidth: 800,
     canvasHeight: 800,
@@ -144,6 +165,8 @@ export const SEED_PRODUCTS: Product[] = [
     is_laser_cut: false,
     materials: ["White", "Black", "Silver"],
     colors: ["White", "Black", "Silver"],
+    optionLabel: { ar: "اللون", en: "Color" },
+    optionChoices: ["White", "Black", "Silver"],
     defaultMaterial: "White",
     canvasWidth: 800,
     canvasHeight: 800,
@@ -175,6 +198,8 @@ export const SEED_PRODUCTS: Product[] = [
     is_laser_cut: true,
     materials: ["Natural pine", "Walnut", "Cherry"],
     colors: ["Natural pine", "Walnut", "Cherry"],
+    optionLabel: { ar: "الخامة", en: "Material" },
+    optionChoices: ["Natural pine", "Walnut", "Cherry"],
     defaultMaterial: "Natural pine",
     canvasWidth: 800,
     canvasHeight: 800,

@@ -31,10 +31,14 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   const slug = slugify(String(formData.get("slug") || name));
   if (!name || !slug) throw new Error("Name is required");
 
-  const materials = String(formData.get("materials") || "")
-    .split(",")
+  const materials = String(formData.get("optionChoices") || formData.get("materials") || "")
+    .split(/[\n,]/)
     .map((item) => item.trim())
     .filter(Boolean);
+  const optionLabel = {
+    ar: String(formData.get("optionLabelAr") || "").trim() || "الخيار",
+    en: String(formData.get("optionLabelEn") || "").trim() || "Option",
+  };
   const category = String(formData.get("category")) as ProductCategory;
   const wrapPreview = formData.get("wrapPreview") === "on";
   const file = formData.get("mockup");
@@ -137,6 +141,8 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     is_laser_cut: formData.get("is_laser_cut") === "on",
     materials: materials.length ? materials : ["Standard"],
     colors: materials.length ? materials : existing?.colors ?? ["White"],
+    optionLabel,
+    optionChoices: materials.length ? materials : ["Standard"],
     defaultMaterial: materials[0] || "Standard",
     priceEgp: Number(formData.get("priceEgp") || existing?.priceEgp || 100),
     customizable: formData.get("customizable") === "on",

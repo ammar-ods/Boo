@@ -100,12 +100,7 @@ export function ProductForm({
                 ))}
               </select>
             </div>
-            <Field
-              label="Materials"
-              name="materials"
-              defaultValue={product?.materials.join(", ")}
-              placeholder="White, Black"
-            />
+            <OptionEditor product={product} />
           </div>
         </section>
 
@@ -424,6 +419,75 @@ function ImageCard({
           ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function OptionEditor({ product }: { product?: Product }) {
+  const choices = (product?.optionChoices?.length ? product.optionChoices : product?.materials ?? []).join(", ");
+  const [labelEn, setLabelEn] = useState(product?.optionLabel?.en || "Color");
+  const [labelAr, setLabelAr] = useState(product?.optionLabel?.ar || "اللون");
+
+  return (
+    <div className="space-y-3 sm:col-span-2">
+      <p className="text-sm font-medium text-oxford">Customer option</p>
+      <p className="text-xs text-muted-foreground">
+        This is the dropdown customers see — size, color, material, or any other label.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {[
+          { en: "Color", ar: "اللون" },
+          { en: "Size", ar: "المقاس" },
+          { en: "Material", ar: "الخامة" },
+        ].map((preset) => (
+          <button
+            key={preset.en}
+            type="button"
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              labelEn === preset.en ? "bg-oxford text-white" : "bg-cream text-oxford ring-1 ring-oxford/10"
+            }`}
+            onClick={() => {
+              setLabelEn(preset.en);
+              setLabelAr(preset.ar);
+            }}
+          >
+            {preset.en}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="optionLabelEn">Label · English</Label>
+          <input
+            id="optionLabelEn"
+            name="optionLabelEn"
+            value={labelEn}
+            onChange={(event) => setLabelEn(event.target.value)}
+            className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="optionLabelAr">Label · عربي</Label>
+          <input
+            id="optionLabelAr"
+            name="optionLabelAr"
+            dir="rtl"
+            value={labelAr}
+            onChange={(event) => setLabelAr(event.target.value)}
+            className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+          />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="optionChoices">Choices (comma-separated)</Label>
+        <input
+          id="optionChoices"
+          name="optionChoices"
+          defaultValue={choices}
+          placeholder="S, M, L, XL"
+          className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+        />
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   productThumbnail,
   localizedName,
   localizedDescription,
+  productOptions,
   type Product,
 } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
@@ -45,7 +46,8 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const detailsRef = useRef<HTMLDivElement>(null);
   const views = productViews(product);
   const gallery = productGallery(product);
-  const colors = product.colors?.length ? product.colors : product.materials;
+  const options = productOptions(product);
+  const colors = options.choices;
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
   const customizable = product.customizable !== false;
   const multiView = customizable && views.length > 1;
@@ -324,7 +326,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
         ) : (
           <div key="product" className="panel-swap-in">
             <div>
-              <p className="mb-2 text-sm font-medium">{t("color")}</p>
+              <p className="mb-2 text-sm font-medium">{locale === "ar" ? options.label.ar : options.label.en}</p>
               <div className="flex flex-wrap gap-2">
                 {colors.map((color) => (
                   <button

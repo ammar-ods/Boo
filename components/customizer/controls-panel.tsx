@@ -15,7 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CANVAS_FONTS } from "@/lib/fonts";
-import type { Product } from "@/lib/products";
+import { productOptions, type Product } from "@/lib/products";
+import { useI18n } from "@/lib/i18n";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { forgetFile, rememberFile } from "@/lib/upload-registry";
 import type { CanvasHandle } from "./fabric-canvas";
@@ -38,6 +39,8 @@ export function ControlsPanel({
   const setQuantity = useCustomizerStore((s) => s.setQuantity);
   const setLaserPreview = useCustomizerStore((s) => s.setLaserPreview);
   const setTextDraft = useCustomizerStore((s) => s.setTextDraft);
+  const { locale } = useI18n();
+  const options = productOptions(product);
   const addAsset = useCustomizerStore((s) => s.addAsset);
   const removeAsset = useCustomizerStore((s) => s.removeAsset);
   const assets = useCustomizerStore((s) => s.assets);
@@ -216,7 +219,7 @@ export function ControlsPanel({
 
       <section className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>Material</Label>
+          <Label>{locale === "ar" ? options.label.ar : options.label.en}</Label>
           <Select
             value={material}
             onValueChange={(value) => {
@@ -227,7 +230,7 @@ export function ControlsPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {product.materials.map((item) => (
+              {options.choices.map((item) => (
                 <SelectItem key={item} value={item}>
                   {item}
                 </SelectItem>

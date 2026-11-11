@@ -72,6 +72,8 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   views?: ProductView[];
   priceEgp?: number;
   customizable?: boolean;
+  optionLabel?: { ar?: string; en?: string };
+  optionChoices?: string[];
 };
 
 function parseViews(
@@ -168,6 +170,13 @@ function rowToProduct(row: Record<string, unknown>): Product {
       : Array.isArray(row.colors)
         ? (row.colors as string[])
         : seed?.colors ?? materials,
+    optionLabel: {
+      ar: String(bounds.optionLabel?.ar ?? seed?.optionLabel?.ar ?? "اللون"),
+      en: String(bounds.optionLabel?.en ?? seed?.optionLabel?.en ?? "Color"),
+    },
+    optionChoices: Array.isArray(bounds.optionChoices) && bounds.optionChoices.length
+      ? bounds.optionChoices.map(String).filter(Boolean)
+      : undefined,
     defaultMaterial: String(row.default_material ?? bounds.defaultMaterial ?? materials[0] ?? "Standard"),
     canvasWidth: Number(row.canvas_width ?? bounds.canvasWidth ?? 800),
     canvasHeight: Number(row.canvas_height ?? bounds.canvasHeight ?? 800),
@@ -206,6 +215,8 @@ function productToRow(product: Product) {
     descriptionAr: product.descriptionAr,
     materials: product.materials,
     colors: product.colors,
+    optionLabel: product.optionLabel,
+    optionChoices: product.optionChoices,
     defaultMaterial: product.defaultMaterial,
     canvasWidth: product.canvasWidth,
     canvasHeight: product.canvasHeight,

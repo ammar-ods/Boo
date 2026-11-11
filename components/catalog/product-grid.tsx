@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/catalog/product-card";
 import { type Product, type ProductCategory } from "@/lib/products";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
@@ -25,7 +26,8 @@ export function ProductGrid({
   compact?: boolean;
 }) {
   const [inStock, setInStock] = useState(false);
-  const [sort, setSort] = useState<"featured" | "name">("featured");
+  const { t } = useI18n();
+  const [sort, setSort] = useState<"featured" | "name" | "price-asc">("featured");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const mapped = collection ? COLLECTIONS[collection] : undefined;
 
@@ -48,6 +50,9 @@ export function ProductGrid({
     if (inStock) next = next.filter((product) => !product.archived);
     if (sort === "name") {
       next = [...next].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (sort === "price-asc") {
+      next = [...next].sort((a, b) => (a.priceEgp || 0) - (b.priceEgp || 0));
     }
     return next;
   }, [collection, inStock, mapped, products, query, sort]);
@@ -77,11 +82,12 @@ export function ProductGrid({
           <div className="flex items-center gap-2">
             <select
               value={sort}
-              onChange={(event) => setSort(event.target.value as "featured" | "name")}
+              onChange={(event) => setSort(event.target.value as "featured" | "name" | "price-asc")}
               className="h-9 rounded-full border-2 border-oxford/15 bg-white px-3 text-sm"
             >
-              <option value="featured">Featured</option>
-              <option value="name">Name</option>
+              <option value="featured">{t("sortFeatured")}</option>
+              <option value="name">{t("sortName")}</option>
+              <option value="price-asc">{t("sortPriceLow")}</option>
             </select>
             <div className="flex rounded-full border border-border bg-white p-1 text-xs">
               <button

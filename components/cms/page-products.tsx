@@ -17,13 +17,16 @@ export function PageProducts({
   products: Product[];
 }) {
   const { editing, patchSection } = useEdit();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const [pick, setPick] = useState("");
+  const [sort, setSort] = useState<"featured" | "name" | "price-asc">("featured");
   const slugs = section.content.productSlugs ?? [];
-  const selected = useMemo(
-    () => slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[],
-    [products, slugs],
-  );
+  const selected = useMemo(() => {
+    const list = slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[];
+    if (sort === "name") return [...list].sort((a, b) => localizedName(a, locale).localeCompare(localizedName(b, locale)));
+    if (sort === "price-asc") return [...list].sort((a, b) => (a.priceEgp || 0) - (b.priceEgp || 0));
+    return list;
+  }, [locale, products, slugs, sort]);
   const available = products.filter((product) => !product.archived && !slugs.includes(product.slug));
 
   function setSlugs(productSlugs: string[]) {
@@ -33,6 +36,19 @@ export function PageProducts({
   return (
     <ShopRail activeId={section.content.collection}>
       <div className="space-y-5">
+        {!editing && selected.length > 1 ? (
+          <div className="flex justify-end">
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as "featured" | "name" | "price-asc")}
+              className="h-9 rounded-full border-2 border-oxford/15 bg-white px-3 text-sm"
+            >
+              <option value="featured">{t("sortFeatured")}</option>
+              <option value="name">{t("sortName")}</option>
+              <option value="price-asc">{t("sortPriceLow")}</option>
+            </select>
+          </div>
+        ) : null}
         <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
           {selected.map((product) => (
             <div key={product.slug} className="relative">

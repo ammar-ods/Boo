@@ -63,9 +63,10 @@ export const useCustomizerStore = create<CustomizerState>((set) => ({
   assets: [],
   hydrateProduct: (product) => {
     const views = productViews(product);
-    const fallbackMaterial = product.defaultMaterial || product.materials[0] || "Standard";
+    const choices = product.optionChoices?.length ? product.optionChoices : product.materials;
+    const fallbackMaterial = product.defaultMaterial || choices[0] || "Standard";
     set((state) => {
-      const material = product.materials.includes(state.material)
+      const material = choices.includes(state.material)
         ? state.material
         : fallbackMaterial;
       if (state.product?.slug === product.slug) {

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { localizedName, localizedTagline, productThumbnail, type Product } from "@/lib/products";
+import { localizedName, localizedTagline, productOptions, productThumbnail, type Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { flashStatus } from "@/components/status-flash";
@@ -44,7 +44,7 @@ export function ProductCard({
       name: product.name,
       nameAr: product.nameAr,
       image,
-      color: product.colors?.[0] || product.defaultMaterial || product.materials[0] || "",
+      color: productOptions(product).choices[0] || product.defaultMaterial || "",
       quantity: 1,
       priceEgp: product.priceEgp || 100,
       kind: "product",
