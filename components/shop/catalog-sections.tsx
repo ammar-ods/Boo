@@ -8,7 +8,7 @@ import { pick } from "@/lib/site";
 export function CatalogSections() {
   const { locale, t } = useI18n();
   const { site } = useEdit();
-  const sections = site.chrome.catalogSections ?? [];
+  const sections = (site.chrome.catalogSections ?? []).filter((section) => section.visible !== false);
 
   return (
     <div>
@@ -21,7 +21,7 @@ export function CatalogSections() {
             <div className="overflow-hidden rounded-[1.8rem] bg-chip ring-1 ring-oxford/8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={section.image}
+                src={section.image || "/products/white-tee-front.jpg"}
                 alt=""
                 className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105"
               />

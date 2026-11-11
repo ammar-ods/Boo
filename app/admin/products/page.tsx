@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getCatalog } from "@/lib/local-db";
-import { productThumbnail } from "@/lib/products";
+import { getCatalog, getSite } from "@/lib/local-db";
+import { normalizeCategoryId, productThumbnail } from "@/lib/products";
+import { pick } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +12,11 @@ export default async function AdminProductsPage({
   searchParams: Promise<{ error?: string; created?: string }>;
 }) {
   const products = await getCatalog();
+  const site = await getSite();
   const { error, created } = await searchParams;
+  const labels = Object.fromEntries(
+    (site.chrome.catalogSections ?? []).map((section) => [section.id, pick(section.label, "en") || section.id]),
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">
@@ -47,7 +52,9 @@ export default async function AdminProductsPage({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={productThumbnail(product)} alt="" className="aspect-square w-full object-cover bg-[#f6f3ee]" />
             <div className="p-4">
-              <p className="text-xs text-muted-foreground">{product.category}</p>
+              <p className="text-xs text-muted-foreground">
+                {labels[normalizeCategoryId(product.category)] || product.category || "Unassigned"}
+              </p>
               <h2 className="font-heading text-xl">{product.name}</h2>
               {product.archived ? (
                 <p className="text-xs text-boo-orange">Hidden from shop</p>

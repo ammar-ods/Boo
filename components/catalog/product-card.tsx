@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { localizedName, localizedTagline, productOptions, productThumbnail, type Product } from "@/lib/products";
+import { localizedName, localizedTagline, normalizeCategoryId, productOptions, productThumbnail, type Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
+import { useEdit } from "@/lib/edit-context";
+import { pick } from "@/lib/site";
 import { flashStatus } from "@/components/status-flash";
 
 export function ProductCard({
@@ -19,6 +21,10 @@ export function ProductCard({
 }) {
   const router = useRouter();
   const { locale, formatPrice, t } = useI18n();
+  const { site } = useEdit();
+  const categoryId = normalizeCategoryId(product.category);
+  const categoryLabel =
+    pick(site.chrome.catalogSections?.find((item) => item.id === categoryId)?.label, locale) || product.category;
   const addItem = useCart((s) => s.addItem);
   const [pressed, setPressed] = useState(false);
   const name = localizedName(product, locale);
@@ -63,7 +69,7 @@ export function ProductCard({
           <Image src={image} alt={name} fill className="object-cover" />
         </div>
         <div className="min-w-0 py-1">
-          <p className="text-[11px] tracking-[0.16em] text-oxford/60">{product.category.toUpperCase()}</p>
+          <p className="text-[11px] tracking-[0.16em] text-oxford/60">{(categoryLabel || product.category).toUpperCase()}</p>
           <h3 className="font-heading text-lg text-oxford sm:text-xl">{name}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{tagline}</p>
           <p className="mt-2 text-sm font-semibold text-oxford">{formatPrice(product.priceEgp || 100)}</p>
@@ -85,7 +91,7 @@ export function ProductCard({
                 className="object-cover transition duration-500 group-hover:scale-105"
               />
               <span className="absolute start-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-semibold text-oxford sm:start-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                {product.category}
+                {categoryLabel || product.category}
               </span>
             </div>
           </div>

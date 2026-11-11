@@ -2,17 +2,21 @@
 
 import { useState, type ReactNode } from "react";
 import type { Product, ProductView } from "@/lib/products";
-import { CATEGORIES, productViews } from "@/lib/products";
+import { normalizeCategoryId, productViews } from "@/lib/products";
 import { Label } from "@/components/ui/label";
 
 export function ProductForm({
   product,
   action,
   error,
+  categories = [],
+  defaultCategory,
 }: {
   product?: Product;
   action: (formData: FormData) => void | Promise<void>;
   error?: string;
+  categories?: { id: string; label: string }[];
+  defaultCategory?: string;
 }) {
   const initialViews = product ? productViews(product) : [];
   const primary = initialViews[0];
@@ -92,13 +96,23 @@ export function ProductForm({
               <select
                 id="category"
                 name="category"
-                defaultValue={product?.category ?? "Apparel"}
+                defaultValue={normalizeCategoryId(product?.category || defaultCategory)}
                 className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
               >
-                {CATEGORIES.map((category) => (
-                  <option key={category}>{category}</option>
+                <option value="">Unassigned</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
                 ))}
               </select>
+              <p className="text-[11px] text-muted-foreground">
+                Manage the list in{" "}
+                <a href="/admin/categories" className="underline">
+                  Categories
+                </a>
+                .
+              </p>
             </div>
             <OptionEditor product={product} />
           </div>

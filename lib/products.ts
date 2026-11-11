@@ -1,4 +1,4 @@
-export type ProductCategory = "Apparel" | "Drinkware" | "Laser Cut Wood";
+export type ProductCategory = string;
 
 export type SafeZone = {
   left: number;
@@ -94,7 +94,26 @@ export function productViews(product: Product): ProductView[] {
   });
 }
 
-export const CATEGORIES: ProductCategory[] = ["Apparel", "Drinkware", "Laser Cut Wood"];
+export const CATEGORIES: ProductCategory[] = ["apparel", "drinkware", "wood"];
+
+export function normalizeCategoryId(value: string | undefined) {
+  const raw = (value || "").trim();
+  if (!raw) return "";
+  const aliases: Record<string, string> = {
+    apparel: "apparel",
+    Apparel: "apparel",
+    drinkware: "drinkware",
+    Drinkware: "drinkware",
+    wood: "wood",
+    "Laser Cut Wood": "wood",
+  };
+  if (aliases[raw]) return aliases[raw];
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 48);
+}
 
 export function productOptions(product: Product) {
   const choices = (
@@ -118,7 +137,7 @@ export const SEED_PRODUCTS: Product[] = [
     slug: "white-tee",
     name: "White Cotton Tee",
     nameAr: "تيشيرت أبيض",
-    category: "Apparel",
+    category: "apparel",
     tagline: "Front and back print on a clean cotton blank.",
     taglineAr: "طباعة أمام وخلف على تيشيرت قطن أبيض.",
     description:
@@ -157,7 +176,7 @@ export const SEED_PRODUCTS: Product[] = [
     slug: "thermal-tumbler",
     name: "Thermal Tumbler",
     nameAr: "مج حراري",
-    category: "Drinkware",
+    category: "drinkware",
     tagline: "Insulated tumbler with a steel lid.",
     taglineAr: "مج حراري مع غطاء استانلس.",
     description: "Double-wall tumbler. Pick a color and add it to your bag. 100 EGP.",
@@ -190,7 +209,7 @@ export const SEED_PRODUCTS: Product[] = [
     slug: "wood-coaster",
     name: "Wood Coaster",
     nameAr: "كوستر خشب",
-    category: "Laser Cut Wood",
+    category: "wood",
     tagline: "Round birch coaster, ready for a mark.",
     taglineAr: "كوستر خشب دائري جاهز للنقش أو الطباعة.",
     description: "Natural round wood coaster. 100 EGP.",

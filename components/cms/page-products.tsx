@@ -16,17 +16,22 @@ export function PageProducts({
   section: SiteSection;
   products: Product[];
 }) {
-  const { editing, patchSection } = useEdit();
+  const { editing, patchSection, pageKey, site } = useEdit();
   const { locale, t } = useI18n();
   const [pick, setPick] = useState("");
   const [sort, setSort] = useState<"featured" | "name" | "price-asc">("featured");
   const slugs = section.content.productSlugs ?? [];
+  const isCategoryPage = Boolean(pageKey && pageKey !== "home" && site.chrome.catalogSections?.some((item) => item.id === pageKey));
   const selected = useMemo(() => {
-    const list = slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[];
+    const list = slugs.length
+      ? (slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[])
+      : isCategoryPage
+        ? products.filter((product) => !product.archived)
+        : [];
     if (sort === "name") return [...list].sort((a, b) => localizedName(a, locale).localeCompare(localizedName(b, locale)));
     if (sort === "price-asc") return [...list].sort((a, b) => (a.priceEgp || 0) - (b.priceEgp || 0));
     return list;
-  }, [locale, products, slugs, sort]);
+  }, [isCategoryPage, locale, products, slugs, sort]);
   const available = products.filter((product) => !product.archived && !slugs.includes(product.slug));
 
   function setSlugs(productSlugs: string[]) {
@@ -34,7 +39,7 @@ export function PageProducts({
   }
 
   return (
-    <ShopRail activeId={section.content.collection}>
+    <ShopRail activeId={isCategoryPage ? pageKey || undefined : section.content.collection}>
       <div className="space-y-5">
         {!editing && selected.length > 1 ? (
           <div className="flex justify-end">
@@ -52,7 +57,7 @@ export function PageProducts({
         <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
           {selected.map((product) => (
             <div key={product.slug} className="relative">
-              {editing ? (
+              {editing && !isCategoryPage ? (
                 <button
                   type="button"
                   className="absolute end-2 top-2 z-20 grid size-8 place-items-center rounded-full bg-white text-red-700 shadow ring-1 ring-oxford/10"
@@ -69,7 +74,7 @@ export function PageProducts({
               <ProductCard product={product} />
             </div>
           ))}
-          {editing ? (
+          {editing && !isCategoryPage ? (
             <div className="flex min-h-[180px] flex-col justify-center rounded-[1.15rem] border-2 border-dashed border-oxford/20 bg-white/40 p-3 sm:min-h-[280px] sm:rounded-[28px] sm:p-4">
               <p className="mb-3 text-sm font-medium text-oxford">Add a product card</p>
               <select

@@ -2,14 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/catalog/product-card";
-import { type Product, type ProductCategory } from "@/lib/products";
+import { normalizeCategoryId, type Product, type ProductCategory } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
-  apparel: ["Apparel"],
-  drinkware: ["Drinkware"],
-  wood: ["Laser Cut Wood"],
   "staff-picks": "staff",
 };
 
@@ -35,8 +32,8 @@ export function ProductGrid({
     let next = products;
     if (mapped === "staff") {
       next = products.slice(0, 3);
-    } else if (mapped) {
-      next = products.filter((product) => mapped.includes(product.category));
+    } else if (collection) {
+      next = products.filter((product) => normalizeCategoryId(product.category) === collection);
     }
     if (query) {
       const needle = query.toLowerCase();

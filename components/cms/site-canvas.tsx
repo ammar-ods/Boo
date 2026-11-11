@@ -13,7 +13,7 @@ import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import type { Product } from "@/lib/products";
+import { normalizeCategoryId, type Product } from "@/lib/products";
 import {
   pick,
   sectionGallery,
@@ -337,7 +337,7 @@ function SectionView({
   locale: string;
   index?: number;
 }) {
-  const { pageKey } = useEdit();
+  const { pageKey, site } = useEdit();
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
   const placement: ImagePlacement =
@@ -461,7 +461,11 @@ function SectionView({
                   ...section,
                   content: { ...section.content, productSlugs: section.content.productSlugs ?? [] },
                 }}
-                products={products}
+                products={
+                  site.chrome.catalogSections?.some((item) => item.id === pageKey)
+                    ? products.filter((product) => normalizeCategoryId(product.category) === pageKey)
+                    : products
+                }
               />
             ) : (
               <div className="cms-copy">

@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  CATEGORIES,
   MUG_WRAP_FLAT,
+  normalizeCategoryId,
   slugify,
   type Product,
-  type ProductCategory,
   type ProductView,
 } from "@/lib/products";
 import {
@@ -39,7 +38,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     ar: String(formData.get("optionLabelAr") || "").trim() || "الخيار",
     en: String(formData.get("optionLabelEn") || "").trim() || "Option",
   };
-  const category = String(formData.get("category")) as ProductCategory;
+  const category = normalizeCategoryId(String(formData.get("category") || ""));
   const wrapPreview = formData.get("wrapPreview") === "on";
   const file = formData.get("mockup");
   let mockup = existing?.mockup || "/products/white-tee-front.jpg";
@@ -133,7 +132,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     slug,
     name,
     nameAr: String(formData.get("nameAr") || existing?.nameAr || name),
-    category: CATEGORIES.includes(category) ? category : "Apparel",
+    category,
     tagline: String(formData.get("tagline") || "Custom studio piece."),
     taglineAr: String(formData.get("taglineAr") || existing?.taglineAr || ""),
     description: String(formData.get("description") || ""),
@@ -184,7 +183,7 @@ export async function createProduct(formData: FormData) {
       );
     }
     const saved = await upsertProduct(product);
-    revalidateProductPages(saved.slug);
+    revalidateProductPages(saved.slug, saved.category);
     redirect(`/admin/products/${saved.slug}?saved=1`);
   } catch (error) {
     if (isNextRedirect(error)) throw error;
@@ -201,11 +200,11 @@ export async function updateProduct(formData: FormData) {
     if (originalSlug && originalSlug !== product.slug) {
       await upsertProduct(product);
       await deleteProduct(originalSlug);
-      revalidateProductPages(originalSlug);
+      revalidateProductPages(originalSlug, product.category);
     } else {
       await upsertProduct(product);
     }
-    revalidateProductPages(product.slug);
+    revalidateProductPages(product.slug, product.category);
     redirect(`/admin/products/${product.slug}?saved=1`);
   } catch (error) {
     if (isNextRedirect(error)) throw error;
@@ -233,11 +232,12 @@ export async function removeProduct(formData: FormData) {
   redirect("/admin/products?deleted=1");
 }
 
-function revalidateProductPages(slug: string) {
+function revalidateProductPages(slug: string, category?: string) {
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath("/");
   revalidatePath("/catalog");
   revalidatePath(`/customize/${slug}`);
   revalidatePath(`/product/${slug}`);
+  if (category) revalidatePath(`/p/${category}`);
 }

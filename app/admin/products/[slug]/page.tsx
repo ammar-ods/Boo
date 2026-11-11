@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { removeProduct, updateProduct } from "@/actions/products";
 import { ProductForm } from "@/components/admin/product-form";
-import { getCatalogProduct } from "@/lib/local-db";
+import { getCatalogProduct, getSite } from "@/lib/local-db";
+import { pick } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,6 +19,11 @@ export default async function EditProductPage({
   const { slug } = await params;
   const { error } = await searchParams;
   const product = await getCatalogProduct(slug);
+  const site = await getSite();
+  const categories = (site.chrome.catalogSections ?? []).map((section) => ({
+    id: section.id,
+    label: pick(section.label, "en") || section.id,
+  }));
   if (!product) {
     redirect(
       `/admin/products?error=${encodeURIComponent(`Saved, but "${slug}" is not readable yet. Check Table Editor → products.`)}`,
@@ -40,6 +46,7 @@ export default async function EditProductPage({
         product={product}
         action={updateProduct}
         error={error ? decodeURIComponent(error) : undefined}
+        categories={categories}
       />
     </div>
   );

@@ -1,10 +1,11 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { unstable_noStore as noStore } from "next/cache";
-import { MUG_WRAP_FLAT, productViews, SEED_PRODUCTS, type Product, type ProductView } from "@/lib/products";
+import { MUG_WRAP_FLAT, normalizeCategoryId, productViews, SEED_PRODUCTS, type Product, type ProductView } from "@/lib/products";
 import type { InquiryRecord } from "@/lib/inquiry-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, supabaseServiceKey } from "@/lib/supabase/env";
+import { syncCategoriesIntoSite } from "@/lib/categories";
 import { DEFAULT_SITE, migrateSite, type SiteDocument } from "@/lib/site";
 import { SEED_BUNDLES, type Bundle } from "@/lib/bundles";
 
@@ -156,7 +157,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     slug,
     name: String(row.title ?? row.name ?? seed?.name ?? ""),
     nameAr: String(bounds.nameAr ?? row.name_ar ?? row.nameAr ?? seed?.nameAr ?? row.title ?? ""),
-    category: (row.category as Product["category"]) || seed?.category || "Apparel",
+    category: normalizeCategoryId(String(row.category ?? seed?.category ?? "")),
     tagline: String(row.tagline ?? bounds.tagline ?? seed?.tagline ?? ""),
     taglineAr: String(bounds.taglineAr ?? row.tagline_ar ?? row.taglineAr ?? seed?.taglineAr ?? ""),
     description: String(row.description ?? seed?.description ?? ""),
@@ -849,20 +850,20 @@ export async function getSite() {
   noStore();
   const remote = await readRemoteSite();
   if (remote) {
-    const migrated = migrateSite(remote);
+    const migrated = syncCategoriesIntoSite(migrateSite(remote));
     memorySite = migrated;
     return migrated;
   }
   if (memorySite) return memorySite;
   const stored = await readJson<unknown>(SITE_FILE, null);
-  if (!stored) return DEFAULT_SITE;
-  const migrated = migrateSite(stored);
-  if (!migrated.sections.length) return DEFAULT_SITE;
+  if (!stored) return syncCategoriesIntoSite(DEFAULT_SITE);
+  const migrated = syncCategoriesIntoSite(migrateSite(stored));
+  if (!migrated.sections.length) return syncCategoriesIntoSite(DEFAULT_SITE);
   return migrated;
 }
 
 export async function saveSite(site: SiteDocument): Promise<{ site: SiteDocument; persist: SitePersist }> {
-  const migrated = migrateSite(site);
+  const migrated = syncCategoriesIntoSite(migrateSite(site));
   memorySite = migrated;
   const wroteLocal = await writeJson(SITE_FILE, migrated);
   if (await writeRemoteSite(migrated)) {

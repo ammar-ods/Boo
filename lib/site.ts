@@ -82,6 +82,7 @@ export type CatalogSection = {
   href: string;
   image: string;
   label: Localized;
+  visible?: boolean;
 };
 
 export type FooterIcon = {
@@ -347,21 +348,24 @@ export const DEFAULT_CHROME: SiteChrome = {
   catalogSections: [
     {
       id: "apparel",
-      href: "/catalog?collection=apparel",
+      href: "/p/apparel",
       image: "/products/white-tee-front.jpg",
       label: loc("ملابس", "Apparel"),
+      visible: true,
     },
     {
       id: "drinkware",
-      href: "/catalog?collection=drinkware",
+      href: "/p/drinkware",
       image: "/products/thermal-tumbler.jpg",
       label: loc("مشروبات", "Drinkware"),
+      visible: true,
     },
     {
       id: "wood",
-      href: "/catalog?collection=wood",
+      href: "/p/wood",
       image: "/products/wood-coaster.png",
       label: loc("خشب", "Laser Cut Wood"),
+      visible: true,
     },
   ],
   logo: "/brand/boo-mark.png",
@@ -675,6 +679,7 @@ export function migrateSite(raw: unknown): SiteDocument {
               href: String(section.href || "/catalog"),
               image: String(section.image || ""),
               label: asLoc(section.label),
+              visible: (section as CatalogSection).visible !== false,
             }))
           : DEFAULT_CHROME.catalogSections,
       logo: typeof chrome.logo === "string" && chrome.logo.trim() ? chrome.logo.trim() : DEFAULT_CHROME.logo,

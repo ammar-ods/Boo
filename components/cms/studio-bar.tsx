@@ -806,7 +806,7 @@ function CatalogSectionsEditor({
         </button>
       </div>
       <p className="mb-3 text-xs text-muted-foreground">
-        These images appear on the shop page. Clicking one opens that section’s products.
+        These tiles appear on the shop page. Add or hide categories in Studio → Categories.
       </p>
       <div className="grid gap-3">
         {sections.map((section, index) => (
