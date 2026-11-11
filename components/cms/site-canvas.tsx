@@ -454,7 +454,7 @@ function SectionView({
             {text("title", "font-heading", "h2")}
             {text("body", "mt-2 text-muted-foreground")}
           </div>
-          <div className="mt-6 sm:mt-8">
+          <div className="cms-copy mt-6 sm:mt-8">
             {pageKey && pageKey !== "home" ? (
               <PageProducts
                 section={{
@@ -464,9 +464,7 @@ function SectionView({
                 products={products}
               />
             ) : (
-              <div className="cms-copy">
-                <ProductGrid products={products} compact />
-              </div>
+              <ProductGrid products={products} compact />
             )}
           </div>
         </div>

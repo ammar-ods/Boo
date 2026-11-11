@@ -31,10 +31,10 @@ export function PageProducts({
   }
 
   return (
-    <div className="flex w-screen max-w-[100vw] gap-6 lg:gap-10" style={{ marginInline: "calc(50% - 50vw)" }}>
+    <div className="flex gap-8 lg:gap-10">
       <ShopSidebar activeId={section.content.collection} />
-      <div className="min-w-0 flex-1 space-y-5 px-4 pe-[max(1rem,env(safe-area-inset-inline-end))] sm:px-8">
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3">
+      <div className="min-w-0 flex-1 space-y-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
           {selected.map((product) => (
             <div key={product.slug} className="relative">
               {editing ? (

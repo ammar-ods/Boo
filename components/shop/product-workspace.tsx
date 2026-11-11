@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { flashStatus, hideFlash } from "@/components/status-flash";
 import {
   productViews,
   productGallery,
@@ -107,6 +108,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
   async function addToCart(options?: { quiet?: boolean }) {
     if (cartBusy) return;
     setCartBusy(true);
+    if (customizable) flashStatus(t("addingToCart"), true);
     try {
       if (!customizable) {
         const images = gallery.length ? gallery : [productThumbnail(product)].filter(Boolean);
@@ -126,7 +128,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           })),
           uploads: [],
         });
-        if (!options?.quiet) toast.success(t("added"));
+        if (!options?.quiet) flashStatus(t("addedSuccess"));
         return true;
       }
       Object.values(canvases).forEach((canvas) => canvas.setPreviewMode(true));
@@ -174,9 +176,11 @@ export function ProductWorkspace({ product }: { product: Product }) {
         viewMockups,
         uploads,
       });
-      if (!options?.quiet) toast.success(t("added"));
+      hideFlash();
+      if (!options?.quiet) flashStatus(t("addedSuccess"));
       return true;
     } catch (error) {
+      hideFlash();
       toast.error(error instanceof Error ? error.message : "Could not save the design");
       return false;
     } finally {

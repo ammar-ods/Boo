@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { ProductCard } from "@/components/catalog/product-card";
-import { CATEGORIES, type Product, type ProductCategory } from "@/lib/products";
+import { ShopSidebar } from "@/components/shop/shop-sidebar";
+import { type Product, type ProductCategory } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
 const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
@@ -11,13 +11,6 @@ const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
   drinkware: ["Drinkware"],
   wood: ["Laser Cut Wood"],
   "staff-picks": "staff",
-};
-
-const CATEGORY_HREF: Record<ProductCategory | "All", string> = {
-  All: "/catalog?all=1",
-  Apparel: "/catalog?collection=apparel",
-  Drinkware: "/catalog?collection=drinkware",
-  "Laser Cut Wood": "/catalog?collection=wood",
 };
 
 export function ProductGrid({
@@ -36,8 +29,6 @@ export function ProductGrid({
   const [sort, setSort] = useState<"featured" | "name">("featured");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const mapped = collection ? COLLECTIONS[collection] : undefined;
-  const selectedCategory: ProductCategory | "All" =
-    mapped && mapped !== "staff" ? mapped[0] : "All";
 
   const items = useMemo(() => {
     let next = products;
@@ -67,9 +58,7 @@ export function ProductGrid({
       className={
         layout === "list"
           ? "grid gap-3"
-          : compact
-            ? "grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4"
-            : "grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3"
+          : "grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4"
       }
     >
       {items.map((product) => (
@@ -83,37 +72,9 @@ export function ProductGrid({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="hidden space-y-6 lg:block">
-        <div>
-          <p className="mb-2 text-xs tracking-[0.16em] text-oxford/60">DISCIPLINE</p>
-          <div className="flex flex-col gap-1">
-            {(["All", ...CATEGORIES] as const).map((item) => (
-              <Link
-                key={item}
-                href={CATEGORY_HREF[item]}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-start text-sm font-medium transition",
-                  selectedCategory === item ? "bg-oxford text-white shadow-[0_3px_0_0_#06182c]" : "text-oxford hover:bg-chip",
-                )}
-              >
-                {item}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={inStock}
-            onChange={(event) => setInStock(event.target.checked)}
-            className="accent-oxford"
-          />
-          In stock
-        </label>
-        <p className="text-xs text-muted-foreground">Micro-batches ship from the atelier desk after quote.</p>
-      </aside>
-      <div className="space-y-5">
+    <div className="flex gap-8 lg:gap-10">
+      <ShopSidebar activeId={collection || (query ? undefined : "all")} />
+      <div className="min-w-0 flex-1 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">{items.length} pieces</p>
           <div className="flex items-center gap-2">
