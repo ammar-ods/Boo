@@ -123,8 +123,8 @@ export function StudioChromePanel() {
 
       {chromeTab ? (
         <div className="border-t border-oxford/8 bg-cream/50">
-          <div className="mx-auto max-w-6xl px-5 py-4 sm:px-8">
-            <div className="mb-3 flex gap-1 rounded-full bg-white p-1 ring-1 ring-oxford/8">
+          <div className="mx-auto max-h-[min(75vh,calc(100dvh-8.5rem))] max-w-6xl overflow-y-auto overscroll-contain px-5 py-4 sm:px-8">
+            <div className="sticky top-0 z-10 mb-3 flex gap-1 rounded-full bg-white p-1 ring-1 ring-oxford/8">
               {(
                 [
                   ["display", locale === "ar" ? "عرض" : "Display"],
@@ -505,15 +505,12 @@ function FooterEditor() {
       </div>
       <div className="md:col-span-2">
         <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
-          Nav and pages
+          Footer links
         </p>
         <p className="mb-3 px-1 text-xs text-muted-foreground">
-          Same links as the header. Hide, rename, or nest them here — subsections sit under Categories.
+          Same links as the header. Hide, rename, or nest them here. New pages are in the Pages tab.
         </p>
         <NavEditor links={site.chrome.navLinks} onChange={setNavLinks} />
-      </div>
-      <div className="md:col-span-2">
-        <PagesEditor />
       </div>
       <div className="rounded-2xl bg-white p-3 md:col-span-2">
         <div className="mb-2 flex items-center justify-between">
