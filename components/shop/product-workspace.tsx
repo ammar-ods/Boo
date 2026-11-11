@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, X } from "lucide-react";
+import { Eye, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   productViews,
@@ -21,7 +21,7 @@ import { FabricCanvas, type CanvasHandle } from "@/components/customizer/fabric-
 import { ControlsPanel } from "@/components/customizer/controls-panel";
 import { CheckoutForm } from "@/components/shop/checkout-form";
 import { storeOrderAsset } from "@/lib/order-assets";
-import { allRememberedFiles, clearRememberedFiles, uploadRegistry } from "@/lib/upload-registry";
+import { allRememberedFiles, clearRememberedFiles, rememberFile, uploadRegistry } from "@/lib/upload-registry";
 
 export function ProductWorkspace({ product }: { product: Product }) {
   const router = useRouter();
@@ -34,6 +34,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const activeViewId = useCustomizerStore((s) => s.activeViewId);
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
   const addItem = useCart((s) => s.addItem);
+  const addAsset = useCustomizerStore((s) => s.addAsset);
   const assets = useCustomizerStore((s) => s.assets);
   const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
   const [preview, setPreview] = useState<{ id: string; label: string; url: string }[] | null>(null);
@@ -199,6 +200,35 @@ export function ProductWorkspace({ product }: { product: Product }) {
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">{localizedDescription(product, locale)}</p>
       </div>
       <div className="order-2 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
+        {customizable ? (
+        <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-boo-teal bg-teal-50/70 px-3 py-3 text-sm font-semibold text-oxford lg:hidden">
+          <Upload className="size-4" />
+          {locale === "ar" ? "اضغط لإضافة صورة" : "Tap to add an image"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/svg+xml,application/pdf"
+            className="sr-only"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file || !activeCanvas) return;
+              const id = crypto.randomUUID();
+              rememberFile(id, file);
+              addAsset({
+                id,
+                name: file.name,
+                type: file.type,
+                previewUrl: URL.createObjectURL(file),
+              });
+              try {
+                await activeCanvas.addImageFromFile(file, id);
+              } catch {
+                toast.error(`Could not place ${file.name}`);
+              }
+            }}
+          />
+        </label>
+        ) : null}
         {customizable ? (
         <div className="flex flex-wrap items-center gap-2">
           {multiView

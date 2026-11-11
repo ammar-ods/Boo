@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cartTotal, useCart, useCartHydrated } from "@/lib/cart";
+import { cartBreakdown, matchPromo } from "@/lib/commerce";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
+import { pick } from "@/lib/site";
+import { DynamicShopFields } from "@/components/shop/dynamic-fields";
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -24,7 +27,7 @@ export function CheckoutForm({
   onBack?: () => void;
 }) {
   const router = useRouter();
-  const { t, formatPrice } = useI18n();
+  const { t, formatPrice, locale } = useI18n();
   const { site } = useEdit();
   const hydrated = useCartHydrated();
   const items = useCart((s) => s.items);
@@ -33,14 +36,42 @@ export function CheckoutForm({
   const [placed, setPlaced] = useState(false);
   const [method, setMethod] = useState<"cod" | "online">("cod");
   const [receiptName, setReceiptName] = useState("");
-  const total = cartTotal(items);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedCode, setAppliedCode] = useState("");
+  const subtotal = cartTotal(items);
   const payPhone = site.chrome.payPhone || "01000000000";
+  const promo = useMemo(
+    () => matchPromo(appliedCode, site.promo.codes ?? []),
+    [appliedCode, site.promo.codes],
+  );
+  const breakdown = cartBreakdown(subtotal, site.commerce, promo);
+  const checkoutFields = site.commerce.checkoutFields?.length
+    ? site.commerce.checkoutFields
+    : [];
+
+  function applyPromo() {
+    const found = matchPromo(promoInput, site.promo.codes ?? []);
+    if (!found) {
+      toast.error(t("promoCode"));
+      setAppliedCode("");
+      return;
+    }
+    setAppliedCode(found.code);
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (items.length === 0) return;
     const form = event.currentTarget;
     const data = new FormData(form);
+    const fields: Record<string, string> = {};
+    for (const field of checkoutFields.filter((item) => item.enabled)) {
+      fields[field.key] = String(data.get(field.key) ?? "").trim();
+      if (field.required && !fields[field.key]) {
+        toast.error(pick(field.label, locale) || field.key);
+        return;
+      }
+    }
     let receiptUrl = "";
     if (method === "online") {
       const transferPhone = String(data.get("transferPhone") ?? "").trim();
@@ -60,10 +91,16 @@ export function CheckoutForm({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: data.get("name"),
-        phone: data.get("phone"),
-        address: data.get("address"),
-        notes: data.get("notes"),
+        name: fields.name || data.get("name"),
+        phone: fields.phone || data.get("phone"),
+        address: fields.address || data.get("address"),
+        email: fields.email || data.get("email"),
+        notes: fields.notes || data.get("notes"),
+        fields,
+        promoCode: appliedCode,
+        shipping: breakdown.shippingCharged,
+        shippingFree: breakdown.shippingFree,
+        discount: breakdown.discount,
         payment: {
           method,
           transferPhone: method === "online" ? String(data.get("transferPhone") ?? "").trim() : "",
@@ -119,26 +156,52 @@ export function CheckoutForm({
       <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-5xl"}`}>
         {t("checkout")}
       </h1>
-      <p className={embedded ? "mt-1 text-sm text-muted-foreground" : "mt-2 text-muted-foreground"}>
-        {t("total")}: {formatPrice(total)}
-      </p>
+      <dl className={`space-y-1 text-sm ${embedded ? "mt-2" : "mt-4"}`}>
+        <div className="flex justify-between">
+          <dt>{t("subtotal")}</dt>
+          <dd>{formatPrice(breakdown.subtotal)}</dd>
+        </div>
+        {breakdown.discount > 0 ? (
+          <div className="flex justify-between text-emerald-700">
+            <dt>
+              {t("discount")}
+              {breakdown.promoCode ? ` (${breakdown.promoCode})` : ""}
+            </dt>
+            <dd>−{formatPrice(breakdown.discount)}</dd>
+          </div>
+        ) : null}
+        <div className="flex justify-between">
+          <dt>{pick(site.commerce.shippingLabel, locale) || t("shipping")}</dt>
+          <dd className="text-end">
+            {breakdown.shippingFree ? (
+              <>
+                <span className="me-2 text-oxford/40 line-through">{formatPrice(breakdown.shipping)}</span>
+                <span className="font-medium text-emerald-600">{t("freeShipping")}</span>
+              </>
+            ) : (
+              formatPrice(breakdown.shippingCharged)
+            )}
+          </dd>
+        </div>
+        <div className="flex justify-between border-t border-oxford/10 pt-2 font-semibold text-oxford">
+          <dt>{t("total")}</dt>
+          <dd>{formatPrice(breakdown.total)}</dd>
+        </div>
+      </dl>
+      <p className="mt-2 text-xs text-muted-foreground">{pick(site.commerce.shippingDetails, locale)}</p>
       <form onSubmit={onSubmit} className={embedded ? "mt-5 space-y-4" : "mt-8 space-y-5"}>
-        <label className="block text-sm">
-          {t("name")}
-          <input required name="name" className="mt-1 h-11 w-full rounded-full border border-border bg-white px-4" />
-        </label>
-        <label className="block text-sm">
-          {t("phone")}
-          <input required name="phone" inputMode="tel" className="mt-1 h-11 w-full rounded-full border border-border bg-white px-4" />
-        </label>
-        <label className="block text-sm">
-          {t("address")}
-          <input required name="address" className="mt-1 h-11 w-full rounded-full border border-border bg-white px-4" />
-        </label>
-        <label className="block text-sm">
-          {t("notes")}
-          <textarea name="notes" rows={3} className="mt-1 w-full rounded-2xl border border-border bg-white px-4 py-3" />
-        </label>
+        <div className="flex gap-2">
+          <input
+            value={promoInput}
+            onChange={(event) => setPromoInput(event.target.value)}
+            placeholder={t("promoCode")}
+            className="h-11 min-w-0 flex-1 rounded-full border border-border bg-white px-4 text-sm"
+          />
+          <button type="button" className="h-11 rounded-full bg-cream px-4 text-sm font-semibold" onClick={applyPromo}>
+            {t("apply")}
+          </button>
+        </div>
+        <DynamicShopFields fields={checkoutFields} />
 
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium text-oxford">{t("payment")}</legend>
@@ -190,7 +253,7 @@ export function CheckoutForm({
                   required={method === "online"}
                   name="transferPhone"
                   inputMode="tel"
-                  className="mt-1 h-11 w-full rounded-full border border-border bg-cream px-4"
+                  className="mt-1 h-11 w-full rounded-full border border-oxford/20 bg-cream px-4"
                 />
               </label>
               <label className="mt-4 block text-sm">

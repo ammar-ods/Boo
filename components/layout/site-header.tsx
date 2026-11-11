@@ -8,21 +8,23 @@ import { BooLogo } from "@/components/brand/boo-logo";
 import { StudioChromePanel, StudioNavButtons } from "@/components/cms/studio-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEdit } from "@/lib/edit-context";
-import { useI18n, type Currency } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { cartCount, useCart } from "@/lib/cart";
 import { NavMenu } from "@/components/layout/nav-menu";
 import { pick } from "@/lib/site";
-
-const CURRENCIES: Currency[] = ["EGP", "USD", "EUR", "GBP"];
+import { useStorefrontUi } from "@/lib/storefront-ui";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, locale, setLocale, currency, setCurrency } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const { site, isAdmin } = useEdit();
   const items = useCart((s) => s.items);
-  const [open, setOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const menuOpen = useStorefrontUi((s) => s.menuOpen);
+  const setMenuOpen = useStorefrontUi((s) => s.setMenuOpen);
+  const searchOpen = useStorefrontUi((s) => s.searchOpen);
+  const setSearchOpen = useStorefrontUi((s) => s.setSearchOpen);
+  const toggleCart = useStorefrontUi((s) => s.toggleCart);
   const [query, setQuery] = useState("");
   const [count, setCount] = useState(0);
 
@@ -44,18 +46,6 @@ export function SiteHeader() {
               <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
                 {locale === "ar" ? "EN" : "عربي"}
               </button>
-              <select
-                value={currency}
-                onChange={(event) => setCurrency(event.target.value as Currency)}
-                className="bg-transparent text-white/90 outline-none"
-                aria-label="Currency"
-              >
-                {CURRENCIES.map((item) => (
-                  <option key={item} value={item} className="text-oxford">
-                    {item}
-                  </option>
-                ))}
-              </select>
             </div>
             <p className="min-w-0 truncate">{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
           </div>
@@ -81,27 +71,43 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="grid size-10 place-items-center rounded-full text-oxford"
+                className="hidden size-10 place-items-center rounded-full text-oxford md:grid"
                 aria-label={t("search")}
               >
                 <Search className="size-[18px]" />
               </button>
-              <Link href="/cart" className="relative grid size-10 place-items-center rounded-full text-oxford" aria-label={t("cart")}>
+              <button
+                type="button"
+                onClick={toggleCart}
+                className="relative grid size-10 place-items-center rounded-full text-oxford"
+                aria-label={t("cart")}
+              >
                 <ShoppingBag className="size-[18px]" />
                 {count > 0 ? (
                   <span className="absolute end-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-oxford text-[10px] text-white">
                     {count}
                   </span>
                 ) : null}
-              </Link>
-              <button type="button" className="rounded-full p-2 md:hidden" onClick={() => setOpen((v) => !v)} aria-label="Menu">
-                {open ? <X className="size-5" /> : <Menu className="size-5" />}
+              </button>
+              <button
+                type="button"
+                className="rounded-full p-2 md:hidden"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Menu"
+              >
+                {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
               </button>
             </div>
           </div>
-          {open && site.chrome.showNav ? (
-            <div className="border-t border-oxford/8 px-5 py-2 sm:px-8 md:hidden">
-              <NavMenu links={links} locale={locale} variant="mobile" onNavigate={() => setOpen(false)} />
+          {site.chrome.showNav ? (
+            <div
+              className={`grid md:hidden ${menuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"} transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]`}
+            >
+              <div className="overflow-hidden">
+                <div className="border-t border-oxford/8 px-5 py-2 sm:px-8">
+                  <NavMenu links={links} locale={locale} variant="mobile" onNavigate={() => setMenuOpen(false)} />
+                </div>
+              </div>
             </div>
           ) : null}
           <StudioNavButtons />
@@ -114,7 +120,7 @@ export function SiteHeader() {
       <StudioChromePanel />
       {searchOpen ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-start bg-oxford/40 px-4 pt-28"
+          className="fixed inset-0 z-[80] grid place-items-start bg-oxford/40 px-4 pt-28"
           onClick={() => setSearchOpen(false)}
         >
           <form

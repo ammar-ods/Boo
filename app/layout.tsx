@@ -9,6 +9,8 @@ import { AppTheme } from "@/components/app-theme";
 import { PromoPopup } from "@/components/promo-popup";
 import { StatusFlashHost } from "@/components/status-flash";
 import { WhatsAppBubble } from "@/components/layout/whatsapp-bubble";
+import { CartPreview } from "@/components/layout/cart-preview";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { EditProvider } from "@/lib/edit-context";
 import { getSite } from "@/lib/local-db";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
@@ -58,10 +60,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <I18nProvider>
             <EditProvider initial={site} isAdmin={isAdmin}>
               <SiteHeader />
-              <main className="flex flex-1 flex-col">{children}</main>
+              <main className="flex flex-1 flex-col pb-16 md:pb-0">{children}</main>
               <SiteFooter />
               <PromoPopup />
               <WhatsAppBubble />
+              <CartPreview />
+              <MobileBottomNav />
               <StatusFlashHost />
               <Toaster />
             </EditProvider>

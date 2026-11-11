@@ -91,13 +91,13 @@ export function ControlsPanel({
         </p>
         <div
           {...dropzone.getRootProps()}
-          className="min-h-28 cursor-pointer rounded-2xl border border-dashed border-boo-teal bg-white px-4 py-5 text-center sm:min-h-32 sm:py-6"
+          className="min-h-32 cursor-pointer rounded-2xl border-2 border-dashed border-boo-teal bg-teal-50/60 px-4 py-5 text-center ring-2 ring-boo-teal/20 sm:min-h-32 sm:bg-white sm:py-6 sm:ring-0"
         >
           <input {...dropzone.getInputProps()} />
           <Upload className="mx-auto mb-2 size-5 text-boo-teal" />
-          <p className="font-heading">Drop PNG, JPG, SVG, or PDF</p>
+          <p className="font-heading">Tap to upload, or drop PNG, JPG, SVG, or PDF</p>
           <p className="text-xs text-muted-foreground">
-            Freeform placement — scale, rotate, and move anywhere.
+            You can also tap the dashed print area on the mockup.
           </p>
         </div>
         {assets.length ? (

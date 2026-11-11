@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { Product, ProductView } from "@/lib/products";
 import { MUG_WRAP_FLAT, productViews } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
+import { rememberFile } from "@/lib/upload-registry";
 
 type FabricMod = typeof import("fabric");
 
@@ -42,6 +43,9 @@ export function FabricCanvas({
 }) {
   const hostRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickImageRef = useRef<() => void>(() => {});
+  const addImageRef = useRef<(file: File, id: string) => Promise<void>>(async () => {});
   const canvasRef = useRef<InstanceType<FabricMod["Canvas"]> | null>(null);
   const fabricRef = useRef<FabricMod | null>(null);
   const viewRef = useRef(view);
@@ -52,6 +56,7 @@ export function FabricCanvas({
   const setBleedWarning = useCustomizerStore((s) => s.setBleedWarning);
   const setSelectedKind = useCustomizerStore((s) => s.setSelectedKind);
   const setTextDraft = useCustomizerStore((s) => s.setTextDraft);
+  const addAsset = useCustomizerStore((s) => s.addAsset);
   const laserPreview = useCustomizerStore((s) => s.laserPreview);
   const previewMode = useCustomizerStore((s) => s.previewMode);
   const textDraft = useCustomizerStore((s) => s.textDraft);
@@ -200,6 +205,21 @@ export function FabricCanvas({
       canvas.on("selection:created", syncSelection);
       canvas.on("selection:updated", syncSelection);
       canvas.on("selection:cleared", () => setSelectedKind("none"));
+      canvas.on("mouse:down", (opt) => {
+        if (opt.target || previewRef.current) return;
+        const pointer = (opt as { scenePoint?: { x: number; y: number } }).scenePoint;
+        if (!pointer) {
+          pickImageRef.current();
+          return;
+        }
+        const safe = viewRef.current.safe_zone_bounds;
+        const inside =
+          pointer.x >= safe.left &&
+          pointer.x <= safe.left + safe.width &&
+          pointer.y >= safe.top &&
+          pointer.y <= safe.top + safe.height;
+        if (inside) pickImageRef.current();
+      });
 
       const applyLaser = (enabled: boolean) => {
         canvas.getObjects().forEach((obj) => {
@@ -239,6 +259,7 @@ export function FabricCanvas({
         applyLaser(laserRef.current);
         checkBleed();
       };
+      addImageRef.current = addImageFromFile;
 
       const addText = () => {
         const draft = textDraftRef.current;
@@ -445,6 +466,10 @@ export function FabricCanvas({
   }, [setBleedWarning, setSelectedKind, setTextDraft]);
 
   useEffect(() => {
+    pickImageRef.current = () => fileRef.current?.click();
+  });
+
+  useEffect(() => {
     canvasRef.current
       ?.getObjects()
       .forEach((obj) => {
@@ -473,6 +498,30 @@ export function FabricCanvas({
         src={view.mockup}
         alt=""
         className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain"
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/svg+xml,application/pdf,.png,.jpg,.jpeg,.svg,.pdf"
+        className="sr-only"
+        onChange={async (event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          const id = crypto.randomUUID();
+          rememberFile(id, file);
+          addAsset({
+            id,
+            name: file.name,
+            type: file.type,
+            previewUrl: URL.createObjectURL(file),
+          });
+          try {
+            await addImageRef.current(file, id);
+          } catch {
+            /* canvas unready */
+          }
+        }}
       />
       <div className="absolute inset-0 z-10 overflow-hidden">
         <canvas ref={hostRef} className="max-h-full max-w-full" />

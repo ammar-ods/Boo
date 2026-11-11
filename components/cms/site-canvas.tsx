@@ -296,7 +296,7 @@ function SectionShell({
       <section
         className={`cms-block reveal relative overflow-hidden ${cover ? "cms-block-cover" : ""} ${rounded ? "rounded-[22px] sm:rounded-[28px]" : ""} ${className}`}
         style={{
-          background: cover ? undefined : surface.background,
+          background: cover || section.type === "banner" || section.type === "slideshow" ? undefined : surface.background,
           color: surface.color,
           ["--cms-w" as string]: `${width}%`,
           ["--cms-pad" as string]: `${pad}px`,
@@ -449,9 +449,11 @@ function SectionView({
   if (section.type === "products") {
     return (
       <SectionShell section={section} index={index}>
-        <div id="creations" className="cms-copy text-start">
-          {text("title", "font-heading", "h2")}
-          {text("body", "mt-2 text-muted-foreground")}
+        <div id="creations">
+          <div className="cms-copy text-start">
+            {text("title", "font-heading", "h2")}
+            {text("body", "mt-2 text-muted-foreground")}
+          </div>
           <div className="mt-6 sm:mt-8">
             {pageKey && pageKey !== "home" ? (
               <PageProducts
@@ -462,7 +464,9 @@ function SectionView({
                 products={products}
               />
             ) : (
-              <ProductGrid products={products} compact />
+              <div className="cms-copy">
+                <ProductGrid products={products} compact />
+              </div>
             )}
           </div>
         </div>

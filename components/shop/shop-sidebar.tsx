@@ -54,7 +54,7 @@ export function ShopSidebar({ activeId }: { activeId?: string }) {
     items[0]?.id;
 
   return (
-    <aside className="space-y-6">
+    <aside className="sticky top-28 hidden w-[min(13.5rem,22vw)] shrink-0 self-start ps-[max(0.75rem,env(safe-area-inset-inline-start))] lg:block">
       <div>
         <p className="mb-2 text-xs tracking-[0.16em] text-oxford/60">DISCIPLINE</p>
         <div className="flex flex-col gap-1">

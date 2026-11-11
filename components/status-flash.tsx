@@ -24,7 +24,7 @@ export function StatusFlashHost() {
 
   useEffect(() => {
     if (!message) return;
-    const hide = window.setTimeout(() => setMessage(null), 1000);
+    const hide = window.setTimeout(() => setMessage(null), 1800);
     return () => window.clearTimeout(hide);
   }, [message, token]);
 

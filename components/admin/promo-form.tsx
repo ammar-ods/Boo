@@ -8,6 +8,7 @@ import { savePromo } from "@/actions/admin";
 import { PromoDialog } from "@/components/promo-popup";
 import { flashStatus } from "@/components/status-flash";
 import { useI18n } from "@/lib/i18n";
+import type { PromoCode } from "@/lib/site";
 
 function Submit() {
   const { pending } = useFormStatus();
@@ -24,12 +25,14 @@ export function PromoForm({
   textEn,
   image,
   payPhone,
+  codes,
 }: {
   live: boolean;
   textAr: string;
   textEn: string;
   image: string;
   payPhone: string;
+  codes: PromoCode[];
 }) {
   const router = useRouter();
   const { locale } = useI18n();
@@ -37,11 +40,13 @@ export function PromoForm({
   const [textArValue, setTextArValue] = useState(textAr);
   const [textEnValue, setTextEnValue] = useState(textEn);
   const [showPreview, setShowPreview] = useState(false);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(codes);
   const previewText = locale === "en" ? textEnValue.trim() || textArValue.trim() : textArValue.trim() || textEnValue.trim();
 
   return (
     <form
       action={async (formData) => {
+        formData.set("codes", JSON.stringify(promoCodes));
         try {
           await savePromo(formData);
           router.refresh();
@@ -117,6 +122,67 @@ export function PromoForm({
           className="mt-1 h-11 w-full rounded-full border border-input px-4 text-sm"
         />
       </label>
+      <div className="space-y-3">
+        <p className="text-sm font-medium">Promo codes</p>
+        {promoCodes.map((item, index) => (
+          <div key={item.id} className="grid gap-2 rounded-2xl bg-cream/80 p-3 sm:grid-cols-[1fr_5rem_auto_auto]">
+            <input
+              value={item.code}
+              onChange={(event) =>
+                setPromoCodes((rows) =>
+                  rows.map((row, i) => (i === index ? { ...row, code: event.target.value.toUpperCase() } : row)),
+                )
+              }
+              placeholder="CODE"
+              className="h-10 rounded-full border border-input bg-white px-3 font-mono text-sm"
+            />
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={item.percent}
+              onChange={(event) =>
+                setPromoCodes((rows) =>
+                  rows.map((row, i) => (i === index ? { ...row, percent: Number(event.target.value) || 0 } : row)),
+                )
+              }
+              className="h-10 rounded-full border border-input bg-white px-3 text-sm"
+            />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={item.active}
+                onChange={(event) =>
+                  setPromoCodes((rows) =>
+                    rows.map((row, i) => (i === index ? { ...row, active: event.target.checked } : row)),
+                  )
+                }
+              />
+              Active
+            </label>
+            <button
+              type="button"
+              className="text-sm text-red-700"
+              onClick={() => setPromoCodes((rows) => rows.filter((_, i) => i !== index))}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="h-10 rounded-full border border-oxford/15 px-4 text-sm font-semibold"
+          onClick={() =>
+            setPromoCodes((rows) => [
+              ...rows,
+              { id: crypto.randomUUID(), code: "", percent: 10, active: true },
+            ])
+          }
+        >
+          Add promo code
+        </button>
+        <p className="text-xs text-muted-foreground">Percent off the cart subtotal at checkout.</p>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <button
           type="button"

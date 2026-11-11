@@ -20,6 +20,14 @@ const COPY: Record<Locale, Record<string, string>> = {
     backDetails: "تفاصيل المنتج",
     addAndShop: "أضف للسلة وكمّل التسوق",
     added: "تمت الإضافة",
+    addedSuccess: "تمت الإضافة بنجاح",
+    sections: "الأقسام",
+    promoCode: "كود الخصم",
+    apply: "تطبيق",
+    shipping: "الشحن",
+    freeShipping: "شحن مجاني",
+    subtotal: "المجموع",
+    discount: "الخصم",
     color: "اللون",
     quantity: "الكمية",
     details: "التفاصيل",
@@ -85,6 +93,14 @@ const COPY: Record<Locale, Record<string, string>> = {
     backDetails: "Product details",
     addAndShop: "Add to cart and continue shopping",
     added: "Added",
+    addedSuccess: "Added successfully",
+    sections: "Sections",
+    promoCode: "Promo code",
+    apply: "Apply",
+    shipping: "Shipping",
+    freeShipping: "Free shipping",
+    subtotal: "Subtotal",
+    discount: "Discount",
     color: "Color",
     quantity: "Quantity",
     details: "Details",
@@ -198,11 +214,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       return COPY[locale][key] ?? COPY.en[key] ?? key;
     }
     function formatPrice(egp: number) {
-      if (currency === "EGP") return locale === "ar" ? `${egp} ج.م` : `${egp} EGP`;
-      const rate = currency === "USD" ? 0.021 : currency === "EUR" ? 0.019 : 0.016;
-      const converted = Math.max(1, Math.round(egp * rate));
-      const symbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "£";
-      return `${symbol}${converted}`;
+      return locale === "ar" ? `${egp} ج.م` : `${egp} EGP`;
     }
     return { locale, setLocale, currency, setCurrency, t, formatPrice };
   }, [currency, locale]);

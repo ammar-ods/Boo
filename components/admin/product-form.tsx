@@ -41,6 +41,21 @@ export function ProductForm({
       <div className="space-y-6">
         <section className="space-y-4 rounded-[1.4rem] bg-white p-5 ring-1 ring-foreground/10">
           <h2 className="font-heading text-xl text-oxford">Details</h2>
+          <label className="flex items-start gap-3 rounded-2xl bg-cream px-4 py-3 text-sm ring-1 ring-oxford/10">
+            <input
+              type="checkbox"
+              name="customizable_preview"
+              checked={customizable}
+              onChange={(event) => setCustomizable(event.target.checked)}
+              className="mt-0.5 size-4 accent-oxford"
+            />
+            <span>
+              <span className="block font-medium text-oxford">Customizable</span>
+              <span className="text-xs text-muted-foreground">
+                On = customer uploads artwork. Off = + on the card adds the item to the cart.
+              </span>
+            </span>
+          </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Name · English" name="name" defaultValue={product?.name} required />
             <Field label="Name · عربي" name="nameAr" defaultValue={product?.nameAr} dir="rtl" />
@@ -257,12 +272,12 @@ export function ProductForm({
             value="on"
             checked={customizable}
             onChange={(event) => setCustomizable(event.target.checked)}
-            className="mt-0.5"
+            className="mt-0.5 size-4 accent-oxford"
           />
           <span>
-            <span className="block font-medium text-oxford">Customers can print on this</span>
+            <span className="block font-medium text-oxford">Customizable</span>
             <span className="text-xs text-muted-foreground">
-              Off = ready-made item with a photo gallery instead of mockups.
+              Off = ready-made item. The catalog + button adds it to the cart.
             </span>
           </span>
         </label>

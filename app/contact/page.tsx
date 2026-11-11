@@ -1,30 +1,44 @@
 "use client";
 
 import { toast } from "sonner";
+import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
+import { pick } from "@/lib/site";
+import { DynamicShopFields } from "@/components/shop/dynamic-fields";
 
 export default function ContactPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { site } = useEdit();
+  const fields = site.commerce.contactFields ?? [];
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const payload: Record<string, string> = {};
+    for (const field of fields.filter((item) => item.enabled)) {
+      payload[field.key] = String(data.get(field.key) ?? "").trim();
+      if (field.required && !payload[field.key]) {
+        toast.error(pick(field.label, locale) || field.key);
+        return;
+      }
+    }
     const response = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: data.get("name"),
-        phone: data.get("phone"),
-        email: data.get("email"),
-        notes: data.get("notes"),
+        name: payload.name,
+        phone: payload.phone,
+        email: payload.email,
+        notes: payload.notes,
+        fields: payload,
       }),
     });
     if (!response.ok) {
       toast.error("Could not send");
       return;
     }
-    const payload = (await response.json()) as { reference?: string };
-    window.location.href = `/thanks?ref=${encodeURIComponent(payload.reference ?? "")}`;
+    const result = (await response.json()) as { reference?: string };
+    window.location.href = `/thanks?ref=${encodeURIComponent(result.reference ?? "")}`;
   }
 
   return (
@@ -32,22 +46,7 @@ export default function ContactPage() {
       <h1 className="font-heading text-4xl text-oxford sm:text-5xl">{t("contactTitle")}</h1>
       <p className="mt-3 text-muted-foreground">{t("contactBody")}</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <label className="block text-sm">
-          {t("name")}
-          <input required name="name" className="mt-1 h-11 w-full rounded-full border border-border bg-white px-4" />
-        </label>
-        <label className="block text-sm">
-          {t("phone")}
-          <input required name="phone" className="mt-1 h-11 w-full rounded-full border border-border bg-white px-4" />
-        </label>
-        <label className="block text-sm">
-          {t("email")}
-          <input name="email" type="email" className="mt-1 h-11 w-full rounded-full border border-border bg-white px-4" />
-        </label>
-        <label className="block text-sm">
-          {t("notes")}
-          <textarea name="notes" rows={4} className="mt-1 w-full rounded-2xl border border-border bg-white px-4 py-3" />
-        </label>
+        <DynamicShopFields fields={fields} />
         <button type="submit" className="btn-press">
           {t("send")}
         </button>

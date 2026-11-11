@@ -20,6 +20,7 @@ export default async function PromoPage() {
         textEn={site.promo.text.en}
         image={site.promo.image}
         payPhone={site.chrome.payPhone}
+        codes={site.promo.codes ?? []}
       />
     </div>
   );

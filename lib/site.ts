@@ -116,6 +116,33 @@ export type PromoPopup = {
   live: boolean;
   text: Localized;
   image: string;
+  codes: PromoCode[];
+};
+
+export type PromoCode = {
+  id: string;
+  code: string;
+  percent: number;
+  active: boolean;
+};
+
+export type ShopFormField = {
+  id: string;
+  key: string;
+  label: Localized;
+  type: "text" | "email" | "tel" | "textarea";
+  required: boolean;
+  enabled: boolean;
+};
+
+export type Commerce = {
+  shippingPrice: number;
+  shippingLabel: Localized;
+  shippingDetails: Localized;
+  freeShippingMin: number;
+  contactEmail: string;
+  contactFields: ShopFormField[];
+  checkoutFields: ShopFormField[];
 };
 
 export type CmsPage = {
@@ -131,6 +158,7 @@ export type SiteDocument = {
   sections: SiteSection[];
   pages: CmsPage[];
   promo: PromoPopup;
+  commerce: Commerce;
 };
 
 export const RESERVED_PAGE_SLUGS = new Set([
@@ -352,6 +380,32 @@ export const DEFAULT_PROMO: PromoPopup = {
   live: false,
   text: loc("خصم ١٠٪ على طلبك الجاي.", "10% off your next order."),
   image: "",
+  codes: [],
+};
+
+export const DEFAULT_CONTACT_FIELDS: ShopFormField[] = [
+  { id: "name", key: "name", type: "text", required: true, enabled: true, label: loc("الاسم", "Name") },
+  { id: "phone", key: "phone", type: "tel", required: true, enabled: true, label: loc("رقم الواتساب", "WhatsApp number") },
+  { id: "email", key: "email", type: "email", required: false, enabled: true, label: loc("البريد", "Email") },
+  { id: "notes", key: "notes", type: "textarea", required: false, enabled: true, label: loc("ملاحظات", "Notes") },
+];
+
+export const DEFAULT_CHECKOUT_FIELDS: ShopFormField[] = [
+  { id: "name", key: "name", type: "text", required: true, enabled: true, label: loc("الاسم", "Name") },
+  { id: "phone", key: "phone", type: "tel", required: true, enabled: true, label: loc("رقم الواتساب", "WhatsApp number") },
+  { id: "address", key: "address", type: "text", required: true, enabled: true, label: loc("العنوان", "Address") },
+  { id: "email", key: "email", type: "email", required: false, enabled: true, label: loc("البريد", "Email") },
+  { id: "notes", key: "notes", type: "textarea", required: false, enabled: true, label: loc("ملاحظات", "Notes") },
+];
+
+export const DEFAULT_COMMERCE: Commerce = {
+  shippingPrice: 80,
+  shippingLabel: loc("الشحن", "Shipping"),
+  shippingDetails: loc("التوصيل داخل مصر خلال ٢–٥ أيام عمل.", "Delivery in Egypt within 2–5 working days."),
+  freeShippingMin: 500,
+  contactEmail: "",
+  contactFields: DEFAULT_CONTACT_FIELDS,
+  checkoutFields: DEFAULT_CHECKOUT_FIELDS,
 };
 
 export function newSection(type: SectionType): SiteSection {
@@ -527,6 +581,7 @@ export function newSection(type: SectionType): SiteSection {
 export const DEFAULT_SITE: SiteDocument = {
   chrome: DEFAULT_CHROME,
   promo: DEFAULT_PROMO,
+  commerce: DEFAULT_COMMERCE,
   pages: [],
   sections: [
     newSection("hero"),
@@ -593,7 +648,8 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
 export function migrateSite(raw: unknown): SiteDocument {
   const data = (raw ?? {}) as {
     chrome?: Partial<SiteChrome>;
-    promo?: Partial<PromoPopup>;
+    promo?: Partial<PromoPopup> & { codes?: PromoCode[] | Array<Record<string, unknown>> };
+    commerce?: Partial<Commerce> & { contactFields?: unknown; checkoutFields?: unknown };
     sections?: SiteSection[] | Array<Record<string, unknown>>;
     pages?: CmsPage[] | Array<Record<string, unknown>>;
   };
@@ -658,7 +714,23 @@ export function migrateSite(raw: unknown): SiteDocument {
       live: Boolean(promo.live),
       text: fillLoc(asLoc(promo.text, DEFAULT_PROMO.text.ar), DEFAULT_PROMO.text) ?? DEFAULT_PROMO.text,
       image: typeof promo.image === "string" ? promo.image : "",
+      codes: Array.isArray(promo.codes)
+        ? promo.codes
+            .map((row, index) => {
+              const item = row as PromoCode;
+              const code = String(item.code || "").trim().toUpperCase();
+              if (!code) return null;
+              return {
+                id: String(item.id || `code-${index}`),
+                code,
+                percent: Math.min(100, Math.max(1, Number(item.percent) || 10)),
+                active: item.active !== false,
+              } satisfies PromoCode;
+            })
+            .filter((item): item is PromoCode => Boolean(item))
+        : [],
     },
+    commerce: migrateCommerce(data.commerce),
     sections: Array.isArray(data.sections)
       ? data.sections.map((section, index) => migrateSection(section, index))
       : DEFAULT_SITE.sections,
@@ -691,6 +763,42 @@ function migrateNavLink(link: Partial<NavLink> | undefined, index: number): NavL
     children: Array.isArray(row.children)
       ? row.children.map((child, childIndex) => migrateNavLink(child, childIndex))
       : undefined,
+  };
+}
+
+function migrateFormFields(value: unknown, fallback: ShopFormField[]): ShopFormField[] {
+  if (!Array.isArray(value) || !value.length) return fallback;
+  return value.map((row, index) => {
+    const item = row as ShopFormField;
+    const type = item.type === "email" || item.type === "tel" || item.type === "textarea" ? item.type : "text";
+    return {
+      id: String(item.id || item.key || `field-${index}`),
+      key: String(item.key || item.id || `field-${index}`),
+      label: asLoc(item.label, String(item.key || "Field")),
+      type,
+      required: Boolean(item.required),
+      enabled: item.enabled !== false,
+    };
+  });
+}
+
+function migrateCommerce(raw: Partial<Commerce> | undefined): Commerce {
+  const src = raw ?? {};
+  return {
+    shippingPrice: Math.max(0, Number(src.shippingPrice) || DEFAULT_COMMERCE.shippingPrice),
+    shippingLabel:
+      fillLoc(asLoc(src.shippingLabel, DEFAULT_COMMERCE.shippingLabel.ar), DEFAULT_COMMERCE.shippingLabel) ??
+      DEFAULT_COMMERCE.shippingLabel,
+    shippingDetails:
+      fillLoc(asLoc(src.shippingDetails, DEFAULT_COMMERCE.shippingDetails.ar), DEFAULT_COMMERCE.shippingDetails) ??
+      DEFAULT_COMMERCE.shippingDetails,
+    freeShippingMin:
+      src.freeShippingMin === undefined || src.freeShippingMin === null
+        ? DEFAULT_COMMERCE.freeShippingMin
+        : Math.max(0, Number(src.freeShippingMin) || 0),
+    contactEmail: typeof src.contactEmail === "string" ? src.contactEmail.trim() : "",
+    contactFields: migrateFormFields(src.contactFields, DEFAULT_CONTACT_FIELDS),
+    checkoutFields: migrateFormFields(src.checkoutFields, DEFAULT_CHECKOUT_FIELDS),
   };
 }
 

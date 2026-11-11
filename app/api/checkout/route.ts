@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCatalogProduct, persistOrderMedia, saveOrder, nextReferenceCode } from "@/lib/local-db";
+import { getCatalogProduct, persistOrderMedia, saveOrder, nextReferenceCode, getSite } from "@/lib/local-db";
+import { cartBreakdown, matchPromo } from "@/lib/commerce";
 
 type CheckoutItem = {
   slug: string;
@@ -18,14 +19,27 @@ export async function POST(request: Request) {
       name?: string;
       phone?: string;
       address?: string;
+      email?: string;
       notes?: string;
+      fields?: Record<string, string>;
+      promoCode?: string;
       payment?: { method?: string; transferPhone?: string; receiptUrl?: string };
       items?: CheckoutItem[];
     };
+    const site = await getSite();
     const items = Array.isArray(body.items) ? body.items : [];
     const paymentMethod = body.payment?.method === "online" ? "online" : "cod";
-    if (!body.name?.trim() || !body.phone?.trim() || !body.address?.trim() || items.length === 0) {
+    const fields = body.fields ?? {};
+    const name = String(fields.name || body.name || "").trim();
+    const phone = String(fields.phone || body.phone || "").trim();
+    const address = String(fields.address || body.address || "").trim();
+    if (!name || !phone || items.length === 0) {
       return NextResponse.json({ error: "Missing checkout fields" }, { status: 400 });
+    }
+    for (const field of (site.commerce.checkoutFields ?? []).filter((item) => item.enabled && item.required)) {
+      if (!String(fields[field.key] ?? "").trim()) {
+        return NextResponse.json({ error: "Missing checkout fields" }, { status: 400 });
+      }
     }
     if (paymentMethod === "online" && (!body.payment?.transferPhone?.trim() || !body.payment?.receiptUrl)) {
       return NextResponse.json({ error: "Missing transfer details" }, { status: 400 });
@@ -34,7 +48,10 @@ export async function POST(request: Request) {
     const summary = items
       .map((item) => `${item.quantity}× ${item.name} (${item.color})`)
       .join(", ");
-    const total = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
+    const subtotal = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
+    const promo = matchPromo(body.promoCode, site.promo.codes ?? []);
+    const breakdown = cartBreakdown(subtotal, site.commerce, promo);
+    const total = breakdown.total;
     const now = new Date().toISOString();
     const first = items[0];
     const catalogItem = first?.slug ? await getCatalogProduct(first.slug) : undefined;
@@ -80,14 +97,16 @@ export async function POST(request: Request) {
       reference_code,
       product_slug: first?.slug ?? "cart",
       product_name: summary,
-      customer_name: body.name.trim(),
-      customer_email: null,
-      customer_phone: body.phone.trim(),
+      customer_name: name,
+      customer_email: String(fields.email || body.email || "").trim() || null,
+      customer_phone: phone,
       material: first?.color ?? null,
       quantity: items.reduce((sum, item) => sum + item.quantity, 0),
       notes: [
-        body.address,
-        body.notes,
+        address,
+        fields.notes || body.notes,
+        breakdown.discount ? `Promo ${breakdown.promoCode} −${breakdown.discount} EGP` : "",
+        breakdown.shippingFree ? "Shipping: free" : `Shipping ${breakdown.shippingCharged} EGP`,
         `Total ${total} EGP`,
         paymentMethod === "online"
           ? `Payment: online transfer from ${body.payment?.transferPhone}`
@@ -101,8 +120,10 @@ export async function POST(request: Request) {
       production_paths: [...previewPaths.slice(1), ...uploadPaths, receiptUrl].filter(Boolean),
       canvas_json: {
         items,
+        fields,
         views: viewFiles,
         uploads: uploadFiles,
+        commerce: breakdown,
         payment: {
           method: paymentMethod,
           transferPhone: body.payment?.transferPhone?.trim() || "",

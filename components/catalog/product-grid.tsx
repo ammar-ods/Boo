@@ -68,8 +68,8 @@ export function ProductGrid({
         layout === "list"
           ? "grid gap-3"
           : compact
-            ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-            : "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+            ? "grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4"
+            : "grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3"
       }
     >
       {items.map((product) => (
@@ -84,7 +84,7 @@ export function ProductGrid({
 
   return (
     <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="space-y-6">
+      <aside className="hidden space-y-6 lg:block">
         <div>
           <p className="mb-2 text-xs tracking-[0.16em] text-oxford/60">DISCIPLINE</p>
           <div className="flex flex-col gap-1">

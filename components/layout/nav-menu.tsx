@@ -117,7 +117,7 @@ function MobileItem({
         </button>
       </div>
       <div
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+        className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >

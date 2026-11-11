@@ -31,10 +31,10 @@ export function PageProducts({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+    <div className="flex w-screen max-w-[100vw] gap-6 lg:gap-10" style={{ marginInline: "calc(50% - 50vw)" }}>
       <ShopSidebar activeId={section.content.collection} />
-      <div className="space-y-5">
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="min-w-0 flex-1 space-y-5 px-4 pe-[max(1rem,env(safe-area-inset-inline-end))] sm:px-8">
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3">
           {selected.map((product) => (
             <div key={product.slug} className="relative">
               {editing ? (
@@ -55,7 +55,7 @@ export function PageProducts({
             </div>
           ))}
           {editing ? (
-            <div className="flex min-h-[280px] flex-col justify-center rounded-[28px] border-2 border-dashed border-oxford/20 bg-white/40 p-4">
+            <div className="flex min-h-[180px] flex-col justify-center rounded-[1.15rem] border-2 border-dashed border-oxford/20 bg-white/40 p-3 sm:min-h-[280px] sm:rounded-[28px] sm:p-4">
               <p className="mb-3 text-sm font-medium text-oxford">Add a product card</p>
               <select
                 value={pick}
