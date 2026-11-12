@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCatalog, getSite } from "@/lib/local-db";
-import { normalizeCategoryId, productThumbnail } from "@/lib/products";
+import { normalizeCategoryId, productThumbnail, sellingPrice } from "@/lib/products";
 import { pick } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +56,11 @@ export default async function AdminProductsPage({
                 {labels[normalizeCategoryId(product.category)] || product.category || "Unassigned"}
               </p>
               <h2 className="font-heading text-xl">{product.name}</h2>
+              <p className="mt-1 text-sm text-oxford">
+                {product.discounted && (product.saleEgp || product.discountPercent)
+                  ? `${sellingPrice(product)} EGP · was ${product.priceEgp}`
+                  : `${product.priceEgp || 100} EGP`}
+              </p>
               {product.archived ? (
                 <p className="text-xs text-boo-orange">Hidden from shop</p>
               ) : null}

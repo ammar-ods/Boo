@@ -30,6 +30,7 @@ export type Product = {
   colors: string[];
   optionLabel?: { ar: string; en: string };
   optionChoices?: string[];
+  optionImages?: Record<string, string>;
   defaultMaterial: string;
   canvasWidth: number;
   canvasHeight: number;
@@ -45,6 +46,9 @@ export type Product = {
   gallery?: string[];
   views?: ProductView[];
   priceEgp: number;
+  discounted?: boolean;
+  saleEgp?: number;
+  discountPercent?: number;
   customizable?: boolean;
 };
 
@@ -113,6 +117,28 @@ export function normalizeCategoryId(value: string | undefined) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 48);
+}
+
+export function sellingPrice(product: Pick<Product, "priceEgp" | "discounted" | "saleEgp" | "discountPercent">) {
+  const list = Math.max(0, Number(product.priceEgp) || 0);
+  if (!product.discounted) return list;
+  const sale = Number(product.saleEgp);
+  if (sale > 0 && sale < list) return Math.round(sale);
+  const percent = Number(product.discountPercent);
+  if (percent > 0 && percent < 100) return Math.max(0, Math.round(list * (1 - percent / 100)));
+  return list;
+}
+
+export function discountPercentOf(product: Pick<Product, "priceEgp" | "discounted" | "saleEgp" | "discountPercent">) {
+  const list = Math.max(0, Number(product.priceEgp) || 0);
+  const sale = sellingPrice(product);
+  if (!product.discounted || !list || sale >= list) return 0;
+  return Math.min(99, Math.round((1 - sale / list) * 100));
+}
+
+export function optionPreview(product: Product, choice?: string) {
+  const key = choice || product.defaultMaterial || productOptions(product).choices[0];
+  return (key && product.optionImages?.[key]) || "";
 }
 
 export function productOptions(product: Product) {

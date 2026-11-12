@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { cartTotal, useCart, useCartHydrated } from "@/lib/cart";
+import { cartHasCustom, cartTotal, useCart, useCartHydrated } from "@/lib/cart";
 import { cartBreakdown, matchPromo } from "@/lib/commerce";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
@@ -35,7 +35,9 @@ export function CheckoutForm({
   const clear = useCart((s) => s.clear);
   const [busy, setBusy] = useState(false);
   const [placed, setPlaced] = useState(false);
-  const [method, setMethod] = useState<"cod" | "online">("cod");
+  const hasCustom = cartHasCustom(items);
+  const blockCod = site.commerce.codBlockCustom !== false && hasCustom;
+  const [method, setMethod] = useState<"cod" | "online">(blockCod ? "online" : "cod");
   const [receiptName, setReceiptName] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
@@ -74,6 +76,10 @@ export function CheckoutForm({
       }
     }
     let receiptUrl = "";
+    if (blockCod && method === "cod") {
+      toast.error(t("payCodCustom"));
+      return;
+    }
     if (method === "online") {
       const transferPhone = String(data.get("transferPhone") ?? "").trim();
       const receipt = data.get("receipt");
@@ -116,6 +122,7 @@ export function CheckoutForm({
           image: item.image,
           viewMockups: item.viewMockups,
           uploads: item.uploads,
+          custom: item.custom,
         })),
       }),
     });
@@ -130,6 +137,10 @@ export function CheckoutForm({
     clear();
     router.push(`/thanks?ref=${encodeURIComponent(payload.ref)}`);
   }
+
+  useEffect(() => {
+    if (blockCod && method === "cod") setMethod("online");
+  }, [blockCod, method]);
 
   useEffect(() => {
     if (!hydrated || items.length > 0 || placed || busy) return;
@@ -228,8 +239,12 @@ export function CheckoutForm({
           <legend className="text-sm font-medium text-oxford">{t("payment")}</legend>
           <div className="grid gap-3 sm:grid-cols-2">
             <label
-              className={`cursor-pointer rounded-2xl bg-white p-4 ring-1 transition ${
-                method === "cod" ? "ring-2 ring-oxford" : "ring-oxford/10"
+              className={`rounded-2xl bg-white p-4 ring-1 transition ${
+                blockCod
+                  ? "cursor-not-allowed opacity-45 grayscale"
+                  : method === "cod"
+                    ? "cursor-pointer ring-2 ring-oxford"
+                    : "cursor-pointer ring-oxford/10"
               }`}
             >
               <input
@@ -237,10 +252,15 @@ export function CheckoutForm({
                 name="method"
                 className="sr-only"
                 checked={method === "cod"}
-                onChange={() => setMethod("cod")}
+                disabled={blockCod}
+                onChange={() => {
+                  if (!blockCod) setMethod("cod");
+                }}
               />
               <p className="font-heading text-lg text-oxford">{t("payCod")}</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">COD</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {blockCod ? t("payCodCustom") : "COD"}
+              </p>
             </label>
             <label
               className={`cursor-pointer rounded-2xl bg-white p-4 ring-1 transition ${

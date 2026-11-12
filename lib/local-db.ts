@@ -72,9 +72,13 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   gallery?: string[];
   views?: ProductView[];
   priceEgp?: number;
+  discounted?: boolean;
+  saleEgp?: number;
+  discountPercent?: number;
   customizable?: boolean;
   optionLabel?: { ar?: string; en?: string };
   optionChoices?: string[];
+  optionImages?: Record<string, string>;
 };
 
 function parseViews(
@@ -178,6 +182,12 @@ function rowToProduct(row: Record<string, unknown>): Product {
     optionChoices: Array.isArray(bounds.optionChoices) && bounds.optionChoices.length
       ? bounds.optionChoices.map(String).filter(Boolean)
       : undefined,
+    optionImages:
+      bounds.optionImages && typeof bounds.optionImages === "object"
+        ? Object.fromEntries(
+            Object.entries(bounds.optionImages).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+          )
+        : undefined,
     defaultMaterial: String(row.default_material ?? bounds.defaultMaterial ?? materials[0] ?? "Standard"),
     canvasWidth: Number(row.canvas_width ?? bounds.canvasWidth ?? 800),
     canvasHeight: Number(row.canvas_height ?? bounds.canvasHeight ?? 800),
@@ -200,6 +210,9 @@ function rowToProduct(row: Record<string, unknown>): Product {
       : undefined,
     views,
     priceEgp: Number(bounds.priceEgp ?? row.price_egp ?? row.priceEgp ?? seed?.priceEgp ?? 100),
+    discounted: Boolean(bounds.discounted),
+    saleEgp: Number(bounds.saleEgp || 0) || undefined,
+    discountPercent: Number(bounds.discountPercent || 0) || undefined,
     customizable: bounds.customizable !== false && row.customizable !== false,
   };
 }
@@ -218,6 +231,7 @@ function productToRow(product: Product) {
     colors: product.colors,
     optionLabel: product.optionLabel,
     optionChoices: product.optionChoices,
+    optionImages: product.optionImages,
     defaultMaterial: product.defaultMaterial,
     canvasWidth: product.canvasWidth,
     canvasHeight: product.canvasHeight,
@@ -230,6 +244,9 @@ function productToRow(product: Product) {
     gallery: product.gallery,
     views,
     priceEgp: product.priceEgp,
+    discounted: Boolean(product.discounted),
+    saleEgp: product.saleEgp,
+    discountPercent: product.discountPercent,
     customizable: product.customizable !== false,
   };
 

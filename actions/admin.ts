@@ -124,6 +124,7 @@ export async function saveShopSettings(formData: FormData) {
       contactEmail: String(formData.get("contactEmail") ?? "").trim(),
       contactFields: parseFormFields(formData.get("contactFields"), DEFAULT_CONTACT_FIELDS),
       checkoutFields: parseFormFields(formData.get("checkoutFields"), DEFAULT_CHECKOUT_FIELDS),
+      codBlockCustom: formData.get("codBlockCustom") === "on",
     },
   });
   revalidatePath("/");

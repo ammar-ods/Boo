@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/catalog/product-card";
 import { ShopRail } from "@/components/shop/shop-sidebar";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { localizedName, productThumbnail, type Product } from "@/lib/products";
+import { localizedName, productThumbnail, sellingPrice, type Product } from "@/lib/products";
 import type { SiteSection } from "@/lib/site";
 
 export function PageProducts({
@@ -29,7 +29,7 @@ export function PageProducts({
         ? products.filter((product) => !product.archived)
         : [];
     if (sort === "name") return [...list].sort((a, b) => localizedName(a, locale).localeCompare(localizedName(b, locale)));
-    if (sort === "price-asc") return [...list].sort((a, b) => (a.priceEgp || 0) - (b.priceEgp || 0));
+    if (sort === "price-asc") return [...list].sort((a, b) => sellingPrice(a) - sellingPrice(b));
     return list;
   }, [isCategoryPage, locale, products, slugs, sort]);
   const available = products.filter((product) => !product.archived && !slugs.includes(product.slug));

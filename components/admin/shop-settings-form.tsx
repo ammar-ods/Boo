@@ -53,6 +53,20 @@ export function ShopSettingsForm({
           <span>Show Discipline menu next to product cards</span>
           <input type="checkbox" name="showDiscipline" defaultChecked={showDiscipline} className="size-4 accent-oxford" />
         </label>
+        <label className="flex items-start justify-between gap-3 rounded-2xl bg-cream px-4 py-3 text-sm">
+          <span>
+            <span className="block">Custom orders must pay online</span>
+            <span className="text-xs text-muted-foreground">
+              If the cart has a custom print (uploaded artwork), cash on delivery is greyed out.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            name="codBlockCustom"
+            defaultChecked={commerce.codBlockCustom !== false}
+            className="mt-0.5 size-4 accent-oxford"
+          />
+        </label>
       </section>
       <section className="space-y-4 rounded-[1.6rem] bg-white p-6 ring-1 ring-oxford/8">
         <h2 className="font-heading text-2xl text-oxford">Contact & shipping</h2>

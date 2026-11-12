@@ -90,32 +90,30 @@ export function ProductForm({
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="category">Category</Label>
-              <select
-                id="category"
-                name="category"
-                defaultValue={normalizeCategoryId(product?.category || defaultCategory)}
-                className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
-              >
-                <option value="">Unassigned</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[11px] text-muted-foreground">
-                Manage the list in{" "}
-                <a href="/admin/categories" className="underline">
-                  Categories
-                </a>
-                .
-              </p>
-            </div>
-            <OptionEditor product={product} />
+          <div className="space-y-1.5">
+            <Label htmlFor="category">Category</Label>
+            <select
+              id="category"
+              name="category"
+              defaultValue={normalizeCategoryId(product?.category || defaultCategory)}
+              className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+            >
+              <option value="">Unassigned</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              Manage the list in{" "}
+              <a href="/admin/categories" className="underline">
+                Categories
+              </a>
+              .
+            </p>
           </div>
+          <OptionEditor product={product} />
         </section>
 
         <section className="space-y-4 rounded-[1.4rem] bg-white p-5 ring-1 ring-foreground/10">
@@ -274,6 +272,7 @@ export function ProductForm({
 
       <div className="space-y-4 rounded-[1.4rem] bg-white p-5 ring-1 ring-foreground/10 lg:sticky lg:top-6 h-fit">
         <h2 className="font-heading text-xl">{customizable ? "Print area" : "Selling"}</h2>
+        <PriceEditor product={product} />
         <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"
@@ -437,16 +436,101 @@ function ImageCard({
   );
 }
 
-function OptionEditor({ product }: { product?: Product }) {
-  const choices = (product?.optionChoices?.length ? product.optionChoices : product?.materials ?? []).join(", ");
-  const [labelEn, setLabelEn] = useState(product?.optionLabel?.en || "Color");
-  const [labelAr, setLabelAr] = useState(product?.optionLabel?.ar || "اللون");
+function PriceEditor({ product }: { product?: Product }) {
+  const [price, setPrice] = useState(String(product?.priceEgp ?? 100));
+  const [discounted, setDiscounted] = useState(Boolean(product?.discounted));
+  const [percent, setPercent] = useState(String(product?.discountPercent || ""));
+  const [sale, setSale] = useState(String(product?.saleEgp || ""));
+  const list = Math.max(0, Number(price) || 0);
+
+  function fromPercent(next: string) {
+    setPercent(next);
+    const value = Math.min(99, Math.max(0, Number(next) || 0));
+    if (list && value > 0) setSale(String(Math.round(list * (1 - value / 100))));
+  }
+
+  function fromSale(next: string) {
+    setSale(next);
+    const value = Math.max(0, Number(next) || 0);
+    if (list && value > 0 && value < list) setPercent(String(Math.round((1 - value / list) * 100)));
+  }
 
   return (
-    <div className="space-y-3 sm:col-span-2">
+    <div className="space-y-3">
+      <label className="space-y-1.5 text-sm">
+        <span>Price (EGP)</span>
+        <input
+          name="priceEgp"
+          type="number"
+          min={0}
+          step="1"
+          value={price}
+          onChange={(event) => setPrice(event.target.value)}
+          className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+        />
+      </label>
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="discounted"
+          value="on"
+          checked={discounted}
+          onChange={(event) => setDiscounted(event.target.checked)}
+          className="mt-0.5 size-4 accent-oxford"
+        />
+        <span>
+          <span className="block font-medium text-oxford">Discounted</span>
+          <span className="text-xs text-muted-foreground">Show the old price crossed out, the sale price, and the % off.</span>
+        </span>
+      </label>
+      {discounted ? (
+        <div className="grid grid-cols-2 gap-3">
+          <label className="space-y-1.5 text-sm">
+            <span>Percent off</span>
+            <input
+              name="discountPercent"
+              type="number"
+              min={0}
+              max={99}
+              value={percent}
+              onChange={(event) => fromPercent(event.target.value)}
+              className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+            />
+          </label>
+          <label className="space-y-1.5 text-sm">
+            <span>Sale price</span>
+            <input
+              name="saleEgp"
+              type="number"
+              min={0}
+              value={sale}
+              onChange={(event) => fromSale(event.target.value)}
+              className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
+            />
+          </label>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function OptionEditor({ product }: { product?: Product }) {
+  const initial =
+    (product?.optionChoices?.length ? product.optionChoices : product?.materials ?? ["White"]).map((label) => ({
+      id: `opt-${label}-${Math.random().toString(36).slice(2, 6)}`,
+      label,
+      image: product?.optionImages?.[label] || "",
+      preview: product?.optionImages?.[label] || "",
+    })) ?? [];
+  const [labelEn, setLabelEn] = useState(product?.optionLabel?.en || "Color");
+  const [labelAr, setLabelAr] = useState(product?.optionLabel?.ar || "اللون");
+  const [rows, setRows] = useState(initial.length ? initial : [{ id: "opt-1", label: "", image: "", preview: "" }]);
+
+  return (
+    <div className="space-y-3">
       <p className="text-sm font-medium text-oxford">Customer option</p>
       <p className="text-xs text-muted-foreground">
-        This is the dropdown customers see — size, color, material, or any other label.
+        Buttons on the product page. Each choice can have its own preview photo.
       </p>
       <div className="flex flex-wrap gap-2">
         {[
@@ -492,15 +576,59 @@ function OptionEditor({ product }: { product?: Product }) {
           />
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="optionChoices">Choices (comma-separated)</Label>
-        <input
-          id="optionChoices"
-          name="optionChoices"
-          defaultValue={choices}
-          placeholder="S, M, L, XL"
-          className="h-8 w-full rounded-lg border border-input px-2.5 text-sm"
-        />
+      <div className="space-y-3">
+        {rows.map((row, index) => (
+          <div key={row.id} className="flex items-center gap-3 rounded-2xl bg-cream p-2 ring-1 ring-oxford/8">
+            <label className="relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-xl bg-white ring-1 ring-oxford/10">
+              {row.preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={row.preview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="grid h-full place-items-center px-1 text-center text-[10px] text-muted-foreground">
+                  Photo
+                </span>
+              )}
+              <input type="hidden" name="optionImageExisting" value={row.image} />
+              <input
+                type="file"
+                name="optionImage"
+                accept="image/*"
+                className="absolute inset-0 cursor-pointer opacity-0"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  const preview = URL.createObjectURL(file);
+                  setRows((current) => current.map((item, i) => (i === index ? { ...item, preview } : item)));
+                }}
+              />
+            </label>
+            <input
+              name="optionChoice"
+              value={row.label}
+              onChange={(event) =>
+                setRows((current) => current.map((item, i) => (i === index ? { ...item, label: event.target.value } : item)))
+              }
+              placeholder="White"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-white px-2.5 text-sm"
+            />
+            <button
+              type="button"
+              className="text-xs text-red-700"
+              onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="h-9 rounded-full bg-oxford px-4 text-sm font-heading text-white"
+          onClick={() =>
+            setRows((current) => [...current, { id: `opt-${Date.now()}`, label: "", image: "", preview: "" }])
+          }
+        >
+          Add choice
+        </button>
       </div>
     </div>
   );

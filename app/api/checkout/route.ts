@@ -9,6 +9,7 @@ type CheckoutItem = {
   color: string;
   priceEgp: number;
   image?: string;
+  custom?: boolean;
   viewMockups?: { id?: string; label?: string; url: string }[];
   uploads?: { name?: string; url: string }[];
 };
@@ -40,6 +41,10 @@ export async function POST(request: Request) {
       if (!String(fields[field.key] ?? "").trim()) {
         return NextResponse.json({ error: "Missing checkout fields" }, { status: 400 });
       }
+    }
+    const hasCustom = items.some((item) => item.custom || (item.uploads?.length ?? 0) > 0);
+    if (site.commerce.codBlockCustom !== false && hasCustom && paymentMethod === "cod") {
+      return NextResponse.json({ error: "Custom orders must pay online" }, { status: 400 });
     }
     if (paymentMethod === "online" && (!body.payment?.transferPhone?.trim() || !body.payment?.receiptUrl)) {
       return NextResponse.json({ error: "Missing transfer details" }, { status: 400 });

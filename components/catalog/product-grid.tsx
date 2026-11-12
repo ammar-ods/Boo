@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/catalog/product-card";
-import { normalizeCategoryId, type Product, type ProductCategory } from "@/lib/products";
+import { normalizeCategoryId, sellingPrice, type Product, type ProductCategory } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +49,7 @@ export function ProductGrid({
       next = [...next].sort((a, b) => a.name.localeCompare(b.name));
     }
     if (sort === "price-asc") {
-      next = [...next].sort((a, b) => (a.priceEgp || 0) - (b.priceEgp || 0));
+      next = [...next].sort((a, b) => sellingPrice(a) - sellingPrice(b));
     }
     return next;
   }, [collection, inStock, mapped, products, query, sort]);

@@ -21,6 +21,7 @@ export type CartItem = {
   quantity: number;
   priceEgp: number;
   kind: "product" | "bundle";
+  custom?: boolean;
   mockup?: string;
   viewMockups?: CartDesignFile[];
   uploads?: CartDesignFile[];
@@ -81,6 +82,10 @@ export function cartCount(items: CartItem[]) {
 
 export function cartTotal(items: CartItem[]) {
   return items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
+}
+
+export function cartHasCustom(items: CartItem[]) {
+  return items.some((item) => item.custom || (item.uploads?.length ?? 0) > 0);
 }
 
 export function useCartHydrated() {

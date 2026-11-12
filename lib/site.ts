@@ -145,6 +145,7 @@ export type Commerce = {
   contactEmail: string;
   contactFields: ShopFormField[];
   checkoutFields: ShopFormField[];
+  codBlockCustom?: boolean;
 };
 
 export type CmsPage = {
@@ -412,6 +413,7 @@ export const DEFAULT_COMMERCE: Commerce = {
   contactEmail: "",
   contactFields: DEFAULT_CONTACT_FIELDS,
   checkoutFields: DEFAULT_CHECKOUT_FIELDS,
+  codBlockCustom: true,
 };
 
 export function newSection(type: SectionType): SiteSection {
@@ -807,6 +809,7 @@ function migrateCommerce(raw: Partial<Commerce> | undefined): Commerce {
     contactEmail: typeof src.contactEmail === "string" ? src.contactEmail.trim() : "",
     contactFields: migrateFormFields(src.contactFields, DEFAULT_CONTACT_FIELDS),
     checkoutFields: migrateFormFields(src.checkoutFields, DEFAULT_CHECKOUT_FIELDS),
+    codBlockCustom: src.codBlockCustom !== false,
   };
 }
 

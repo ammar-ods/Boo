@@ -13,7 +13,9 @@ import {
   productThumbnail,
   localizedName,
   localizedDescription,
+  optionPreview,
   productOptions,
+  sellingPrice,
   type Product,
 } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
@@ -22,12 +24,13 @@ import { useI18n } from "@/lib/i18n";
 import { FabricCanvas, type CanvasHandle } from "@/components/customizer/fabric-canvas";
 import { ControlsPanel } from "@/components/customizer/controls-panel";
 import { CheckoutForm } from "@/components/shop/checkout-form";
+import { PriceTag } from "@/components/catalog/price-tag";
 import { storeOrderAsset } from "@/lib/order-assets";
 import { allRememberedFiles, clearRememberedFiles, rememberFile, uploadRegistry } from "@/lib/upload-registry";
 
 export function ProductWorkspace({ product }: { product: Product }) {
   const router = useRouter();
-  const { locale, t, formatPrice } = useI18n();
+  const { locale, t } = useI18n();
   const hydrateProduct = useCustomizerStore((s) => s.hydrateProduct);
   const material = useCustomizerStore((s) => s.material);
   const setMaterial = useCustomizerStore((s) => s.setMaterial);
@@ -44,10 +47,17 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const [cartBusy, setCartBusy] = useState(false);
   const [step, setStep] = useState<"product" | "checkout">("product");
   const detailsRef = useRef<HTMLDivElement>(null);
-  const views = productViews(product);
-  const gallery = productGallery(product);
   const options = productOptions(product);
   const colors = options.choices;
+  const choiceImage = optionPreview(product, material || colors[0]);
+  const views = productViews(product).map((view) =>
+    choiceImage ? { ...view, mockup: choiceImage } : view,
+  );
+  const gallery = (() => {
+    const photos = productGallery(product);
+    if (choiceImage) return [choiceImage, ...photos.filter((src) => src !== choiceImage)];
+    return photos;
+  })();
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
   const customizable = product.customizable !== false;
   const multiView = customizable && views.length > 1;
@@ -113,7 +123,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
     if (customizable) flashStatus(t("addingToCart"), true);
     try {
       if (!customizable) {
-        const images = gallery.length ? gallery : [productThumbnail(product)].filter(Boolean);
+        const images = gallery.length ? gallery : [choiceImage || productThumbnail(product)].filter(Boolean);
         addItem({
           slug: product.slug,
           name: product.name,
@@ -121,8 +131,9 @@ export function ProductWorkspace({ product }: { product: Product }) {
           image: images[0] || product.mockup,
           color: material || colors[0],
           quantity,
-          priceEgp: product.priceEgp || 100,
+          priceEgp: sellingPrice(product) || 100,
           kind: "product",
+          custom: false,
           viewMockups: images.map((url, index) => ({
             id: `gallery-${index}`,
             label: `${index + 1}`,
@@ -170,11 +181,12 @@ export function ProductWorkspace({ product }: { product: Product }) {
         slug: product.slug,
         name: product.name,
         nameAr: product.nameAr,
-        image: viewMockups[0]?.url || product.mockup,
+        image: viewMockups[0]?.url || choiceImage || product.mockup,
         color: material || colors[0],
         quantity,
-        priceEgp: product.priceEgp || 100,
+        priceEgp: sellingPrice(product) || 100,
         kind: "product",
+        custom: true,
         viewMockups,
         uploads,
       });
@@ -202,7 +214,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
       >
         <p className="text-xs font-medium text-oxford/60">{product.category}</p>
         <h1 className="mt-1 font-heading text-3xl leading-tight text-oxford sm:text-4xl">{localizedName(product, locale)}</h1>
-        <p className="mt-2 text-xl font-semibold text-oxford sm:text-2xl">{formatPrice(product.priceEgp || 100)}</p>
+        <PriceTag product={product} size="lg" className="mt-2" />
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">{localizedDescription(product, locale)}</p>
       </div>
       <div className="order-2 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
@@ -309,7 +321,11 @@ export function ProductWorkspace({ product }: { product: Product }) {
           })}
         </div>
         ) : (
-          <ProductPhotoGallery images={gallery.length ? gallery : [productThumbnail(product)].filter(Boolean)} name={localizedName(product, locale)} />
+          <ProductPhotoGallery
+            key={material || colors[0]}
+            images={gallery.length ? gallery : [choiceImage || productThumbnail(product)].filter(Boolean)}
+            name={localizedName(product, locale)}
+          />
         )}
       </div>
 
@@ -328,18 +344,26 @@ export function ProductWorkspace({ product }: { product: Product }) {
             <div>
               <p className="mb-2 text-sm font-medium">{locale === "ar" ? options.label.ar : options.label.en}</p>
               <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setMaterial(color)}
-                    className={`rounded-full border-2 px-4 py-2 text-sm ${
-                      (material || colors[0]) === color ? "border-oxford bg-oxford text-white" : "border-oxford/15 bg-white"
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
+                {colors.map((color) => {
+                  const photo = optionPreview(product, color);
+                  const active = (material || colors[0]) === color;
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setMaterial(color)}
+                      className={`inline-flex items-center gap-2 rounded-full border-2 py-1.5 ps-1.5 pe-4 text-sm ${
+                        active ? "border-oxford bg-oxford text-white" : "border-oxford/15 bg-white"
+                      }`}
+                    >
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photo} alt="" className="size-8 rounded-full object-cover" />
+                      ) : null}
+                      {color}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -366,7 +390,9 @@ export function ProductWorkspace({ product }: { product: Product }) {
             <div className="mt-6 border-t border-border pt-5">
               <h2 className="font-heading text-xl">{t("details")}</h2>
               <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-muted-foreground">
-                <li>{formatPrice(100)}</li>
+                <li>
+                  <PriceTag product={product} size="sm" />
+                </li>
                 <li>{colors.join(" · ")}</li>
                 <li>{product.category}</li>
               </ul>

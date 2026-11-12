@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { localizedName, localizedTagline, normalizeCategoryId, productOptions, productThumbnail, type Product } from "@/lib/products";
+import { localizedName, localizedTagline, normalizeCategoryId, productOptions, productThumbnail, sellingPrice, type Product } from "@/lib/products";
+import { PriceTag } from "@/components/catalog/price-tag";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
@@ -20,7 +21,7 @@ export function ProductCard({
   layout?: "grid" | "list";
 }) {
   const router = useRouter();
-  const { locale, formatPrice, t } = useI18n();
+  const { locale, t } = useI18n();
   const { site } = useEdit();
   const categoryId = normalizeCategoryId(product.category);
   const categoryLabel =
@@ -52,7 +53,7 @@ export function ProductCard({
       image,
       color: productOptions(product).choices[0] || product.defaultMaterial || "",
       quantity: 1,
-      priceEgp: product.priceEgp || 100,
+      priceEgp: sellingPrice(product) || 100,
       kind: "product",
     });
     flashStatus(t("addedSuccess"));
@@ -72,7 +73,7 @@ export function ProductCard({
           <p className="text-[11px] tracking-[0.16em] text-oxford/60">{(categoryLabel || product.category).toUpperCase()}</p>
           <h3 className="font-heading text-lg text-oxford sm:text-xl">{name}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{tagline}</p>
-          <p className="mt-2 text-sm font-semibold text-oxford">{formatPrice(product.priceEgp || 100)}</p>
+          <PriceTag product={product} size="sm" className="mt-2" />
         </div>
       </Link>
     );
@@ -108,7 +109,7 @@ export function ProductCard({
       <Link href={`/product/${product.slug}`} onClick={pulse} className="block space-y-0.5 px-0.5 pt-2 sm:space-y-1 sm:px-1 sm:pt-3">
         <h3 className="font-heading text-[13px] leading-snug text-oxford sm:text-lg">{name}</h3>
         <p className="line-clamp-2 text-[11px] text-muted-foreground sm:text-sm">{tagline}</p>
-        <p className="text-xs font-semibold text-oxford sm:text-sm">{formatPrice(product.priceEgp || 100)}</p>
+        <PriceTag product={product} size="sm" />
       </Link>
     </article>
   );

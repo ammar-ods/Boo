@@ -30,14 +30,48 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   const slug = slugify(String(formData.get("slug") || name));
   if (!name || !slug) throw new Error("Name is required");
 
-  const materials = String(formData.get("optionChoices") || formData.get("materials") || "")
+  const rawChoices = formData.getAll("optionChoice").map((item) => String(item));
+  const fallbackChoices = String(formData.get("optionChoices") || formData.get("materials") || "")
     .split(/[\n,]/)
     .map((item) => item.trim())
     .filter(Boolean);
+  const optionImageFiles = formData.getAll("optionImage");
+  const optionImageExisting = formData.getAll("optionImageExisting").map(String);
+  const optionImages: Record<string, string> = {};
+  const choices: string[] = [];
+  if (rawChoices.length) {
+    for (const [index, raw] of rawChoices.entries()) {
+      const label = raw.trim();
+      if (!label) continue;
+      choices.push(label);
+      const file = optionImageFiles[index];
+      if (file instanceof File && file.size > 0) {
+        optionImages[label] = await uploadViewFile(slug, file);
+      } else if (optionImageExisting[index]) {
+        optionImages[label] = optionImageExisting[index];
+      } else if (existing?.optionImages?.[label]) {
+        optionImages[label] = existing.optionImages[label];
+      }
+    }
+  } else {
+    choices.push(...fallbackChoices);
+    Object.assign(optionImages, existing?.optionImages ?? {});
+  }
   const optionLabel = {
     ar: String(formData.get("optionLabelAr") || "").trim() || "الخيار",
     en: String(formData.get("optionLabelEn") || "").trim() || "Option",
   };
+  const priceEgp = Math.max(0, Number(formData.get("priceEgp") || existing?.priceEgp || 100));
+  const discounted = formData.get("discounted") === "on";
+  let saleEgp = Math.max(0, Number(formData.get("saleEgp") || 0));
+  let discountPercent = Math.min(99, Math.max(0, Number(formData.get("discountPercent") || 0)));
+  if (discounted) {
+    if (saleEgp > 0 && saleEgp < priceEgp) {
+      discountPercent = Math.round((1 - saleEgp / priceEgp) * 100);
+    } else if (discountPercent > 0) {
+      saleEgp = Math.round(priceEgp * (1 - discountPercent / 100));
+    }
+  }
   const category = normalizeCategoryId(String(formData.get("category") || ""));
   const wrapPreview = formData.get("wrapPreview") === "on";
   const file = formData.get("mockup");
@@ -138,12 +172,16 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     description: String(formData.get("description") || ""),
     descriptionAr: String(formData.get("descriptionAr") || existing?.descriptionAr || ""),
     is_laser_cut: formData.get("is_laser_cut") === "on",
-    materials: materials.length ? materials : ["Standard"],
-    colors: materials.length ? materials : existing?.colors ?? ["White"],
+    materials: choices.length ? choices : ["Standard"],
+    colors: choices.length ? choices : existing?.colors ?? ["White"],
     optionLabel,
-    optionChoices: materials.length ? materials : ["Standard"],
-    defaultMaterial: materials[0] || "Standard",
-    priceEgp: Number(formData.get("priceEgp") || existing?.priceEgp || 100),
+    optionChoices: choices.length ? choices : ["Standard"],
+    optionImages,
+    defaultMaterial: choices[0] || "Standard",
+    priceEgp,
+    discounted,
+    saleEgp: discounted && saleEgp > 0 ? saleEgp : undefined,
+    discountPercent: discounted && discountPercent > 0 ? discountPercent : undefined,
     customizable: formData.get("customizable") === "on",
     canvasWidth: 800,
     canvasHeight: 800,
