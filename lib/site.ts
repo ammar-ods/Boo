@@ -30,6 +30,7 @@ export type SectionStyle = {
   secondaryCtaBackground?: string;
   secondaryCtaColor?: string;
   imageRounded?: boolean;
+  cardRounded?: boolean;
   intervalMs?: number;
   aspect?: string;
   blockWidth?: number;

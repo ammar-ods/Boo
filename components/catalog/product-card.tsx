@@ -25,10 +25,16 @@ import { flashStatus } from "@/components/status-flash";
 export function ProductCard({
   product,
   layout = "grid",
+  cardRounded = false,
+  thumbRounded = false,
 }: {
   product: Product;
   layout?: "grid" | "list";
+  cardRounded?: boolean;
+  thumbRounded?: boolean;
 }) {
+  const cardRadius = cardRounded ? "rounded-xl" : "rounded-none";
+  const thumbRadius = thumbRounded ? "rounded-lg" : "rounded-none";
   const router = useRouter();
   const { locale, t } = useI18n();
   const { site } = useEdit();
@@ -75,11 +81,11 @@ export function ProductCard({
       <Link
         href={`/product/${product.slug}`}
         onClick={pulse}
-        className={`flex gap-4 rounded-xl bg-white p-4 shadow-sm transition duration-300 hover:shadow-xl ${
+        className={`flex gap-4 bg-white p-4 shadow-sm transition duration-300 hover:shadow-xl ${cardRadius} ${
           pressed ? "scale-[0.97]" : ""
         }`}
       >
-        <div className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-chip sm:size-28">
+        <div className={`relative size-24 shrink-0 overflow-hidden bg-chip sm:size-28 ${thumbRadius}`}>
           <Image src={image} alt={name} fill className="object-cover" />
         </div>
         <div className="min-w-0 py-1">
@@ -96,11 +102,11 @@ export function ProductCard({
 
   return (
     <article
-      className={`group flex flex-col rounded-xl bg-white p-3 shadow-sm transition duration-300 hover:shadow-xl sm:p-4 ${
+      className={`group flex flex-col bg-white p-3 shadow-sm transition duration-300 hover:shadow-xl sm:p-4 ${cardRadius} ${
         pressed ? "scale-[0.97]" : ""
       }`}
     >
-      <div className="relative mb-4 overflow-hidden rounded-lg bg-chip">
+      <div className={`relative mb-4 overflow-hidden bg-chip ${thumbRadius}`}>
         <Link href={`/product/${product.slug}`} onClick={pulse} className="block">
           <div className="relative aspect-[4/5] overflow-hidden">
             <Image

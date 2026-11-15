@@ -21,22 +21,25 @@ export function PageProducts({
   const { locale } = useI18n();
   const [pick, setPick] = useState("");
   const slugs = section.content.productSlugs ?? [];
+  const isHome = !pageKey || pageKey === "home";
   const isCategoryPage = Boolean(pageKey && pageKey !== "home" && site.chrome.catalogSections?.some((item) => item.id === pageKey));
+  const fallbackAll = isHome || isCategoryPage;
   const selected = useMemo(() => {
-    return slugs.length
-      ? (slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[])
-      : isCategoryPage
-        ? products.filter((product) => !product.archived)
-        : [];
-  }, [isCategoryPage, products, slugs]);
-  const available = products.filter((product) => !product.archived && !slugs.includes(product.slug));
+    if (slugs.length) {
+      return slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[];
+    }
+    return fallbackAll ? products.filter((product) => !product.archived) : [];
+  }, [fallbackAll, products, slugs]);
+  const selectedSlugs = selected.map((product) => product.slug);
+  const available = products.filter((product) => !product.archived && !selectedSlugs.includes(product.slug));
+  const cardRounded = Boolean(section.style.cardRounded);
+  const thumbRounded = Boolean(section.style.imageRounded);
 
   function setSlugs(productSlugs: string[]) {
     patchSection(section.id, { content: { productSlugs } });
   }
 
-  return (
-    <ShopRail activeId={isCategoryPage ? pageKey || undefined : section.content.collection}>
+  const body = (
       <div className="space-y-5">
         {editing ? (
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-8">
@@ -50,13 +53,13 @@ export function PageProducts({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    setSlugs(slugs.filter((slug) => slug !== product.slug));
+                    setSlugs(selectedSlugs.filter((slug) => slug !== product.slug));
                   }}
                 >
                   <Trash2 className="size-3.5" />
                 </button>
               ) : null}
-              <ProductCard product={product} />
+              <ProductCard product={product} cardRounded={cardRounded} thumbRounded={thumbRounded} />
             </div>
           ))}
           {!isCategoryPage ? (
@@ -80,7 +83,7 @@ export function PageProducts({
                 disabled={!pick}
                 onClick={() => {
                   if (!pick) return;
-                  setSlugs([...slugs, pick]);
+                  setSlugs([...selectedSlugs, pick]);
                   setPick("");
                 }}
               >
@@ -96,11 +99,18 @@ export function PageProducts({
         ) : selected.length === 0 ? (
           <p className="text-sm text-oxford/50">No products on this page yet.</p>
         ) : (
-          <ProductGrid products={selected} />
+          <ProductGrid
+            products={selected}
+            compact={isHome}
+            cardRounded={cardRounded}
+            thumbRounded={thumbRounded}
+          />
         )}
       </div>
-    </ShopRail>
   );
+
+  if (isHome) return <div className="cms-copy">{body}</div>;
+  return <ShopRail activeId={isCategoryPage ? pageKey || undefined : section.content.collection}>{body}</ShopRail>;
 }
 
 export function ProductShelfEditor({
@@ -113,8 +123,10 @@ export function ProductShelfEditor({
   patch: ReturnType<typeof useEdit>["patchSection"];
 }) {
   const { locale } = useI18n();
-  const slugs = section.content.productSlugs ?? [];
-  const available = products.filter((product) => !product.archived && !slugs.includes(product.slug));
+  const stored = section.content.productSlugs ?? [];
+  const live = products.filter((product) => !product.archived);
+  const slugs = stored.length ? stored : live.map((product) => product.slug);
+  const available = live.filter((product) => !slugs.includes(product.slug));
 
   function setSlugs(productSlugs: string[]) {
     patch(section.id, { content: { productSlugs } });
@@ -123,13 +135,32 @@ export function ProductShelfEditor({
   return (
     <div className="space-y-3">
       <p className="text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">Product cards</p>
+      <label className="flex h-10 items-center justify-between gap-3 border-b border-oxford/6 text-sm">
+        <span>Card rounded corners</span>
+        <input
+          type="checkbox"
+          className="size-4 accent-oxford"
+          checked={Boolean(section.style.cardRounded)}
+          onChange={(event) => patch(section.id, { style: { cardRounded: event.target.checked } })}
+        />
+      </label>
+      <label className="flex h-10 items-center justify-between gap-3 border-b border-oxford/6 text-sm">
+        <span>Thumbnail rounded corners</span>
+        <input
+          type="checkbox"
+          className="size-4 accent-oxford"
+          checked={Boolean(section.style.imageRounded)}
+          onChange={(event) => patch(section.id, { style: { imageRounded: event.target.checked } })}
+        />
+      </label>
+      {slugs.length === 0 ? <p className="text-xs text-oxford/50">No products in this section yet.</p> : null}
       {slugs.map((slug, index) => {
         const product = products.find((item) => item.slug === slug);
         if (!product) return null;
         return (
           <div key={slug} className="flex items-center gap-2 rounded-xl bg-cream/80 p-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={productThumbnail(product)} alt="" className="size-12 rounded-lg object-cover" />
+            <img src={productThumbnail(product)} alt="" className="size-12 object-cover" />
             <p className="min-w-0 flex-1 truncate text-sm text-oxford">{localizedName(product, locale)}</p>
             <button
               type="button"

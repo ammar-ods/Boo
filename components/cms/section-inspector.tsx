@@ -256,6 +256,20 @@ function LayoutTab({
           checked={Boolean(section.style.rounded)}
           onChange={(rounded) => patch(section.id, { style: { rounded } })}
         />
+        {section.type === "products" ? (
+          <>
+            <SwitchRow
+              label="Card rounded corners"
+              checked={Boolean(section.style.cardRounded)}
+              onChange={(cardRounded) => patch(section.id, { style: { cardRounded } })}
+            />
+            <SwitchRow
+              label="Thumbnail rounded corners"
+              checked={Boolean(section.style.imageRounded)}
+              onChange={(imageRounded) => patch(section.id, { style: { imageRounded } })}
+            />
+          </>
+        ) : null}
         <SwitchRow
           label="Show primary button"
           checked={section.style.showPrimaryCta !== false}

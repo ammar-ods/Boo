@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
-import { ProductGrid } from "@/components/catalog/product-grid";
 import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { AutoScroller } from "@/components/cms/auto-scroller";
 import { BannerSlideshow } from "@/components/cms/banner-slideshow";
@@ -459,23 +458,14 @@ function SectionView({
             {text("body", "mt-2 text-muted-foreground")}
           </div>
           <div className="mt-6 sm:mt-8">
-            {pageKey && pageKey !== "home" ? (
-              <PageProducts
-                section={{
-                  ...section,
-                  content: { ...section.content, productSlugs: section.content.productSlugs ?? [] },
-                }}
-                products={
-                  site.chrome.catalogSections?.some((item) => item.id === pageKey)
-                    ? products.filter((product) => normalizeCategoryId(product.category) === pageKey)
-                    : products
-                }
-              />
-            ) : (
-              <div className="cms-copy">
-                <ProductGrid products={products} compact />
-              </div>
-            )}
+            <PageProducts
+              section={section}
+              products={
+                pageKey && pageKey !== "home" && site.chrome.catalogSections?.some((item) => item.id === pageKey)
+                  ? products.filter((product) => normalizeCategoryId(product.category) === pageKey)
+                  : products
+              }
+            />
           </div>
         </div>
       </SectionShell>

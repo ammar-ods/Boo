@@ -20,12 +20,16 @@ export function ProductGrid({
   collection,
   query,
   compact = false,
+  cardRounded = false,
+  thumbRounded = false,
 }: {
   products: Product[];
   initialCategory?: ProductCategory;
   collection?: string;
   query?: string;
   compact?: boolean;
+  cardRounded?: boolean;
+  thumbRounded?: boolean;
 }) {
   const [inStock, setInStock] = useState(false);
   const { t, locale } = useI18n();
@@ -80,7 +84,13 @@ export function ProductGrid({
       }
     >
       {visible.map((product) => (
-        <ProductCard key={product.slug} product={product} layout={layout} />
+        <ProductCard
+          key={product.slug}
+          product={product}
+          layout={layout}
+          cardRounded={cardRounded}
+          thumbRounded={thumbRounded}
+        />
       ))}
     </div>
   );
