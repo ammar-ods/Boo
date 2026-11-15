@@ -49,7 +49,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40">
       {site.chrome.showAnnouncement ? (
         <div className="bg-oxford text-[11px] tracking-[0.12em] text-white/85">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-2 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-2 sm:px-8 lg:px-12">
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
@@ -61,7 +61,7 @@ export function SiteHeader() {
         </div>
       ) : (
         <div className="bg-oxford text-[11px] text-white/85">
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2 sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-2 sm:px-8 lg:px-12">
             <ThemeToggle />
             <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
               {locale === "ar" ? "EN" : "عربي"}
@@ -70,8 +70,8 @@ export function SiteHeader() {
         </div>
       )}
       {site.chrome.showHeader ? (
-        <div className="relative border-b border-oxford/8 bg-cream">
-          <div className={`mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:gap-4 sm:px-8 sm:py-5 ${isAdmin ? "md:pe-44" : ""}`}>
+        <div className="relative border-b border-oxford/8 bg-card/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl">
+          <div className={`mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:gap-6 sm:px-8 sm:py-5 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
             <Link href="/" className="shrink-0">
               <BooLogo src={site.chrome.logo} />
             </Link>
@@ -116,7 +116,7 @@ export function SiteHeader() {
               }`}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="relative z-20 max-h-[min(70dvh,calc(100dvh-8rem))] overflow-y-auto overscroll-contain border-t border-oxford/8 bg-cream px-5 py-2 sm:px-8">
+                <div className="relative z-20 max-h-[min(70dvh,calc(100dvh-8rem))] overflow-y-auto overscroll-contain border-t border-oxford/8 bg-white px-5 py-2 sm:px-8">
                   <NavMenu links={links} locale={locale} variant="mobile" onNavigate={() => setMenuOpen(false)} />
                 </div>
               </div>
@@ -124,7 +124,7 @@ export function SiteHeader() {
           ) : null}
         </div>
       ) : (
-        <div className="relative h-14 bg-cream">
+        <div className="relative h-14 bg-card/90 backdrop-blur-xl">
           <StudioNavButtons />
         </div>
       )}

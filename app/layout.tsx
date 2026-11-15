@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cairo, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Cairo, Geist_Mono, Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -15,6 +15,11 @@ import { EditProvider } from "@/lib/edit-context";
 import { getSite } from "@/lib/local-db";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
 import "./globals.css";
+
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+});
 
 const cairo = Cairo({
   variable: "--font-inter",
@@ -55,7 +60,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${cairo.variable} ${playfair.variable} ${geistMono.variable} flex min-h-full flex-col font-sans`}>
+      <body className={`${jakarta.variable} ${cairo.variable} ${playfair.variable} ${geistMono.variable} flex min-h-full flex-col font-sans`}>
         <AppTheme>
           <I18nProvider>
             <EditProvider initial={site} isAdmin={isAdmin}>

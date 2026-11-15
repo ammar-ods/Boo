@@ -18,14 +18,14 @@ export default async function CatalogPage({
 
   if (showSections) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
+      <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 lg:px-12">
         <CatalogSections />
       </div>
     );
   }
 
   return (
-    <div className="py-12">
+    <div className="py-16">
       <ShopRail activeId={collection || (q ? undefined : "all")}>
         <CatalogIntro query={q} collection={collection} />
         <div className="mt-8">

@@ -65,17 +65,13 @@ export function useShopNavItems(): ShopNavItem[] {
 
 export function ShopRail({
   children,
-  activeId,
 }: {
   children: ReactNode;
   activeId?: string;
 }) {
-  const { site } = useEdit();
-  const show = site.chrome.showDiscipline !== false;
   return (
-    <div className="mx-auto flex w-full max-w-[86rem] items-start justify-center px-5 sm:px-8">
-      {show ? <ShopSidebar activeId={activeId} /> : null}
-      <div className="w-full min-w-0 max-w-6xl">{children}</div>
+    <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12">
+      <div className="w-full min-w-0">{children}</div>
     </div>
   );
 }

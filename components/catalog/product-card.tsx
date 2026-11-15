@@ -5,7 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { localizedName, localizedTagline, normalizeCategoryId, productOptions, productThumbnail, sellingPrice, type Product } from "@/lib/products";
+import {
+  localizedName,
+  localizedTagline,
+  normalizeCategoryId,
+  optionSwatch,
+  productOptions,
+  productThumbnail,
+  sellingPrice,
+  type Product,
+} from "@/lib/products";
 import { PriceTag } from "@/components/catalog/price-tag";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
@@ -32,6 +41,8 @@ export function ProductCard({
   const tagline = localizedTagline(product, locale);
   const image = productThumbnail(product);
   const customizable = product.customizable !== false;
+  const options = productOptions(product);
+  const swatches = options.choices.slice(0, 4);
 
   function pulse() {
     setPressed(true);
@@ -51,7 +62,7 @@ export function ProductCard({
       name: product.name,
       nameAr: product.nameAr,
       image,
-      color: productOptions(product).choices[0] || product.defaultMaterial || "",
+      color: options.choices[0] || product.defaultMaterial || "",
       quantity: 1,
       priceEgp: sellingPrice(product) || 100,
       kind: "product",
@@ -64,13 +75,17 @@ export function ProductCard({
       <Link
         href={`/product/${product.slug}`}
         onClick={pulse}
-        className={`surface-card flex gap-4 p-3 transition duration-200 ${pressed ? "scale-[0.97]" : "hover:-translate-y-0.5"}`}
+        className={`flex gap-4 rounded-xl bg-white p-4 shadow-sm transition duration-300 hover:shadow-xl ${
+          pressed ? "scale-[0.97]" : ""
+        }`}
       >
-        <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-chip sm:size-28">
+        <div className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-chip sm:size-28">
           <Image src={image} alt={name} fill className="object-cover" />
         </div>
         <div className="min-w-0 py-1">
-          <p className="text-[11px] tracking-[0.16em] text-oxford/60">{(categoryLabel || product.category).toUpperCase()}</p>
+          <p className="text-[10px] font-bold tracking-[0.16em] text-oxford/45 uppercase">
+            {categoryLabel || product.category}
+          </p>
           <h3 className="font-heading text-lg text-oxford sm:text-xl">{name}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{tagline}</p>
           <PriceTag product={product} size="sm" className="mt-2" />
@@ -80,36 +95,57 @@ export function ProductCard({
   }
 
   return (
-    <article className={`transition duration-200 ${pressed ? "scale-[0.96]" : ""}`}>
-      <div className="relative">
-        <Link href={`/product/${product.slug}`} onClick={pulse} className="group block">
-          <div className="overflow-hidden rounded-[1.15rem] bg-card shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)] transition duration-500 group-hover:-translate-y-1 sm:rounded-[28px]">
-            <div className="relative aspect-[3/4] overflow-hidden bg-chip sm:aspect-[4/5]">
-              <Image
-                src={image}
-                alt={name}
-                fill
-                className="object-cover transition duration-500 group-hover:scale-105"
-              />
-              <span className="absolute start-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-semibold text-oxford sm:start-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                {categoryLabel || product.category}
-              </span>
-            </div>
+    <article
+      className={`group flex flex-col rounded-xl bg-white p-3 shadow-sm transition duration-300 hover:shadow-xl sm:p-4 ${
+        pressed ? "scale-[0.97]" : ""
+      }`}
+    >
+      <div className="relative mb-4 overflow-hidden rounded-lg bg-chip">
+        <Link href={`/product/${product.slug}`} onClick={pulse} className="block">
+          <div className="relative aspect-[4/5] overflow-hidden">
+            <Image
+              src={image}
+              alt={name}
+              fill
+              className="object-cover transition duration-500 group-hover:scale-105"
+            />
+            <span className="absolute start-3 top-3 rounded bg-white/92 px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-oxford uppercase shadow-sm">
+              {categoryLabel || product.category}
+            </span>
           </div>
         </Link>
         <button
           type="button"
-          className="icon-circle absolute bottom-2 end-2 z-10 size-9 sm:bottom-3 sm:end-3 sm:size-11"
+          className="icon-circle absolute bottom-3 end-3 z-10 size-10 opacity-100 shadow-md transition duration-300 sm:opacity-0 sm:group-hover:opacity-100"
           aria-label={customizable ? t("customize") : t("addToCart")}
           onClick={onPlus}
         >
           <Plus className="size-4 sm:size-5" />
         </button>
       </div>
-      <Link href={`/product/${product.slug}`} onClick={pulse} className="block space-y-0.5 px-0.5 pt-2 sm:space-y-1 sm:px-1 sm:pt-3">
-        <h3 className="font-heading text-[13px] leading-snug text-oxford sm:text-lg">{name}</h3>
-        <p className="line-clamp-2 text-[11px] text-muted-foreground sm:text-sm">{tagline}</p>
-        <PriceTag product={product} size="sm" />
+      <Link href={`/product/${product.slug}`} onClick={pulse} className="flex flex-1 flex-col justify-between">
+        <div>
+          <p className="mb-1 text-[10px] font-bold tracking-[0.16em] text-oxford/40 uppercase">
+            {categoryLabel || product.category}
+          </p>
+          <h3 className="font-heading text-[15px] leading-snug text-oxford sm:text-lg">{name}</h3>
+          <p className="mt-1 line-clamp-1 text-[13px] text-muted-foreground">{tagline}</p>
+        </div>
+        <div className="mt-4 flex items-end justify-between gap-3 border-t border-oxford/6 pt-3">
+          <PriceTag product={product} size="sm" />
+          {swatches.length > 1 ? (
+            <div className="flex items-center gap-1.5">
+              {swatches.map((choice) => (
+                <span
+                  key={choice}
+                  title={choice}
+                  className="size-3.5 rounded-full shadow-inner ring-1 ring-oxford/10"
+                  style={{ background: optionSwatch(choice) }}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
       </Link>
     </article>
   );

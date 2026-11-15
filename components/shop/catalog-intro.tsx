@@ -23,8 +23,8 @@ export function CatalogIntro({ query, collection }: { query?: string; collection
         <BackChevron />
         {t("catalogTitle")}
       </Link>
-      <h1 className="mt-4 font-heading text-5xl text-oxford">{heading}</h1>
-      <p className="mb-8 mt-2 max-w-2xl text-muted-foreground">{t("catalogBody")}</p>
+      <h1 className="mt-4 font-heading text-4xl tracking-tight text-oxford sm:text-5xl">{heading}</h1>
+      <p className="mb-10 mt-3 max-w-2xl text-muted-foreground">{t("catalogBody")}</p>
     </>
   );
 }

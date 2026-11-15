@@ -141,6 +141,21 @@ export function optionPreview(product: Product, choice?: string) {
   return (key && product.optionImages?.[key]) || "";
 }
 
+const SWATCH_COLORS: Record<string, string> = {
+  white: "#e8e2d6",
+  black: "#2c2c2e",
+  navy: "#0a2540",
+  charcoal: "#4a4b4d",
+  sandstone: "#d4c3a3",
+  chalk: "#e5e0d8",
+};
+
+export function optionSwatch(choice: string) {
+  const raw = choice.trim();
+  if (raw.startsWith("#")) return raw;
+  return SWATCH_COLORS[raw.toLowerCase()] || "#c9d0d8";
+}
+
 export function productOptions(product: Product) {
   const choices = (
     product.optionChoices?.filter(Boolean).length

@@ -28,7 +28,7 @@ export function NavMenu({
   }
 
   return (
-    <nav className="hidden items-center gap-6 text-[15px] font-medium text-oxford md:flex">
+    <nav className="hidden items-center gap-7 text-[13px] font-semibold tracking-[0.08em] text-oxford/70 md:flex">
       {visible.map((link) => (
         <DesktopItem key={link.id} link={link} locale={locale} />
       ))}

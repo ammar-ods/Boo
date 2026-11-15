@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
+import { ProductGrid } from "@/components/catalog/product-grid";
 import { ShopRail } from "@/components/shop/shop-sidebar";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { localizedName, productThumbnail, sellingPrice, type Product } from "@/lib/products";
+import { localizedName, productThumbnail, type Product } from "@/lib/products";
 import type { SiteSection } from "@/lib/site";
 
 export function PageProducts({
@@ -17,21 +18,17 @@ export function PageProducts({
   products: Product[];
 }) {
   const { editing, patchSection, pageKey, site } = useEdit();
-  const { locale, t } = useI18n();
+  const { locale } = useI18n();
   const [pick, setPick] = useState("");
-  const [sort, setSort] = useState<"featured" | "name" | "price-asc">("featured");
   const slugs = section.content.productSlugs ?? [];
   const isCategoryPage = Boolean(pageKey && pageKey !== "home" && site.chrome.catalogSections?.some((item) => item.id === pageKey));
   const selected = useMemo(() => {
-    const list = slugs.length
+    return slugs.length
       ? (slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[])
       : isCategoryPage
         ? products.filter((product) => !product.archived)
         : [];
-    if (sort === "name") return [...list].sort((a, b) => localizedName(a, locale).localeCompare(localizedName(b, locale)));
-    if (sort === "price-asc") return [...list].sort((a, b) => sellingPrice(a) - sellingPrice(b));
-    return list;
-  }, [isCategoryPage, locale, products, slugs, sort]);
+  }, [isCategoryPage, products, slugs]);
   const available = products.filter((product) => !product.archived && !slugs.includes(product.slug));
 
   function setSlugs(productSlugs: string[]) {
@@ -41,23 +38,11 @@ export function PageProducts({
   return (
     <ShopRail activeId={isCategoryPage ? pageKey || undefined : section.content.collection}>
       <div className="space-y-5">
-        {!editing && selected.length > 1 ? (
-          <div className="flex justify-end">
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value as "featured" | "name" | "price-asc")}
-              className="h-9 rounded-full border-2 border-oxford/15 bg-white px-3 text-sm"
-            >
-              <option value="featured">{t("sortFeatured")}</option>
-              <option value="name">{t("sortName")}</option>
-              <option value="price-asc">{t("sortPriceLow")}</option>
-            </select>
-          </div>
-        ) : null}
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+        {editing ? (
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-8">
           {selected.map((product) => (
             <div key={product.slug} className="relative">
-              {editing && !isCategoryPage ? (
+              {!isCategoryPage ? (
                 <button
                   type="button"
                   className="absolute end-2 top-2 z-20 grid size-8 place-items-center rounded-full bg-white text-red-700 shadow ring-1 ring-oxford/10"
@@ -74,8 +59,8 @@ export function PageProducts({
               <ProductCard product={product} />
             </div>
           ))}
-          {editing && !isCategoryPage ? (
-            <div className="flex min-h-[180px] flex-col justify-center rounded-[1.15rem] border-2 border-dashed border-oxford/20 bg-white/40 p-3 sm:min-h-[280px] sm:rounded-[28px] sm:p-4">
+          {!isCategoryPage ? (
+            <div className="flex min-h-[180px] flex-col justify-center rounded-xl border-2 border-dashed border-oxford/20 bg-white/40 p-3 sm:min-h-[280px] sm:p-4">
               <p className="mb-3 text-sm font-medium text-oxford">Add a product card</p>
               <select
                 value={pick}
@@ -108,9 +93,11 @@ export function PageProducts({
             </div>
           ) : null}
         </div>
-        {!editing && selected.length === 0 ? (
+        ) : selected.length === 0 ? (
           <p className="text-sm text-oxford/50">No products on this page yet.</p>
-        ) : null}
+        ) : (
+          <ProductGrid products={selected} />
+        )}
       </div>
     </ShopRail>
   );
