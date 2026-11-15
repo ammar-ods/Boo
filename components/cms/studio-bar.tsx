@@ -8,6 +8,7 @@ import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { FontFields } from "@/components/cms/font-fields";
 import { FOOTER_ICON_OPTIONS } from "@/components/layout/footer-icons";
 import { removeNavCategory } from "@/lib/categories";
 import { cmsPagePath, loc, normalizeNavHref, type CatalogSection, type FooterIcon, type NavLink, type SectionType } from "@/lib/site";
@@ -175,6 +176,15 @@ export function StudioChromePanel() {
                     label={locale === "ar" ? "الفوتر" : "Footer"}
                     checked={site.chrome.showFooter}
                     onChange={(showFooter) => setChrome({ showFooter })}
+                  />
+                  <p className="mb-1 mt-4 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+                    {locale === "ar" ? "الخطوط" : "Fonts"}
+                  </p>
+                  <FontFields
+                    fontEn={site.chrome.fontEn}
+                    fontAr={site.chrome.fontAr}
+                    onEn={(fontEn) => setChrome({ fontEn })}
+                    onAr={(fontAr) => setChrome({ fontAr })}
                   />
                 </div>
                 <div className="rounded-2xl bg-white p-3">

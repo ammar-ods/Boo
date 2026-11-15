@@ -1,8 +1,10 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
-import { Cairo, Geist_Mono, Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFonts } from "@/components/layout/site-fonts";
 import { I18nProvider } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import { AppTheme } from "@/components/app-theme";
@@ -14,23 +16,8 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { EditProvider } from "@/lib/edit-context";
 import { getSite } from "@/lib/local-db";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
+import { fontStack, resolveSiteFont } from "@/lib/fonts";
 import "./globals.css";
-
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-});
-
-const cairo = Cairo({
-  variable: "--font-inter",
-  subsets: ["arabic", "latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -57,13 +44,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     isAdmin = false;
   }
   const site = await getSite();
+  const latin = resolveSiteFont(site.chrome.fontEn, "latin");
+  const arabic = resolveSiteFont(site.chrome.fontAr, "arabic");
+  const initialStack = fontStack(arabic, latin);
 
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${jakarta.variable} ${cairo.variable} ${playfair.variable} ${geistMono.variable} flex min-h-full flex-col font-sans`}>
+    <html
+      lang="ar"
+      dir="rtl"
+      suppressHydrationWarning
+      style={{ "--font-site": initialStack, "--font-site-heading": initialStack } as CSSProperties}
+    >
+      <body className={`${geistMono.variable} flex min-h-full flex-col font-sans`}>
         <AppTheme>
           <I18nProvider>
             <EditProvider initial={site} isAdmin={isAdmin}>
+              <SiteFonts />
               <SiteHeader />
               <main className="flex flex-1 flex-col pb-16 md:pb-0">{children}</main>
               <SiteFooter />

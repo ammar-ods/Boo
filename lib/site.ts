@@ -120,6 +120,8 @@ export type SiteChrome = {
   contactWaShape: "pill" | "rounded" | "square";
   contactWaSize: "sm" | "md" | "lg";
   contactWaIcon: string;
+  fontEn: string;
+  fontAr: string;
 };
 
 export type PromoPopup = {
@@ -395,6 +397,8 @@ export const DEFAULT_CHROME: SiteChrome = {
   contactWaShape: "pill",
   contactWaSize: "lg",
   contactWaIcon: "whatsapp",
+  fontEn: "jakarta",
+  fontAr: "ibm-plex-arabic",
 };
 
 export const DEFAULT_PROMO: PromoPopup = {
@@ -741,6 +745,8 @@ export function migrateSite(raw: unknown): SiteDocument {
         typeof chrome.contactWaIcon === "string" && chrome.contactWaIcon.trim()
           ? chrome.contactWaIcon.trim()
           : DEFAULT_CHROME.contactWaIcon,
+      fontEn: typeof chrome.fontEn === "string" && chrome.fontEn.trim() ? chrome.fontEn.trim() : DEFAULT_CHROME.fontEn,
+      fontAr: typeof chrome.fontAr === "string" && chrome.fontAr.trim() ? chrome.fontAr.trim() : DEFAULT_CHROME.fontAr,
     },
     promo: {
       live: Boolean(promo.live),

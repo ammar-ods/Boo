@@ -109,6 +109,8 @@ export async function saveShopSettings(formData: FormData) {
       whatsappPhone: String(formData.get("whatsappPhone") ?? "").trim(),
       payPhone: String(formData.get("payPhone") ?? "").trim() || site.chrome.payPhone,
       showDiscipline: formData.get("showDiscipline") === "on",
+      fontEn: String(formData.get("fontEn") ?? site.chrome.fontEn).trim() || site.chrome.fontEn,
+      fontAr: String(formData.get("fontAr") ?? site.chrome.fontAr).trim() || site.chrome.fontAr,
     },
     commerce: {
       shippingPrice: Math.max(0, Number(formData.get("shippingPrice") || 0)),

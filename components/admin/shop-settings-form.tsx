@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { saveShopSettings } from "@/actions/admin";
 import { flashStatus } from "@/components/status-flash";
+import { FontFields } from "@/components/cms/font-fields";
 import type { Commerce, ShopFormField } from "@/lib/site";
 
 function Submit({ label }: { label: string }) {
@@ -22,15 +23,21 @@ export function ShopSettingsForm({
   whatsappPhone,
   payPhone,
   showDiscipline,
+  fontEn,
+  fontAr,
 }: {
   commerce: Commerce;
   whatsappPhone: string;
   payPhone: string;
   showDiscipline: boolean;
+  fontEn: string;
+  fontAr: string;
 }) {
   const router = useRouter();
   const [contactFields, setContactFields] = useState(commerce.contactFields);
   const [checkoutFields, setCheckoutFields] = useState(commerce.checkoutFields);
+  const [englishFont, setEnglishFont] = useState(fontEn);
+  const [arabicFont, setArabicFont] = useState(fontAr);
 
   return (
     <form
@@ -47,6 +54,13 @@ export function ShopSettingsForm({
       }}
       className="mt-8 space-y-8"
     >
+      <section className="space-y-4 rounded-[1.6rem] bg-white p-6 ring-1 ring-oxford/8">
+        <h2 className="font-heading text-2xl text-oxford">Typography</h2>
+        <p className="text-sm text-muted-foreground">
+          These fonts apply to the whole storefront. Arabic text uses the Arabic font; English uses the Latin font.
+        </p>
+        <FontFields fontEn={englishFont} fontAr={arabicFont} onEn={setEnglishFont} onAr={setArabicFont} />
+      </section>
       <section className="space-y-4 rounded-[1.6rem] bg-white p-6 ring-1 ring-oxford/8">
         <h2 className="font-heading text-2xl text-oxford">Shop</h2>
         <label className="flex h-12 items-center justify-between gap-3 rounded-2xl bg-cream px-4 text-sm">
