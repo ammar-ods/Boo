@@ -18,7 +18,7 @@ export function StudioNavButtons() {
   if (!isAdmin || pathname.startsWith("/admin")) return null;
 
   return (
-    <div className="pointer-events-none relative z-[70] flex justify-end px-3 py-2 md:absolute md:end-2 md:top-1/2 md:-translate-y-1/2 md:px-0 md:py-0">
+    <div className="pointer-events-none relative z-10 flex justify-end px-3 py-2 md:absolute md:end-2 md:top-1/2 md:z-[70] md:-translate-y-1/2 md:px-0 md:py-0">
       <div className="pointer-events-auto flex max-w-[min(100vw-1.5rem,42rem)] flex-wrap items-center justify-end gap-2">
         {editing ? (
           <>

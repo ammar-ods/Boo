@@ -77,10 +77,12 @@ function MobileItem({
   link,
   locale,
   onNavigate,
+  depth = 0,
 }: {
   link: NavLink;
   locale: string;
   onNavigate?: () => void;
+  depth?: number;
 }) {
   const children = (link.children ?? []).filter((item) => item.visible);
   const [open, setOpen] = useState(false);
@@ -91,6 +93,7 @@ function MobileItem({
         href={link.href}
         onClick={onNavigate}
         className="flex min-h-12 items-center text-base font-medium text-oxford"
+        style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
       >
         {pick(link.label, locale)}
       </Link>
@@ -99,18 +102,20 @@ function MobileItem({
 
   return (
     <div>
-      <div className="flex min-h-12 items-center gap-2">
+      <div className="flex min-h-12 items-center gap-1">
         <Link
           href={link.href}
           onClick={onNavigate}
           className="flex-1 text-base font-medium text-oxford"
+          style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
         >
           {pick(link.label, locale)}
         </Link>
         <button
           type="button"
-          className="grid size-10 place-items-center rounded-full text-oxford"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-oxford"
           aria-expanded={open}
+          aria-label={pick(link.label, locale)}
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -120,24 +125,19 @@ function MobileItem({
           <ChevronDown className={`size-4 transition ${open ? "rotate-180" : ""}`} />
         </button>
       </div>
-      <div
-        className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-        }`}
-      >
-        <div className="overflow-hidden">
+      {open ? (
+        <div className="pb-1">
           {children.map((child) => (
-            <Link
+            <MobileItem
               key={child.id}
-              href={child.href}
-              onClick={onNavigate}
-              className="flex min-h-11 items-center ps-4 text-sm text-oxford/80"
-            >
-              {pick(child.label, locale)}
-            </Link>
+              link={child}
+              locale={locale}
+              onNavigate={onNavigate}
+              depth={depth + 1}
+            />
           ))}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
