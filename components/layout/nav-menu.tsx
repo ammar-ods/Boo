@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { NavAnchor, isNavClickable } from "@/components/layout/nav-anchor";
 import { pick, type NavLink } from "@/lib/site";
 
 export function NavMenu({
@@ -40,32 +40,31 @@ function DesktopItem({ link, locale }: { link: NavLink; locale: string }) {
   const children = (link.children ?? []).filter((item) => item.visible);
   if (!children.length) {
     return (
-      <Link href={link.href} className="hover:text-oxford/55">
+      <NavAnchor link={link} className="hover:text-oxford/55">
         {pick(link.label, locale)}
-      </Link>
+      </NavAnchor>
     );
   }
 
   return (
     <div className="group relative">
-      <Link
-        href={link.href}
-        className="inline-flex items-center gap-1 hover:text-oxford/55"
-        aria-haspopup="menu"
+      <NavAnchor
+        link={link}
+        className="inline-flex cursor-pointer items-center gap-1 hover:text-oxford/55"
       >
         {pick(link.label, locale)}
         <ChevronDown className="size-3.5 opacity-60 transition group-hover:rotate-180 group-focus-within:rotate-180" />
-      </Link>
+      </NavAnchor>
       <div className="invisible absolute start-0 top-full z-50 min-w-48 origin-top translate-y-1 pt-2 opacity-0 transition duration-200 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
         <div className="overflow-hidden rounded-2xl bg-white py-1.5 shadow-[0_18px_40px_-22px_rgba(10,37,64,0.4)] ring-1 ring-oxford/10">
           {children.map((child) => (
-            <Link
+            <NavAnchor
               key={child.id}
-              href={child.href}
+              link={child}
               className="block px-4 py-2.5 text-sm text-oxford hover:bg-cream"
             >
               {pick(child.label, locale)}
-            </Link>
+            </NavAnchor>
           ))}
         </div>
       </div>
@@ -89,28 +88,41 @@ function MobileItem({
 
   if (!children.length) {
     return (
-      <Link
-        href={link.href}
+      <NavAnchor
+        link={link}
         onClick={onNavigate}
         className="flex min-h-12 items-center text-base font-medium text-oxford"
         style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
       >
         {pick(link.label, locale)}
-      </Link>
+      </NavAnchor>
     );
   }
+
+  const clickable = isNavClickable(link);
 
   return (
     <div>
       <div className="flex min-h-12 items-center gap-1">
-        <Link
-          href={link.href}
-          onClick={onNavigate}
-          className="flex-1 text-base font-medium text-oxford"
-          style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
-        >
-          {pick(link.label, locale)}
-        </Link>
+        {clickable ? (
+          <NavAnchor
+            link={link}
+            onClick={onNavigate}
+            className="flex-1 text-base font-medium text-oxford"
+            style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
+          >
+            {pick(link.label, locale)}
+          </NavAnchor>
+        ) : (
+          <button
+            type="button"
+            className="flex-1 text-start text-base font-medium text-oxford"
+            style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {pick(link.label, locale)}
+          </button>
+        )}
         <button
           type="button"
           className="grid size-11 shrink-0 place-items-center rounded-full text-oxford"

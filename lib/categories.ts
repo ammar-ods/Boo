@@ -24,12 +24,22 @@ export function isShopNavParent(link: NavLink) {
   );
 }
 
+function matchesCategory(link: NavLink, section: CatalogSection) {
+  return (
+    link.id === `cat-${section.id}` ||
+    link.id === section.id ||
+    link.href === section.href ||
+    link.href.endsWith(`/${section.id}`)
+  );
+}
+
 export function upsertNavCategory(navLinks: NavLink[], section: CatalogSection): NavLink[] {
   const child: NavLink = {
     id: `cat-${section.id}`,
     href: section.href,
     label: section.label,
     visible: section.visible !== false,
+    clickable: true,
   };
   const parentIndex = navLinks.findIndex((link) => isShopNavParent(link));
   if (parentIndex < 0) {
@@ -46,11 +56,22 @@ export function upsertNavCategory(navLinks: NavLink[], section: CatalogSection):
   }
   const parent = navLinks[parentIndex];
   const children = parent.children ?? [];
-  const existing = children.findIndex(
-    (item) => item.id === child.id || item.href === child.href || item.id === section.id,
-  );
+  const existing = children.findIndex((item) => matchesCategory(item, section));
   const nextChildren =
-    existing >= 0 ? children.map((item, index) => (index === existing ? { ...item, ...child } : item)) : [...children, child];
+    existing >= 0
+      ? children.map((item, index) =>
+          index === existing
+            ? {
+                ...item,
+                id: child.id,
+                href: child.href,
+                label: child.label,
+                visible: child.visible,
+                clickable: item.clickable !== false,
+              }
+            : item,
+        )
+      : [...children, child];
   return navLinks.map((link, index) => (index === parentIndex ? { ...link, children: nextChildren } : link));
 }
 
@@ -97,15 +118,38 @@ export function removeCategoryFromSite(site: SiteDocument, id: string): SiteDocu
   };
 }
 
+function patchExistingNavCategory(navLinks: NavLink[], section: CatalogSection): NavLink[] {
+  return navLinks.map((link) => {
+    const children = link.children?.length ? patchExistingNavCategory(link.children, section) : link.children;
+    if (!matchesCategory(link, section)) {
+      return children === link.children ? link : { ...link, children };
+    }
+    return {
+      ...link,
+      href: section.href,
+      label: section.label,
+      children,
+    };
+  });
+}
+
 export function syncCategoriesIntoSite(site: SiteDocument): SiteDocument {
-  return (site.chrome.catalogSections ?? []).reduce(
-    (next, section) =>
-      upsertCategoryInSite(next, {
-        ...section,
-        href: categoryPath(section.id),
-      }),
-    site,
-  );
+  return (site.chrome.catalogSections ?? []).reduce((next, section) => {
+    const href = categoryPath(section.id);
+    const pages = next.pages.some((page) => page.slug === section.id)
+      ? next.pages.map((page) =>
+          page.slug === section.id ? { ...page, title: section.label } : page,
+        )
+      : [...next.pages, blankCmsPage(section.id, section.label)];
+    return {
+      ...next,
+      pages,
+      chrome: {
+        ...next.chrome,
+        navLinks: patchExistingNavCategory(next.chrome.navLinks, { ...section, href }),
+      },
+    };
+  }, site);
 }
 
 export function uniqueCategoryId(site: SiteDocument, raw: string) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
@@ -9,6 +8,7 @@ import { FooterIconRow } from "@/components/layout/footer-icons";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { isLightColor } from "@/lib/color";
+import { NavAnchor } from "@/components/layout/nav-anchor";
 import { pick, type NavLink } from "@/lib/site";
 
 export function SiteFooter() {
@@ -93,18 +93,18 @@ function FooterLinkTree({ link, locale }: { link: NavLink; locale: string }) {
 
   if (!children.length) {
     return (
-      <Link href={link.href} className="flex min-h-11 items-center hover:opacity-100">
+      <NavAnchor link={link} className="flex min-h-11 items-center hover:opacity-100">
         {pick(link.label, locale)}
-      </Link>
+      </NavAnchor>
     );
   }
 
   return (
     <div>
       <div className="flex min-h-11 items-center gap-1">
-        <Link href={link.href} className="flex-1 hover:opacity-100">
+        <NavAnchor link={link} className="flex-1 hover:opacity-100">
           {pick(link.label, locale)}
-        </Link>
+        </NavAnchor>
         <button
           type="button"
           className="grid size-9 place-items-center opacity-70"
@@ -122,13 +122,9 @@ function FooterLinkTree({ link, locale }: { link: NavLink; locale: string }) {
       >
         <div className="overflow-hidden">
           {children.map((child) => (
-            <Link
-              key={child.id}
-              href={child.href}
-              className="flex min-h-10 items-center ps-3 opacity-55 hover:opacity-100"
-            >
-              {pick(child.label, locale)}
-            </Link>
+            <div key={child.id} className="ps-3">
+              <FooterLinkTree link={child} locale={locale} />
+            </div>
           ))}
         </div>
       </div>

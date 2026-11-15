@@ -74,6 +74,7 @@ export type NavLink = {
   href: string;
   label: Localized;
   visible: boolean;
+  clickable?: boolean;
   children?: NavLink[];
 };
 
@@ -682,20 +683,18 @@ export function migrateSite(raw: unknown): SiteDocument {
       showHeader: chrome.showHeader !== false,
       showNav: chrome.showNav !== false,
       showDiscipline: chrome.showDiscipline !== false,
-      navLinks:
-        Array.isArray(chrome.navLinks) && chrome.navLinks.length
+      navLinks: Array.isArray(chrome.navLinks)
           ? chrome.navLinks.map((link, index) => migrateNavLink(link, index))
           : DEFAULT_CHROME.navLinks,
-      catalogSections:
-        Array.isArray(chrome.catalogSections) && chrome.catalogSections.length
-          ? chrome.catalogSections.map((section, index) => ({
-              id: String(section.id || `section-${index}`),
-              href: String(section.href || "/catalog"),
-              image: String(section.image || ""),
-              label: asLoc(section.label),
-              visible: (section as CatalogSection).visible !== false,
-            }))
-          : DEFAULT_CHROME.catalogSections,
+      catalogSections: Array.isArray(chrome.catalogSections)
+        ? chrome.catalogSections.map((section, index) => ({
+            id: String(section.id || `section-${index}`),
+            href: String(section.href || "/catalog"),
+            image: String(section.image || ""),
+            label: asLoc(section.label),
+            visible: (section as CatalogSection).visible !== false,
+          }))
+        : DEFAULT_CHROME.catalogSections,
       logo: typeof chrome.logo === "string" && chrome.logo.trim() ? chrome.logo.trim() : DEFAULT_CHROME.logo,
       footerLogo:
         typeof chrome.footerLogo === "string" && chrome.footerLogo.trim()
@@ -792,6 +791,7 @@ function migrateNavLink(link: Partial<NavLink> | undefined, index: number): NavL
     href: normalizeNavHref(String(row.href || "/")),
     label: asLoc(row.label),
     visible: row.visible !== false,
+    clickable: row.clickable !== false,
     children: Array.isArray(row.children)
       ? row.children.map((child, childIndex) => migrateNavLink(child, childIndex))
       : undefined,

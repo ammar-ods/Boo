@@ -9,6 +9,7 @@ import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { FOOTER_ICON_OPTIONS } from "@/components/layout/footer-icons";
+import { removeNavCategory } from "@/lib/categories";
 import { cmsPagePath, loc, normalizeNavHref, type CatalogSection, type FooterIcon, type NavLink, type SectionType } from "@/lib/site";
 
 export function StudioNavButtons() {
@@ -289,7 +290,16 @@ export function StudioChromePanel() {
             {chromeTab === "shop" ? (
               <CatalogSectionsEditor
                 sections={site.chrome.catalogSections ?? []}
-                onChange={(catalogSections) => setChrome({ catalogSections })}
+                onChange={(catalogSections) => {
+                  const removed = (site.chrome.catalogSections ?? []).filter(
+                    (section) => !catalogSections.some((item) => item.id === section.id),
+                  );
+                  let navLinks = site.chrome.navLinks;
+                  for (const section of removed) {
+                    navLinks = removeNavCategory(navLinks, section.id);
+                  }
+                  setChrome({ catalogSections, navLinks });
+                }}
               />
             ) : null}
 
@@ -759,6 +769,7 @@ function emptyLink(labelAr = "رابط جديد", labelEn = "New link"): NavLink
     href: "/catalog",
     label: loc(labelAr, labelEn),
     visible: true,
+    clickable: true,
   };
 }
 
@@ -861,13 +872,14 @@ function NavLinkFields({
         onChange={(event) => onPatch({ label: { ...link.label, en: event.target.value } })}
       />
       <input
-        className="h-9 rounded-xl border border-oxford/12 bg-white px-2.5 text-sm"
+        className="h-9 rounded-xl border border-oxford/12 bg-white px-2.5 text-sm disabled:opacity-40"
         value={link.href}
         placeholder="/p/about"
+        disabled={link.clickable === false}
         onChange={(event) => onPatch({ href: event.target.value })}
         onBlur={(event) => onPatch({ href: normalizeNavHref(event.target.value) })}
       />
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-1 text-xs">
           <input
             type="checkbox"
@@ -876,6 +888,15 @@ function NavLinkFields({
             onChange={(event) => onPatch({ visible: event.target.checked })}
           />
           show
+        </label>
+        <label className="flex items-center gap-1 text-xs">
+          <input
+            type="checkbox"
+            className="accent-oxford"
+            checked={link.clickable !== false}
+            onChange={(event) => onPatch({ clickable: event.target.checked })}
+          />
+          clickable
         </label>
         <button type="button" className="rounded-lg px-2 py-1 text-xs text-red-700" onClick={onDelete}>
           Delete
@@ -913,6 +934,7 @@ function CatalogSectionsEditor({
                 href: "/catalog",
                 image: "/products/white-tee-front.jpg",
                 label: loc("قسم جديد", "New section"),
+                visible: true,
               },
             ])
           }
@@ -969,13 +991,24 @@ function CatalogSectionsEditor({
                 onChange={(event) => patch(index, { href: event.target.value })}
               />
             </div>
-            <button
-              type="button"
-              className="self-start text-xs text-red-700"
-              onClick={() => onChange(sections.filter((item) => item.id !== section.id))}
-            >
-              Delete
-            </button>
+            <div className="flex flex-col items-start gap-2">
+              <label className="flex items-center gap-1 text-xs">
+                <input
+                  type="checkbox"
+                  className="accent-oxford"
+                  checked={section.visible !== false}
+                  onChange={(event) => patch(index, { visible: event.target.checked })}
+                />
+                show
+              </label>
+              <button
+                type="button"
+                className="text-xs text-red-700"
+                onClick={() => onChange(sections.filter((item) => item.id !== section.id))}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>

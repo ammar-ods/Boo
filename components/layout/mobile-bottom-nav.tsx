@@ -8,6 +8,7 @@ import { cartCount, useCart, useCartHydrated } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { useStorefrontUi } from "@/lib/storefront-ui";
+import { NavAnchor, isNavClickable } from "@/components/layout/nav-anchor";
 import { pick, type NavLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -96,26 +97,36 @@ function MobileSectionItem({ link, onNavigate }: { link: NavLink; onNavigate: ()
 
   if (!children.length) {
     return (
-      <Link
-        href={link.href}
+      <NavAnchor
+        link={link}
         onClick={onNavigate}
         className="flex min-h-12 items-center rounded-xl px-3 text-sm font-medium text-oxford hover:bg-cream"
       >
         {pick(link.label, locale)}
-      </Link>
+      </NavAnchor>
     );
   }
 
   return (
     <div className="rounded-xl">
       <div className="flex min-h-12 items-center gap-1">
-        <Link
-          href={link.href}
-          onClick={onNavigate}
-          className="flex-1 rounded-xl px-3 text-sm font-medium text-oxford hover:bg-cream"
-        >
-          {pick(link.label, locale)}
-        </Link>
+        {isNavClickable(link) ? (
+          <NavAnchor
+            link={link}
+            onClick={onNavigate}
+            className="flex-1 rounded-xl px-3 text-sm font-medium text-oxford hover:bg-cream"
+          >
+            {pick(link.label, locale)}
+          </NavAnchor>
+        ) : (
+          <button
+            type="button"
+            className="flex-1 rounded-xl px-3 text-start text-sm font-medium text-oxford hover:bg-cream"
+            onClick={() => setOpen((value) => !value)}
+          >
+            {pick(link.label, locale)}
+          </button>
+        )}
         <button
           type="button"
           className="grid size-10 place-items-center rounded-full text-oxford"
@@ -132,14 +143,7 @@ function MobileSectionItem({ link, onNavigate }: { link: NavLink; onNavigate: ()
       >
         <div className="overflow-hidden">
           {children.map((child) => (
-            <Link
-              key={child.id}
-              href={child.href}
-              onClick={onNavigate}
-              className="flex min-h-11 items-center rounded-xl px-6 text-sm text-oxford/80 hover:bg-cream"
-            >
-              {pick(child.label, locale)}
-            </Link>
+            <MobileSectionItem key={child.id} link={child} onNavigate={onNavigate} />
           ))}
         </div>
       </div>
