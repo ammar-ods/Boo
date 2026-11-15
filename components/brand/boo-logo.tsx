@@ -21,7 +21,7 @@ export function BooLogo({
         alt="Boo"
         data-default={isDefault ? "1" : undefined}
         className={cn(
-          compact ? "h-8 w-auto sm:h-9" : "h-10 w-auto sm:h-12",
+          compact ? "h-9 w-auto sm:h-10" : "h-11 w-auto sm:h-[3.25rem]",
           onDark && isDefault ? "brightness-0 invert" : "",
         )}
       />
