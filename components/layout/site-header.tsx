@@ -62,62 +62,64 @@ export function SiteHeader() {
       )}
       {site.chrome.showHeader ? (
         <div className="relative z-[41] border-b border-oxford/8 bg-cream">
-          <div className={`mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:gap-4 sm:px-8 sm:py-5 ${isAdmin ? "md:pe-44" : ""}`}>
-            <Link href="/" className="shrink-0">
-              <BooLogo src={site.chrome.logo} />
-            </Link>
-            {site.chrome.showNav ? <NavMenu links={links} locale={locale} /> : null}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="hidden size-10 place-items-center rounded-full text-oxford md:grid"
-                aria-label={t("search")}
-              >
-                <Search className="size-[18px]" />
-              </button>
-              <button
-                type="button"
-                onClick={toggleCart}
-                className="relative grid size-10 place-items-center rounded-full text-oxford"
-                aria-label={t("cart")}
-              >
-                <ShoppingBag className="size-[18px]" />
-                {count > 0 ? (
-                  <span className="absolute end-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-oxford text-[10px] text-white">
-                    {count}
-                  </span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                className="rounded-full p-2 md:hidden"
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-label="Menu"
-              >
-                {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-              </button>
-            </div>
-          </div>
-          {site.chrome.showNav ? (
-            <div
-              className={`grid md:hidden ${menuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"} transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]`}
-            >
-              <div className="overflow-hidden">
-                <div className="border-t border-oxford/8 px-5 py-2 sm:px-8">
-                  <NavMenu links={links} locale={locale} variant="mobile" onNavigate={() => setMenuOpen(false)} />
-                </div>
-              </div>
-            </div>
-          ) : null}
           {menuOpen ? (
             <button
               type="button"
               aria-label="Close menu"
-              className="fixed inset-0 z-30 bg-oxford/25 md:hidden"
+              className="fixed inset-0 z-0 bg-oxford/25 md:hidden"
               onClick={() => setMenuOpen(false)}
             />
           ) : null}
+          <div className="relative z-10">
+            <div className={`mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:gap-4 sm:px-8 sm:py-5 ${isAdmin ? "md:pe-44" : ""}`}>
+              <Link href="/" className="shrink-0">
+                <BooLogo src={site.chrome.logo} />
+              </Link>
+              {site.chrome.showNav ? <NavMenu links={links} locale={locale} /> : null}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className="hidden size-10 place-items-center rounded-full text-oxford md:grid"
+                  aria-label={t("search")}
+                >
+                  <Search className="size-[18px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleCart}
+                  className="relative grid size-10 place-items-center rounded-full text-oxford"
+                  aria-label={t("cart")}
+                >
+                  <ShoppingBag className="size-[18px]" />
+                  {count > 0 ? (
+                    <span className="absolute end-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-oxford text-[10px] text-white">
+                      {count}
+                    </span>
+                  ) : null}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full p-2 md:hidden"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  aria-label="Menu"
+                >
+                  {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                </button>
+              </div>
+            </div>
+            {site.chrome.showNav ? (
+              <div
+                className={`grid md:hidden ${menuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"} transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]`}
+              >
+                <div className={menuOpen ? "max-h-[min(70dvh,calc(100dvh-8rem))] overflow-y-auto overscroll-contain" : "overflow-hidden"}>
+                  <div className="border-t border-oxford/8 px-5 py-2 sm:px-8">
+                    <NavMenu links={links} locale={locale} variant="mobile" onNavigate={() => setMenuOpen(false)} />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
           <StudioNavButtons />
         </div>
       ) : (

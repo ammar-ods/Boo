@@ -111,7 +111,11 @@ function MobileItem({
           type="button"
           className="grid size-10 place-items-center rounded-full text-oxford"
           aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen((value) => !value);
+          }}
         >
           <ChevronDown className={`size-4 transition ${open ? "rotate-180" : ""}`} />
         </button>
