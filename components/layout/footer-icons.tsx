@@ -12,8 +12,8 @@ export const FOOTER_ICON_OPTIONS = [
   ["phone", "Phone"],
 ] as const;
 
-function IconGlyph({ name }: { name: string }) {
-  const common = "size-4";
+export function IconGlyph({ name, className = "size-4" }: { name: string; className?: string }) {
+  const common = className;
   if (name === "facebook") {
     return (
       <svg viewBox="0 0 24 24" className={common} fill="currentColor" aria-hidden>
@@ -64,6 +64,13 @@ function IconGlyph({ name }: { name: string }) {
       </svg>
     );
   }
+  if (name === "chat") {
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <path d="M5 18.5 3.5 21l2.2-1.1A9 9 0 1 0 5 18.5Z" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
       <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
@@ -82,10 +89,10 @@ export function FooterIconRow({ items, locale }: { items: FooterIcon[]; locale: 
         const label = pick(item.label, locale);
         const inner = (
           <>
-            <span className="grid size-8 place-items-center rounded-full bg-white/10">
+            <span className="grid size-8 place-items-center rounded-full bg-current/10">
               <IconGlyph name={item.icon} />
             </span>
-            {label ? <span className="text-sm text-white/75">{label}</span> : null}
+            {label ? <span className="text-sm opacity-75">{label}</span> : null}
           </>
         );
         if (!item.href) {
@@ -101,7 +108,7 @@ export function FooterIconRow({ items, locale }: { items: FooterIcon[]; locale: 
             href={item.href}
             target={item.href.startsWith("http") ? "_blank" : undefined}
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 hover:text-white"
+            className="inline-flex items-center gap-2 hover:opacity-100"
           >
             {inner}
           </a>

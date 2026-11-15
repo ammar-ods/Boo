@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, X } from "lucide-react";
+import { BackChevron } from "@/components/ui/back-chevron";
 import { MUG_WRAP_FLAT, mugPhotoUrl, productViews, type Product, type ProductView } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
@@ -84,8 +85,9 @@ export function CustomizerShell({ product }: { product: Product }) {
       <div className="mx-auto grid max-w-[1400px] gap-5 px-3 py-4 sm:px-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:gap-6 lg:px-6">
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/catalog" className="text-sm text-boo-teal hover:underline">
-              ← Catalog
+            <Link href="/catalog" className="inline-flex items-center gap-1 text-sm text-boo-teal hover:underline">
+              <BackChevron />
+              Catalog
             </Link>
             <button
               type="button"

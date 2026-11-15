@@ -14,6 +14,7 @@ import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { normalizeCategoryId, type Product } from "@/lib/products";
+import { darkenHex } from "@/lib/color";
 import {
   pick,
   sectionGallery,
@@ -244,6 +245,7 @@ function CmsButton({
   background?: string;
   color?: string;
 }) {
+  const lip = background ? darkenHex(background) : undefined;
   return (
     <Link
       href={href}
@@ -251,10 +253,12 @@ function CmsButton({
       style={
         background || color
           ? {
+              ["--btn-bg" as string]: outline ? undefined : background,
+              ["--btn-fg" as string]: color,
+              ["--btn-lip" as string]: outline ? undefined : lip,
               background: outline ? undefined : background,
               color,
               borderColor: outline ? background || color : undefined,
-              boxShadow: outline || !background ? undefined : `0 6px 0 0 ${background}`,
             }
           : undefined
       }

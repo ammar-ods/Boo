@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Home, LayoutGrid, Search, ShoppingBag, X } from "lucide-react";
-import { cartCount, useCart } from "@/lib/cart";
+import { cartCount, useCart, useCartHydrated } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { useStorefrontUi } from "@/lib/storefront-ui";
@@ -16,8 +16,10 @@ export function MobileBottomNav() {
   const { t } = useI18n();
   const { site } = useEdit();
   const items = useCart((s) => s.items);
-  const count = cartCount(items);
+  const hydrated = useCartHydrated();
+  const count = hydrated ? cartCount(items) : 0;
   const setSearchOpen = useStorefrontUi((s) => s.setSearchOpen);
+  const cartOpen = useStorefrontUi((s) => s.cartOpen);
   const toggleCart = useStorefrontUi((s) => s.toggleCart);
   const sectionsOpen = useStorefrontUi((s) => s.sectionsOpen);
   const setSectionsOpen = useStorefrontUi((s) => s.setSectionsOpen);
@@ -66,7 +68,7 @@ export function MobileBottomNav() {
             <LayoutGrid className="size-5" />
             {t("sections")}
           </button>
-          <button type="button" className={tabClass(false)} onClick={toggleCart}>
+          <button type="button" className={tabClass(cartOpen)} onClick={toggleCart}>
             <span className="relative">
               <ShoppingBag className="size-5" />
               {count > 0 ? (

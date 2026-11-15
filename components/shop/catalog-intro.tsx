@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BackChevron } from "@/components/ui/back-chevron";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { pick } from "@/lib/site";
@@ -18,8 +19,9 @@ export function CatalogIntro({ query, collection }: { query?: string; collection
       : collection || t("catalogTitle");
   return (
     <>
-      <Link href="/catalog" className="inline-flex min-h-11 items-center text-sm text-oxford">
-        ← {t("catalogTitle")}
+      <Link href="/catalog" className="inline-flex min-h-11 items-center gap-1 text-sm text-oxford">
+        <BackChevron />
+        {t("catalogTitle")}
       </Link>
       <h1 className="mt-4 font-heading text-5xl text-oxford">{heading}</h1>
       <p className="mb-8 mt-2 max-w-2xl text-muted-foreground">{t("catalogBody")}</p>

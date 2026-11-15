@@ -61,7 +61,7 @@ export function SiteHeader() {
         </div>
       )}
       {site.chrome.showHeader ? (
-        <div className="relative border-b border-oxford/8 bg-cream">
+        <div className="relative z-[41] border-b border-oxford/8 bg-cream">
           <div className={`mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:gap-4 sm:px-8 sm:py-5 ${isAdmin ? "md:pe-44" : ""}`}>
             <Link href="/" className="shrink-0">
               <BooLogo src={site.chrome.logo} />
@@ -109,6 +109,14 @@ export function SiteHeader() {
                 </div>
               </div>
             </div>
+          ) : null}
+          {menuOpen ? (
+            <button
+              type="button"
+              aria-label="Close menu"
+              className="fixed inset-0 z-30 bg-oxford/25 md:hidden"
+              onClick={() => setMenuOpen(false)}
+            />
           ) : null}
           <StudioNavButtons />
         </div>

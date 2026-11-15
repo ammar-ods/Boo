@@ -9,6 +9,7 @@ import { cartBreakdown, matchPromo } from "@/lib/commerce";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { pick } from "@/lib/site";
+import { BackChevron } from "@/components/ui/back-chevron";
 import { DynamicShopFields } from "@/components/shop/dynamic-fields";
 
 function readFileAsDataUrl(file: File) {
@@ -160,9 +161,10 @@ export function CheckoutForm({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex min-h-9 items-center text-sm text-oxford/70 hover:text-oxford"
+          className="inline-flex min-h-9 items-center gap-1 text-sm text-oxford/70 hover:text-oxford"
         >
-          ← {t("backDetails")}
+          <BackChevron />
+          {t("backDetails")}
         </button>
       ) : null}
       <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-5xl"}`}>

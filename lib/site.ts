@@ -109,9 +109,15 @@ export type SiteChrome = {
   footerMetaTitle: Localized;
   footerMetaLines: Localized[];
   footerShowStudio: boolean;
+  footerShowNav: boolean;
+  footerBg: string;
+  footerText: string;
   footerIcons: FooterIcon[];
   payPhone: string;
   whatsappPhone: string;
+  contactWaShape: "pill" | "rounded" | "square";
+  contactWaSize: "sm" | "md" | "lg";
+  contactWaIcon: string;
 };
 
 export type PromoPopup = {
@@ -378,9 +384,15 @@ export const DEFAULT_CHROME: SiteChrome = {
   footerMetaTitle: loc("Boo", "Boo"),
   footerMetaLines: [loc("١٠٠ جنيه", "100 EGP"), loc("جنيه · دولار · يورو · إسترليني", "EGP · USD · EUR · GBP")],
   footerShowStudio: true,
+  footerShowNav: true,
+  footerBg: "#121214",
+  footerText: "#ffffff",
   footerIcons: [],
   payPhone: "01000000000",
   whatsappPhone: "01000000000",
+  contactWaShape: "pill",
+  contactWaSize: "lg",
+  contactWaIcon: "whatsapp",
 };
 
 export const DEFAULT_PROMO: PromoPopup = {
@@ -704,6 +716,9 @@ export function migrateSite(raw: unknown): SiteDocument {
         ? chrome.footerMetaLines.map((line) => asLoc(line))
         : DEFAULT_CHROME.footerMetaLines,
       footerShowStudio: chrome.footerShowStudio !== false,
+      footerShowNav: chrome.footerShowNav !== false,
+      footerBg: typeof chrome.footerBg === "string" && chrome.footerBg.trim() ? chrome.footerBg.trim() : DEFAULT_CHROME.footerBg,
+      footerText: typeof chrome.footerText === "string" && chrome.footerText.trim() ? chrome.footerText.trim() : DEFAULT_CHROME.footerText,
       footerIcons: Array.isArray(chrome.footerIcons)
         ? chrome.footerIcons.map((item, index) => ({
             id: String(item.id || `icon-${index}`),
@@ -719,6 +734,13 @@ export function migrateSite(raw: unknown): SiteDocument {
           : typeof chrome.payPhone === "string" && chrome.payPhone.trim()
             ? chrome.payPhone.trim()
             : DEFAULT_CHROME.whatsappPhone,
+      contactWaShape:
+        chrome.contactWaShape === "rounded" || chrome.contactWaShape === "square" ? chrome.contactWaShape : "pill",
+      contactWaSize: chrome.contactWaSize === "sm" || chrome.contactWaSize === "md" ? chrome.contactWaSize : "lg",
+      contactWaIcon:
+        typeof chrome.contactWaIcon === "string" && chrome.contactWaIcon.trim()
+          ? chrome.contactWaIcon.trim()
+          : DEFAULT_CHROME.contactWaIcon,
     },
     promo: {
       live: Boolean(promo.live),

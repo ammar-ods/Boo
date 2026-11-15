@@ -359,6 +359,9 @@ html[dir="rtl"] .cms-banner-slide-out {
 }
 
 .btn-press {
+  --btn-bg: #0a2540;
+  --btn-fg: #fff;
+  --btn-lip: #04101c;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -368,20 +371,20 @@ html[dir="rtl"] .cms-banner-slide-out {
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.25;
-  background: #0a2540;
-  color: #fff;
-  box-shadow: 0 6px 0 0 #04101c, 0 12px 18px -10px rgba(10, 37, 64, 0.55);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  box-shadow: 0 6px 0 0 var(--btn-lip), 0 12px 18px -10px color-mix(in srgb, var(--btn-lip) 72%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, color 0.12s ease;
 }
 
 .btn-press:hover {
   transform: translateY(2px);
-  box-shadow: 0 4px 0 0 #04101c, 0 8px 14px -10px rgba(10, 37, 64, 0.45);
+  box-shadow: 0 4px 0 0 var(--btn-lip), 0 8px 14px -10px color-mix(in srgb, var(--btn-lip) 60%, transparent);
 }
 
 .btn-press:active {
   transform: translateY(6px);
-  box-shadow: 0 0 0 0 #04101c;
+  box-shadow: 0 0 0 0 var(--btn-lip);
 }
 
 .btn-press-sm {

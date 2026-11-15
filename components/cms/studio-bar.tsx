@@ -206,6 +206,70 @@ export function StudioChromePanel() {
                     value={site.chrome.whatsappPhone}
                     onChange={(event) => setChrome({ whatsappPhone: event.target.value })}
                   />
+                  <p className="mb-1 mt-3 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
+                    Contact WhatsApp button
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-xs text-oxford/60">
+                      Shape
+                      <select
+                        className="mt-1 h-9 w-full rounded-xl border border-oxford/12 bg-white px-2 text-sm"
+                        value={site.chrome.contactWaShape || "pill"}
+                        onChange={(event) =>
+                          setChrome({ contactWaShape: event.target.value as "pill" | "rounded" | "square" })
+                        }
+                      >
+                        <option value="pill">Pill</option>
+                        <option value="rounded">Rounded</option>
+                        <option value="square">Square</option>
+                      </select>
+                    </label>
+                    <label className="text-xs text-oxford/60">
+                      Size
+                      <select
+                        className="mt-1 h-9 w-full rounded-xl border border-oxford/12 bg-white px-2 text-sm"
+                        value={site.chrome.contactWaSize || "lg"}
+                        onChange={(event) =>
+                          setChrome({ contactWaSize: event.target.value as "sm" | "md" | "lg" })
+                        }
+                      >
+                        <option value="sm">Small</option>
+                        <option value="md">Medium</option>
+                        <option value="lg">Large</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className="mt-2 block text-xs text-oxford/60">
+                    Icon
+                    <select
+                      className="mt-1 h-9 w-full rounded-xl border border-oxford/12 bg-white px-2 text-sm"
+                      value={
+                        site.chrome.contactWaIcon?.startsWith("/") || site.chrome.contactWaIcon?.startsWith("http")
+                          ? "custom"
+                          : site.chrome.contactWaIcon || "whatsapp"
+                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (value === "custom") return;
+                        setChrome({ contactWaIcon: value });
+                      }}
+                    >
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="phone">Phone</option>
+                      <option value="chat">Chat</option>
+                      <option value="none">No icon</option>
+                      <option value="custom">Uploaded image</option>
+                    </select>
+                  </label>
+                  <ChromeImageField
+                    label="Custom icon image"
+                    value={
+                      site.chrome.contactWaIcon?.startsWith("/") || site.chrome.contactWaIcon?.startsWith("http")
+                        ? site.chrome.contactWaIcon
+                        : ""
+                    }
+                    onChange={(contactWaIcon) => setChrome({ contactWaIcon })}
+                  />
                   <p className="mb-1 mt-4 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
                     Logo
                   </p>
@@ -502,16 +566,47 @@ function FooterEditor() {
           />
           Studio login link
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="accent-oxford"
+            checked={site.chrome.footerShowNav !== false}
+            onChange={(event) => setChrome({ footerShowNav: event.target.checked })}
+          />
+          Show nav links in footer
+        </label>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <label>
+            Background
+            <input
+              type="color"
+              className="mt-1 h-10 w-full rounded-lg border border-oxford/12 bg-white"
+              value={site.chrome.footerBg || "#121214"}
+              onChange={(event) => setChrome({ footerBg: event.target.value })}
+            />
+          </label>
+          <label>
+            Text
+            <input
+              type="color"
+              className="mt-1 h-10 w-full rounded-lg border border-oxford/12 bg-white"
+              value={site.chrome.footerText || "#ffffff"}
+              onChange={(event) => setChrome({ footerText: event.target.value })}
+            />
+          </label>
+        </div>
       </div>
+      {site.chrome.footerShowNav !== false ? (
       <div className="md:col-span-2">
         <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
           Footer links
         </p>
         <p className="mb-3 px-1 text-xs text-muted-foreground">
-          Same links as the header. Hide, rename, or nest them here. New pages are in the Pages tab.
+          Same links as the header. Turn the column off above if you do not want them in the footer.
         </p>
         <NavEditor links={site.chrome.navLinks} onChange={setNavLinks} />
       </div>
+      ) : null}
       <div className="rounded-2xl bg-white p-3 md:col-span-2">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">

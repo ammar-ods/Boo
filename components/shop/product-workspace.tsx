@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Upload, X } from "lucide-react";
+import { BackChevron } from "@/components/ui/back-chevron";
 import { toast } from "sonner";
 import { flashStatus, hideFlash } from "@/components/status-flash";
 import {
@@ -204,8 +205,9 @@ export function ProductWorkspace({ product }: { product: Product }) {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-6 sm:px-8 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
-      <Link href="/catalog" className="inline-flex min-h-11 items-center text-sm text-oxford lg:col-span-2">
-        ← {t("catalogTitle")}
+      <Link href="/catalog" className="inline-flex min-h-11 items-center gap-1 text-sm text-oxford lg:col-span-2">
+        <BackChevron />
+        {t("catalogTitle")}
       </Link>
       <div
         className={`order-1 lg:col-start-2 lg:row-start-2 ${

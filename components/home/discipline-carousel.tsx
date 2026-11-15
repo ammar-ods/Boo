@@ -30,6 +30,7 @@ const ITEMS = [
 export function DisciplineCarousel() {
   const scroller = useRef<HTMLDivElement>(null);
   const { locale } = useI18n();
+  const flip = locale === "ar" ? "rotate-180" : "";
 
   function scroll(direction: -1 | 1) {
     scroller.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
@@ -44,7 +45,7 @@ export function DisciplineCarousel() {
           onClick={() => scroll(-1)}
           className="icon-circle absolute start-1 top-1/2 z-10 -translate-y-1/2 sm:start-6"
         >
-          <ChevronLeft className="size-5" />
+          <ChevronLeft className={`size-5 ${flip}`} />
         </button>
         <button
           type="button"
@@ -52,7 +53,7 @@ export function DisciplineCarousel() {
           onClick={() => scroll(1)}
           className="icon-circle absolute end-1 top-1/2 z-10 -translate-y-1/2 sm:end-6"
         >
-          <ChevronRight className="size-5" />
+          <ChevronRight className={`size-5 ${flip}`} />
         </button>
         <div
           ref={scroller}
