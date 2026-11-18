@@ -21,6 +21,7 @@ import {
   pick,
   sectionGallery,
   sectionSurface,
+  sectionViewportClass,
   type ImagePlacement,
   type Localized,
   type SiteSection,
@@ -65,7 +66,7 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
         <div
           key={section.id}
           data-section-id={section.id}
-          className={`relative ${editing && selectedId === section.id ? "ring-2 ring-oxford/25" : ""}`}
+          className={`relative ${sectionViewportClass(section.style, editing)} ${editing && selectedId === section.id ? "ring-2 ring-oxford/25" : ""}`}
           onClickCapture={(event) => {
             if (!editing) return;
             const target = event.target as HTMLElement;
@@ -200,7 +201,7 @@ function SectionMedia({
   href,
   aspect,
 }: {
-  src: string;
+  src?: string;
   srcMobile?: string;
   height: number;
   widthPct: number;
@@ -283,7 +284,7 @@ function SectionShell({
   index: number;
   children: React.ReactNode;
   className?: string;
-  cover?: { src: string; srcMobile?: string; height: number; href?: string };
+  cover?: { src?: string; srcMobile?: string; height: number; href?: string };
 }) {
   const surface = sectionSurface(section.style);
   const pad = Math.max(0, section.style.paddingY ?? 48);
@@ -317,10 +318,10 @@ function SectionShell({
             <div className="absolute inset-0">
               {cover.href ? (
                 <Link href={cover.href} className="absolute inset-0">
-                  <ResponsiveImg src={cover.src} srcMobile={cover.srcMobile} className="h-full w-full object-cover object-top" />
+                  <ResponsiveImg src={cover.src} srcMobile={cover.srcMobile} className="absolute inset-0 h-full w-full object-cover object-top" />
                 </Link>
               ) : (
-                <ResponsiveImg src={cover.src} srcMobile={cover.srcMobile} className="h-full w-full object-cover object-top" />
+                <ResponsiveImg src={cover.src} srcMobile={cover.srcMobile} className="absolute inset-0 h-full w-full object-cover object-top" />
               )}
             </div>
             <div className="pointer-events-none absolute inset-0 bg-oxford/35" />
@@ -350,8 +351,8 @@ function SectionView({
   const image = pick(section.content.image, locale);
   const imageMobile = pick(section.content.imageMobile, locale);
   const placement: ImagePlacement =
-    section.style.imagePlacement ?? (image ? "below" : "hidden");
-  const showImage = placement !== "hidden" && Boolean(image);
+    section.style.imagePlacement ?? (image || imageMobile ? "below" : "hidden");
+  const showImage = placement !== "hidden" && Boolean(image || imageMobile);
   const widthPct = section.style.imageWidth ?? (placement === "bleed" || placement === "cover" ? 100 : 70);
   const height = section.style.imageHeight ?? 280;
   const rounded =

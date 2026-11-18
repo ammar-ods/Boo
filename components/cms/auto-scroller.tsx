@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ResponsiveImg } from "@/components/cms/responsive-img";
 import type { GalleryItem } from "@/lib/site";
 
 export function AutoScroller({
@@ -24,13 +25,13 @@ export function AutoScroller({
       >
         {loop.map((item, index) => {
           const image = (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={item.src}
-              alt=""
-              className={`cms-marquee-img ${rounded ? "rounded-[20px] sm:rounded-[24px]" : ""}`}
-              style={{ ["--cms-img-h" as string]: `${Math.max(64, height)}px` }}
-            />
+            <div style={{ ["--cms-img-h" as string]: `${Math.max(64, height)}px` }}>
+              <ResponsiveImg
+                src={item.src}
+                srcMobile={item.srcMobile}
+                className={`cms-marquee-img ${rounded ? "rounded-[20px] sm:rounded-[24px]" : ""}`}
+              />
+            </div>
           );
           const className = "shrink-0";
           return item.href ? (

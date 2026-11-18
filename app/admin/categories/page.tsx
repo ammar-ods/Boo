@@ -42,11 +42,16 @@ export default async function AdminCategoriesPage({
             className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10 transition hover:-translate-y-0.5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={section.image || "/products/white-tee-front.jpg"}
-              alt=""
-              className="aspect-[4/5] w-full bg-[#f6f3ee] object-cover"
-            />
+            {section.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={section.image}
+                alt=""
+                className="aspect-[4/5] w-full bg-[#f6f3ee] object-cover"
+              />
+            ) : (
+              <div className="aspect-[4/5] w-full bg-[#f6f3ee]" />
+            )}
             <div className="p-4">
               <h2 className="font-heading text-xl">{pick(section.label, "en")}</h2>
               <p className="text-xs text-muted-foreground">{section.id}</p>

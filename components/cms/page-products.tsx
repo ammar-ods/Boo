@@ -162,7 +162,12 @@ export function ProductShelfEditor({
         return (
           <div key={slug} className="flex items-center gap-2 rounded-xl bg-cream/80 p-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={productThumbnail(product)} alt="" className="size-12 object-cover" />
+            {productThumbnail(product) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={productThumbnail(product)} alt="" className="size-12 object-cover" />
+            ) : (
+              <div className="size-12 bg-transparent" />
+            )}
             <p className="min-w-0 flex-1 truncate text-sm text-oxford">{localizedName(product, locale)}</p>
             <button
               type="button"

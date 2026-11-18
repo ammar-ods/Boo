@@ -125,7 +125,12 @@ export function CategoryForm({
                   className="size-4 accent-oxford"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={productThumbnail(product)} alt="" className="size-14 rounded-xl object-cover" />
+                {productThumbnail(product) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={productThumbnail(product)} alt="" className="size-14 rounded-xl object-cover" />
+                ) : (
+                  <span className="size-14 rounded-xl bg-[#f6f3ee]" />
+                )}
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-oxford">{product.name}</span>
                   <span className="text-xs text-muted-foreground">{product.category || "Unassigned"}</span>

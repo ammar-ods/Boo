@@ -39,6 +39,8 @@ export type SectionStyle = {
   marginX?: number;
   marginY?: number;
   rounded?: boolean;
+  showOnMobile?: boolean;
+  showOnDesktop?: boolean;
 };
 
 export type GalleryItem = {
@@ -322,17 +324,27 @@ export function parseGalleryItems(value: unknown): GalleryItem[] {
   return value
     .map((item) => {
       if (typeof item === "string") return { src: item };
-      if (item && typeof item === "object" && "src" in item && typeof (item as GalleryItem).src === "string") {
+      if (item && typeof item === "object") {
         const row = item as GalleryItem;
-        return {
-          src: row.src,
-          href: row.href,
-          srcMobile: typeof row.srcMobile === "string" && row.srcMobile.trim() ? row.srcMobile : undefined,
-        };
+        const src = typeof row.src === "string" ? row.src : "";
+        const srcMobile = typeof row.srcMobile === "string" && row.srcMobile.trim() ? row.srcMobile : undefined;
+        const href = typeof row.href === "string" ? row.href : undefined;
+        if (!src && !srcMobile) return null;
+        return { src, href, srcMobile };
       }
       return null;
     })
-    .filter((item): item is GalleryItem => Boolean(item?.src));
+    .filter((item): item is GalleryItem => Boolean(item && (item.src || item.srcMobile)));
+}
+
+export function sectionViewportClass(style: SectionStyle | undefined, editing = false) {
+  if (editing) return "";
+  const mobile = style?.showOnMobile !== false;
+  const desktop = style?.showOnDesktop !== false;
+  if (mobile && desktop) return "";
+  if (!mobile && !desktop) return "hidden";
+  if (!mobile) return "hidden md:block";
+  return "md:hidden";
 }
 
 export function sectionGallery(section: SiteSection, locale: string) {
@@ -499,7 +511,6 @@ export function newSection(type: SectionType): SiteSection {
         body: loc("اكتب تفاصيل الإصدار هنا.", "Write the drop details here."),
         ctaLabel: loc("تسوق", "Shop"),
         ctaHref: "/catalog",
-        image: loc("/products/white-tee-front.jpg", "/products/white-tee-front.jpg"),
       },
     },
     slideshow: {
@@ -522,16 +533,8 @@ export function newSection(type: SectionType): SiteSection {
         showSecondaryCta: false,
       },
       content: {
-        galleryAr: [
-          { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
-          { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
-          { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
-        ],
-        galleryEn: [
-          { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
-          { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
-          { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
-        ],
+        galleryAr: [],
+        galleryEn: [],
       },
     },
     text: {
@@ -599,12 +602,7 @@ export function newSection(type: SectionType): SiteSection {
       },
       content: {
         title: loc("منتجات تتحرك", "In motion"),
-        gallery: [
-          { src: "/products/white-tee-front.jpg", href: "/product/white-tee" },
-          { src: "/products/thermal-tumbler.jpg", href: "/product/thermal-tumbler" },
-          { src: "/products/wood-coaster.png", href: "/product/wood-coaster" },
-          { src: "/products/white-tee-back.jpg", href: "/product/white-tee" },
-        ],
+        gallery: [],
       },
     },
     faq: {
@@ -935,7 +933,8 @@ function fillMissingEnglish(section: SiteSection): SiteSection {
       body: fillLoc(section.content.body, fallback.content.body),
       ctaLabel: fillLoc(section.content.ctaLabel, fallback.content.ctaLabel),
       secondaryCtaLabel: fillLoc(section.content.secondaryCtaLabel, fallback.content.secondaryCtaLabel),
-      image: section.content.image ?? fallback.content.image,
+      image: section.content.image,
+      imageMobile: section.content.imageMobile,
     },
   };
 }

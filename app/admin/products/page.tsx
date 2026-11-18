@@ -49,8 +49,12 @@ export default async function AdminProductsPage({
             href={`/admin/products/${product.slug}`}
             className="overflow-hidden rounded-[1.4rem] bg-white ring-1 ring-foreground/10 transition hover:-translate-y-0.5"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={productThumbnail(product)} alt="" className="aspect-square w-full object-cover bg-[#f6f3ee]" />
+            {productThumbnail(product) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={productThumbnail(product)} alt="" className="aspect-square w-full object-cover bg-[#f6f3ee]" />
+            ) : (
+              <div className="aspect-square w-full bg-[#f6f3ee]" />
+            )}
             <div className="p-4">
               <p className="text-xs text-muted-foreground">
                 {labels[normalizeCategoryId(product.category)] || product.category || "Unassigned"}

@@ -331,7 +331,7 @@ export async function getCatalog(): Promise<Product[]> {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
       if (error) {
         if (canUseSeedFallback(error)) return SEED_PRODUCTS;
         return SEED_PRODUCTS;
@@ -342,7 +342,7 @@ export async function getCatalog(): Promise<Product[]> {
           const { data: seeded, error: seedReadError } = await supabase
             .from("products")
             .select("*")
-            .order("created_at", { ascending: true });
+            .order("created_at", { ascending: false });
           if (!seedReadError && seeded && seeded.length > 0) {
             return seeded.map((row) => rowToProduct(row as Record<string, unknown>));
           }
@@ -365,9 +365,9 @@ export async function getCatalog(): Promise<Product[]> {
       !stored.some((item) => item.slug === "white-tee"));
   if (stale) {
     await writeJson(CATALOG_FILE, SEED_PRODUCTS);
-    return SEED_PRODUCTS;
+    return [...SEED_PRODUCTS].reverse();
   }
-  return stored;
+  return [...stored].reverse();
 }
 
 export async function getLiveCatalog() {
@@ -424,7 +424,7 @@ export async function upsertProduct(product: Product) {
     }
     return data ? rowToProduct(data as Record<string, unknown>) : product;
   }
-  const catalog = await getCatalog();
+  const catalog = [...(await getCatalog())].reverse();
   const index = catalog.findIndex((item) => item.slug === product.slug);
   if (index >= 0) catalog[index] = product;
   else catalog.push(product);
@@ -440,7 +440,7 @@ export async function deleteProduct(slug: string) {
     if (error) throw new Error(`Could not delete product: ${error.message}`);
     return;
   }
-  const catalog = await getCatalog();
+  const catalog = [...(await getCatalog())].reverse();
   await saveCatalog(catalog.filter((item) => item.slug !== slug));
 }
 

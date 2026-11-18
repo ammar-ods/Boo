@@ -315,7 +315,7 @@ export function slugify(value: string) {
 }
 
 export function productThumbnail(product: Product) {
-  return product.thumbnail || product.gallery?.[0] || product.mockup;
+  return product.thumbnail || product.gallery?.[0] || product.mockup || "";
 }
 
 export function productGallery(product: Product) {

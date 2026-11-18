@@ -273,11 +273,14 @@ html.locale-fading body {
 }
 
 .cms-media.is-ratio {
+  position: relative;
   aspect-ratio: var(--cms-img-aspect, 5 / 2);
   overflow: hidden;
 }
 
 .cms-media.is-ratio .cms-media-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   max-height: none;
@@ -580,6 +583,23 @@ html.dark:not(:has(.admin-desk)) .bg-cream\/80 {
 
 .saved-toast {
   animation: saved-pop 1s ease forwards;
+}
+
+.boo-load-fill {
+  clip-path: inset(100% 0 0 0);
+  animation: boo-load-fill 1.05s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+@keyframes boo-load-fill {
+  0% {
+    clip-path: inset(100% 0 0 0);
+  }
+  55% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 100% 0);
+  }
 }
 
 @keyframes boo-fade-up {

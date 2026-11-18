@@ -87,7 +87,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   const category = normalizeCategoryId(String(formData.get("category") || ""));
   const wrapPreview = formData.get("wrapPreview") === "on";
   const file = formData.get("mockup");
-  let mockup = existing?.mockup || "/products/white-tee-front.jpg";
+  let mockup = existing?.mockup || "";
   if (file instanceof File && file.size > 0) {
     mockup = await uploadViewFile(slug, file);
   }
@@ -238,7 +238,7 @@ export async function createProduct(formData: FormData) {
     }
     const saved = await upsertProduct(product);
     revalidateProductPages(saved.slug, saved.category);
-    redirect(`/admin/products/${saved.slug}?saved=1`);
+    redirect(`/admin/products?created=${encodeURIComponent(saved.name)}`);
   } catch (error) {
     if (isNextRedirect(error)) throw error;
     const message = error instanceof Error ? error.message : "Could not create product";

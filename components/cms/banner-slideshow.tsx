@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ResponsiveImg } from "@/components/cms/responsive-img";
+import { startRouteLoading } from "@/components/layout/route-loading";
 import type { GalleryItem } from "@/lib/site";
 
 const SLIDE_MS = 520;
@@ -12,7 +13,7 @@ const SWIPE_PX = 48;
 function SlideImage({ item }: { item: GalleryItem }) {
   return (
     <div className="absolute inset-0">
-      <ResponsiveImg src={item.src} srcMobile={item.srcMobile} className="h-full w-full object-cover" />
+      <ResponsiveImg src={item.src} srcMobile={item.srcMobile} className="absolute inset-0 h-full w-full object-cover" />
     </div>
   );
 }
@@ -23,6 +24,7 @@ function openHref(router: ReturnType<typeof useRouter>, href?: string) {
     window.location.assign(href);
     return;
   }
+  startRouteLoading();
   router.push(href);
 }
 
@@ -42,7 +44,7 @@ export function BannerSlideshow({
   intervalMs: number;
 }) {
   const router = useRouter();
-  const slides = items.filter((item) => item.src);
+  const slides = items.filter((item) => item.src || item.srcMobile);
   const [active, setActive] = useState(0);
   const [leaving, setLeaving] = useState<number | null>(null);
   const [dir, setDir] = useState<1 | -1>(1);

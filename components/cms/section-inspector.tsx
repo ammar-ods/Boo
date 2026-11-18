@@ -252,6 +252,16 @@ function LayoutTab({
       </Group>
       <Group title="Options">
         <SwitchRow
+          label="Mobile version visibility"
+          checked={section.style.showOnMobile !== false}
+          onChange={(showOnMobile) => patch(section.id, { style: { showOnMobile } })}
+        />
+        <SwitchRow
+          label="Desktop visibility"
+          checked={section.style.showOnDesktop !== false}
+          onChange={(showOnDesktop) => patch(section.id, { style: { showOnDesktop } })}
+        />
+        <SwitchRow
           label="Rounded corners"
           checked={Boolean(section.style.rounded)}
           onChange={(rounded) => patch(section.id, { style: { rounded } })}
@@ -683,7 +693,10 @@ function GalleryEditor({
       {items.map((item, index) => (
         <div key={`${item.src}-${index}`} className="mb-3 rounded-xl bg-white p-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.src} alt="" className="mb-2 max-h-20 w-full object-contain" />
+          {item.src || item.srcMobile ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.src || item.srcMobile} alt="" className="mb-2 max-h-20 w-full object-contain" />
+          ) : null}
           <input
             className="mb-2 h-9 w-full rounded-xl border border-oxford/12 px-2.5 text-sm"
             placeholder="Link (optional)"

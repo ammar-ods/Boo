@@ -977,7 +977,7 @@ function CatalogSectionsEditor({
               {
                 id: `section-${Math.random().toString(36).slice(2, 7)}`,
                 href: "/catalog",
-                image: "/products/white-tee-front.jpg",
+                image: "",
                 label: loc("قسم جديد", "New section"),
                 visible: true,
               },

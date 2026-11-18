@@ -19,12 +19,16 @@ export function CatalogSections() {
         {sections.map((section) => (
           <Link key={section.id} href={section.href} className="group block">
             <div className="overflow-hidden rounded-[1.8rem] bg-chip ring-1 ring-oxford/8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={section.image || "/products/white-tee-front.jpg"}
-                alt=""
-                className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105"
-              />
+              {section.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={section.image}
+                  alt=""
+                  className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="aspect-[4/5] w-full bg-transparent" />
+              )}
             </div>
             <h2 className="mt-3 font-heading text-2xl text-oxford">{pick(section.label, locale)}</h2>
           </Link>

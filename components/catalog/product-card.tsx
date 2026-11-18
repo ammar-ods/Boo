@@ -21,6 +21,8 @@ import { useCart } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
 import { pick } from "@/lib/site";
 import { flashStatus } from "@/components/status-flash";
+import { startRouteLoading } from "@/components/layout/route-loading";
+import { useStorefrontUi } from "@/lib/storefront-ui";
 
 export function ProductCard({
   product,
@@ -42,6 +44,7 @@ export function ProductCard({
   const categoryLabel =
     pick(site.chrome.catalogSections?.find((item) => item.id === categoryId)?.label, locale) || product.category;
   const addItem = useCart((s) => s.addItem);
+  const setCartOpen = useStorefrontUi((s) => s.setCartOpen);
   const [pressed, setPressed] = useState(false);
   const name = localizedName(product, locale);
   const tagline = localizedTagline(product, locale);
@@ -60,6 +63,7 @@ export function ProductCard({
     event.stopPropagation();
     pulse();
     if (customizable) {
+      startRouteLoading();
       router.push(`/product/${product.slug}`);
       return;
     }
@@ -74,6 +78,7 @@ export function ProductCard({
       kind: "product",
     });
     flashStatus(t("addedSuccess"));
+    setCartOpen(true);
   }
 
   if (layout === "list") {
@@ -86,7 +91,7 @@ export function ProductCard({
         }`}
       >
         <div className={`relative size-24 shrink-0 overflow-hidden bg-chip sm:size-28 ${thumbRadius}`}>
-          <Image src={image} alt={name} fill className="object-cover" />
+          {image ? <Image src={image} alt={name} fill className="object-cover" /> : null}
         </div>
         <div className="min-w-0 py-1">
           <p className="text-[10px] font-bold tracking-[0.16em] text-oxford/45 uppercase">
@@ -109,12 +114,14 @@ export function ProductCard({
       <div className={`relative mb-4 overflow-hidden bg-chip ${thumbRadius}`}>
         <Link href={`/product/${product.slug}`} onClick={pulse} className="block">
           <div className="relative aspect-[4/5] overflow-hidden">
-            <Image
-              src={image}
-              alt={name}
-              fill
-              className="object-cover transition duration-500 group-hover:scale-105"
-            />
+            {image ? (
+              <Image
+                src={image}
+                alt={name}
+                fill
+                className="object-cover transition duration-500 group-hover:scale-105"
+              />
+            ) : null}
             <span className="absolute start-3 top-3 rounded bg-white/92 px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-oxford uppercase shadow-sm">
               {categoryLabel || product.category}
             </span>

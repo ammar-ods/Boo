@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { AppTheme } from "@/components/app-theme";
 import { PromoPopup } from "@/components/promo-popup";
 import { StatusFlashHost } from "@/components/status-flash";
+import { RouteLoading } from "@/components/layout/route-loading";
 import { WhatsAppBubble } from "@/components/layout/whatsapp-bubble";
 import { CartPreview } from "@/components/layout/cart-preview";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -76,6 +77,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <CartPreview />
               <MobileBottomNav />
               <StatusFlashHost />
+              <RouteLoading />
               <Toaster />
             </EditProvider>
           </I18nProvider>
