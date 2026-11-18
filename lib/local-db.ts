@@ -76,6 +76,10 @@ type SafeZonePayload = Product["safe_zone_bounds"] & {
   saleEgp?: number;
   discountPercent?: number;
   customizable?: boolean;
+  allowImage?: boolean;
+  allowText?: boolean;
+  askDimensions?: boolean;
+  specPoints?: { ar?: string; en?: string }[];
   optionLabel?: { ar?: string; en?: string };
   optionChoices?: string[];
   optionImages?: Record<string, string>;
@@ -168,6 +172,14 @@ function rowToProduct(row: Record<string, unknown>): Product {
     descriptionAr: String(
       bounds.descriptionAr ?? row.description_ar ?? row.descriptionAr ?? seed?.descriptionAr ?? "",
     ),
+    specPoints: Array.isArray(bounds.specPoints)
+      ? bounds.specPoints
+          .map((point) => ({
+            ar: String(point?.ar ?? "").trim(),
+            en: String(point?.en ?? "").trim(),
+          }))
+          .filter((point) => point.ar || point.en)
+      : seed?.specPoints,
     is_laser_cut: Boolean(row.is_laser_cut),
     materials: materials.length ? materials : seed?.materials ?? ["Standard"],
     colors: Array.isArray(bounds.colors)
@@ -214,6 +226,9 @@ function rowToProduct(row: Record<string, unknown>): Product {
     saleEgp: Number(bounds.saleEgp || 0) || undefined,
     discountPercent: Number(bounds.discountPercent || 0) || undefined,
     customizable: bounds.customizable !== false && row.customizable !== false,
+    allowImage: bounds.allowImage !== false,
+    allowText: bounds.allowText !== false,
+    askDimensions: Boolean(bounds.askDimensions),
   };
 }
 
@@ -227,6 +242,7 @@ function productToRow(product: Product) {
     taglineAr: product.taglineAr,
     nameAr: product.nameAr,
     descriptionAr: product.descriptionAr,
+    specPoints: product.specPoints,
     materials: product.materials,
     colors: product.colors,
     optionLabel: product.optionLabel,
@@ -248,6 +264,9 @@ function productToRow(product: Product) {
     saleEgp: product.saleEgp,
     discountPercent: product.discountPercent,
     customizable: product.customizable !== false,
+    allowImage: product.allowImage !== false,
+    allowText: product.allowText !== false,
+    askDimensions: Boolean(product.askDimensions),
   };
 
   return {

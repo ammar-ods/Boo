@@ -78,6 +78,14 @@ export function CartPreview() {
                             {t("color")}: <span className="text-oxford">{item.color}</span>
                           </p>
                         ) : null}
+                        {item.dimensions?.length || item.dimensions?.width ? (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {t("dimensions")}:{" "}
+                            <span className="text-oxford">
+                              {item.dimensions.length || "?"} × {item.dimensions.width || "?"}
+                            </span>
+                          </p>
+                        ) : null}
                       </div>
                       <p className="shrink-0 text-sm font-semibold text-oxford">{formatPrice(item.priceEgp)}</p>
                     </div>

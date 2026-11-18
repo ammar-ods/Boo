@@ -29,6 +29,9 @@ export function ProductForm({
   const [extraViews, setExtraViews] = useState<ProductView[]>(initialViews.slice(1));
   const [wrap, setWrap] = useState(Boolean(product?.wrapPreview) || product?.category === "Drinkware");
   const [customizable, setCustomizable] = useState(product?.customizable !== false);
+  const [allowImage, setAllowImage] = useState(product?.allowImage !== false);
+  const [allowText, setAllowText] = useState(product?.allowText !== false);
+  const [askDimensions, setAskDimensions] = useState(Boolean(product?.askDimensions));
   const [gallery, setGallery] = useState<{ id: string; src: string }[]>(
     (product?.gallery ?? []).map((src, index) => ({ id: `gallery-${index}`, src })),
   );
@@ -69,27 +72,7 @@ export function ProductForm({
             <Field label="Tagline · English" name="tagline" defaultValue={product?.tagline} />
             <Field label="Tagline · عربي" name="taglineAr" defaultValue={product?.taglineAr} dir="rtl" />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="description">Description · English</Label>
-              <textarea
-                id="description"
-                name="description"
-                defaultValue={product?.description}
-                className="min-h-24 w-full rounded-lg border border-input px-2.5 py-2 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="descriptionAr">Description · عربي</Label>
-              <textarea
-                id="descriptionAr"
-                name="descriptionAr"
-                dir="rtl"
-                defaultValue={product?.descriptionAr}
-                className="min-h-24 w-full rounded-lg border border-input px-2.5 py-2 text-sm"
-              />
-            </div>
-          </div>
+          <SpecPointsEditor product={product} />
           <div className="space-y-1.5">
             <Label htmlFor="category">Category</Label>
             <select
@@ -291,6 +274,47 @@ export function ProductForm({
         </label>
         {customizable ? (
           <>
+            <div className="space-y-2 rounded-2xl bg-cream px-3 py-3 text-sm">
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  name="allowImage"
+                  checked={allowImage}
+                  onChange={(event) => setAllowImage(event.target.checked)}
+                  className="mt-0.5 size-4 accent-oxford"
+                />
+                <span>
+                  <span className="block font-medium text-oxford">Customer can add an image</span>
+                  <span className="text-xs text-muted-foreground">Upload artwork onto the mockup.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  name="allowText"
+                  checked={allowText}
+                  onChange={(event) => setAllowText(event.target.checked)}
+                  className="mt-0.5 size-4 accent-oxford"
+                />
+                <span>
+                  <span className="block font-medium text-oxford">Customer can add text</span>
+                  <span className="text-xs text-muted-foreground">For names, dates, or laser copy.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  name="askDimensions"
+                  checked={askDimensions}
+                  onChange={(event) => setAskDimensions(event.target.checked)}
+                  className="mt-0.5 size-4 accent-oxford"
+                />
+                <span>
+                  <span className="block font-medium text-oxford">Ask for dimensions (L × W)</span>
+                  <span className="text-xs text-muted-foreground">Shown only on this product.</span>
+                </span>
+              </label>
+            </div>
             <p className="text-xs text-muted-foreground">Dashed box on the first mockup. 800×800 canvas.</p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Left" name="safe_left" type="number" defaultValue={safe.left} />
@@ -510,6 +534,77 @@ function PriceEditor({ product }: { product?: Product }) {
           </label>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function SpecPointsEditor({ product }: { product?: Product }) {
+  const fromPoints = product?.specPoints?.length
+    ? product.specPoints.map((point) => ({
+        id: crypto.randomUUID(),
+        en: point.en,
+        ar: point.ar,
+      }))
+    : undefined;
+  const fromText =
+    fromPoints ??
+    (() => {
+      const en = (product?.description || "").split(/\n+/).map((line) => line.replace(/^[-•*]\s*/, "").trim());
+      const ar = (product?.descriptionAr || "").split(/\n+/).map((line) => line.replace(/^[-•*]\s*/, "").trim());
+      const count = Math.max(en.length, ar.length, 1);
+      return Array.from({ length: count }, (_, index) => ({
+        id: `spec-${index}`,
+        en: en[index] || "",
+        ar: ar[index] || "",
+      }));
+    })();
+  const [rows, setRows] = useState(fromText);
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-medium text-oxford">Description points</p>
+        <p className="text-xs text-muted-foreground">Material, size, finish — one point per row.</p>
+      </div>
+      {rows.map((row, index) => (
+        <div key={row.id} className="grid gap-2 rounded-2xl bg-cream p-3 sm:grid-cols-[1fr_1fr_auto]">
+          <input
+            name="specPointEn"
+            value={row.en}
+            onChange={(event) =>
+              setRows((current) => current.map((item, i) => (i === index ? { ...item, en: event.target.value } : item)))
+            }
+            placeholder="Material: cotton"
+            className="h-9 rounded-lg border border-input bg-white px-2.5 text-sm"
+          />
+          <input
+            name="specPointAr"
+            dir="rtl"
+            value={row.ar}
+            onChange={(event) =>
+              setRows((current) => current.map((item, i) => (i === index ? { ...item, ar: event.target.value } : item)))
+            }
+            placeholder="الخامة: قطن"
+            className="h-9 rounded-lg border border-input bg-white px-2.5 text-sm"
+          />
+          <button
+            type="button"
+            className="text-xs text-red-700"
+            onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="h-9 rounded-full bg-cream px-4 text-sm font-semibold text-oxford"
+        onClick={() => setRows((current) => [...current, { id: crypto.randomUUID(), en: "", ar: "" }])}
+      >
+        Add point
+      </button>
+      <input type="hidden" name="description" value={rows.map((row) => row.en).filter(Boolean).join("\n")} />
+      <input type="hidden" name="descriptionAr" value={rows.map((row) => row.ar).filter(Boolean).join("\n")} />
     </div>
   );
 }

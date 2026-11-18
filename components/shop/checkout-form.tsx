@@ -124,6 +124,7 @@ export function CheckoutForm({
           viewMockups: item.viewMockups,
           uploads: item.uploads,
           custom: item.custom,
+          dimensions: item.dimensions,
         })),
       }),
     });

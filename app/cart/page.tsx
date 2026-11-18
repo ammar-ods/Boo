@@ -34,6 +34,11 @@ export default function CartPage() {
               <div className="min-w-0 flex-1">
                 <p className="font-heading text-xl text-oxford">{locale === "ar" ? item.nameAr : item.name}</p>
                 <p className="text-sm text-muted-foreground">{item.color}</p>
+                {item.dimensions?.length || item.dimensions?.width ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("dimensions")}: {item.dimensions.length || "?"} × {item.dimensions.width || "?"}
+                  </p>
+                ) : null}
                 <p className="mt-1 font-medium">{formatPrice(item.priceEgp)}</p>
                 <div className="mt-2 flex items-center gap-3 text-sm">
                   <button type="button" onClick={() => setQuantity(item.id, item.quantity - 1)}>

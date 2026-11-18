@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Product, ProductView } from "@/lib/products";
-import { MUG_WRAP_FLAT, productViews } from "@/lib/products";
+import { MUG_WRAP_FLAT, productAllowsImage, productViews } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { rememberFile } from "@/lib/upload-registry";
 
@@ -206,7 +206,7 @@ export function FabricCanvas({
       canvas.on("selection:updated", syncSelection);
       canvas.on("selection:cleared", () => setSelectedKind("none"));
       canvas.on("mouse:down", (opt) => {
-        if (opt.target || previewRef.current) return;
+        if (opt.target || previewRef.current || !productAllowsImage(productRef.current)) return;
         const pointer = (opt as { scenePoint?: { x: number; y: number } }).scenePoint;
         if (!pointer) {
           pickImageRef.current();

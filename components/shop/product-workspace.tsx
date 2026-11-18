@@ -13,9 +13,13 @@ import {
   productGallery,
   productThumbnail,
   localizedName,
-  localizedDescription,
   optionPreview,
   productOptions,
+  productAllowsImage,
+  productAllowsText,
+  productAsksDimensions,
+  productNeedsCanvas,
+  productSpecPoints,
   sellingPrice,
   type Product,
 } from "@/lib/products";
@@ -47,6 +51,8 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const [previewBusy, setPreviewBusy] = useState(false);
   const [cartBusy, setCartBusy] = useState(false);
   const [step, setStep] = useState<"product" | "checkout">("product");
+  const [dimLength, setDimLength] = useState("");
+  const [dimWidth, setDimWidth] = useState("");
   const detailsRef = useRef<HTMLDivElement>(null);
   const options = productOptions(product);
   const colors = options.choices;
@@ -61,7 +67,11 @@ export function ProductWorkspace({ product }: { product: Product }) {
   })();
   const activeCanvas = canvases[activeViewId] ?? canvases[views[0]?.id];
   const customizable = product.customizable !== false;
-  const multiView = customizable && views.length > 1;
+  const allowImage = productAllowsImage(product);
+  const allowText = productAllowsText(product);
+  const askDimensions = productAsksDimensions(product);
+  const needsCanvas = productNeedsCanvas(product);
+  const multiView = needsCanvas && views.length > 1;
 
   useEffect(() => {
     hydrateProduct(product);
@@ -121,9 +131,12 @@ export function ProductWorkspace({ product }: { product: Product }) {
   async function addToCart(options?: { quiet?: boolean }) {
     if (cartBusy) return;
     setCartBusy(true);
-    if (customizable) flashStatus(t("addingToCart"), true);
+    if (needsCanvas) flashStatus(t("addingToCart"), true);
     try {
-      if (!customizable) {
+      const dimensions = askDimensions
+        ? { length: dimLength.trim(), width: dimWidth.trim() }
+        : undefined;
+      if (!needsCanvas) {
         const images = gallery.length ? gallery : [choiceImage || productThumbnail(product)].filter(Boolean);
         addItem({
           slug: product.slug,
@@ -134,7 +147,8 @@ export function ProductWorkspace({ product }: { product: Product }) {
           quantity,
           priceEgp: sellingPrice(product) || 100,
           kind: "product",
-          custom: false,
+          custom: Boolean(askDimensions),
+          dimensions,
           viewMockups: images.map((url, index) => ({
             id: `gallery-${index}`,
             label: `${index + 1}`,
@@ -188,6 +202,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
         priceEgp: sellingPrice(product) || 100,
         kind: "product",
         custom: true,
+        dimensions,
         viewMockups,
         uploads,
       });
@@ -217,10 +232,16 @@ export function ProductWorkspace({ product }: { product: Product }) {
         <p className="text-xs font-medium text-oxford/60">{product.category}</p>
         <h1 className="mt-1 font-heading text-3xl leading-tight text-oxford sm:text-4xl">{localizedName(product, locale)}</h1>
         <PriceTag product={product} size="lg" className="mt-2" />
-        <p className="mt-2 text-sm text-muted-foreground sm:text-base">{localizedDescription(product, locale)}</p>
+        {productSpecPoints(product, locale).length ? (
+          <ul className="mt-3 list-disc space-y-1 ps-5 text-sm text-muted-foreground">
+            {productSpecPoints(product, locale).map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        ) : null}
       </div>
       <div className="order-2 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
-        {customizable ? (
+        {allowImage ? (
         <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-boo-teal bg-teal-50/70 px-3 py-3 text-sm font-semibold text-oxford lg:hidden">
           <Upload className="size-4" />
           {locale === "ar" ? "اضغط لإضافة صورة" : "Tap to add an image"}
@@ -249,7 +270,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           />
         </label>
         ) : null}
-        {customizable ? (
+        {needsCanvas ? (
         <div className="flex flex-wrap items-center gap-2">
           {multiView
             ? views.map((view) => (
@@ -278,7 +299,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           </button>
         </div>
         ) : null}
-        {customizable ? (
+        {needsCanvas ? (
         <div
           className={`grid items-start justify-items-center gap-4 py-2 sm:gap-6 sm:py-4 ${multiView ? "sm:grid-cols-2" : ""}`}
           onClick={(event) => {
@@ -382,23 +403,40 @@ export function ProductWorkspace({ product }: { product: Product }) {
               </div>
             </div>
 
-            {customizable ? (
+            {askDimensions ? (
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-medium">{t("dimensions")}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-muted-foreground">
+                    {t("length")}
+                    <input
+                      value={dimLength}
+                      onChange={(event) => setDimLength(event.target.value)}
+                      inputMode="decimal"
+                      placeholder="L"
+                      className="mt-1 h-11 w-full rounded-full border border-oxford/12 bg-white px-4 text-sm text-oxford"
+                    />
+                  </label>
+                  <label className="text-xs text-muted-foreground">
+                    {t("width")}
+                    <input
+                      value={dimWidth}
+                      onChange={(event) => setDimWidth(event.target.value)}
+                      inputMode="decimal"
+                      placeholder="W"
+                      className="mt-1 h-11 w-full rounded-full border border-oxford/12 bg-white px-4 text-sm text-oxford"
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            {needsCanvas ? (
               <div className="mt-6 border-t border-border pt-5">
                 <p className="mb-3 font-heading text-xl">{t("customize")}</p>
                 <ControlsPanel product={product} canvas={activeCanvas ?? null} />
               </div>
             ) : null}
-
-            <div className="mt-6 border-t border-border pt-5">
-              <h2 className="font-heading text-xl">{t("details")}</h2>
-              <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-muted-foreground">
-                <li>
-                  <PriceTag product={product} size="sm" />
-                </li>
-                <li>{colors.join(" · ")}</li>
-                <li>{product.category}</li>
-              </ul>
-            </div>
 
             <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-oxford/10 bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
               <button

@@ -25,6 +25,7 @@ export type Product = {
   taglineAr: string;
   description: string;
   descriptionAr: string;
+  specPoints?: { ar: string; en: string }[];
   is_laser_cut: boolean;
   materials: string[];
   colors: string[];
@@ -50,6 +51,9 @@ export type Product = {
   saleEgp?: number;
   discountPercent?: number;
   customizable?: boolean;
+  allowImage?: boolean;
+  allowText?: boolean;
+  askDimensions?: boolean;
 };
 
 const MUG_WRAP_BOUNDS = { left: 214, top: 228, width: 330, height: 360, radius: 48 };
@@ -185,6 +189,11 @@ export const SEED_PRODUCTS: Product[] = [
       "Choose a color, then upload artwork on the front and back photos. Price is 100 EGP.",
     descriptionAr:
       "اختار اللون، وبعدين ارفع التصميم على صورة الأمام والخلف. السعر ١٠٠ جنيه.",
+    specPoints: [
+      { en: "Material: cotton", ar: "الخامة: قطن" },
+      { en: "Print: front and back", ar: "الطباعة: أمام وخلف" },
+      { en: "Price: 100 EGP", ar: "السعر: ١٠٠ جنيه" },
+    ],
     is_laser_cut: false,
     materials: ["White", "Black", "Navy"],
     colors: ["White", "Black", "Navy"],
@@ -198,6 +207,8 @@ export const SEED_PRODUCTS: Product[] = [
     accent: "teal",
     priceEgp: PRICE_EGP,
     customizable: true,
+    allowImage: true,
+    allowText: true,
     views: [
       {
         id: "front",
@@ -222,6 +233,11 @@ export const SEED_PRODUCTS: Product[] = [
     taglineAr: "مج حراري مع غطاء استانلس.",
     description: "Double-wall tumbler. Pick a color and add it to your bag. 100 EGP.",
     descriptionAr: "مج حراري جدار مزدوج. اختار اللون وضيفه للسلة. السعر ١٠٠ جنيه.",
+    specPoints: [
+      { en: "Material: double-wall steel", ar: "الخامة: استانلس جدار مزدوج" },
+      { en: "Lid: steel", ar: "الغطاء: استانلس" },
+      { en: "Price: 100 EGP", ar: "السعر: ١٠٠ جنيه" },
+    ],
     is_laser_cut: false,
     materials: ["White", "Black", "Silver"],
     colors: ["White", "Black", "Silver"],
@@ -237,6 +253,8 @@ export const SEED_PRODUCTS: Product[] = [
     wrapPreview: false,
     priceEgp: PRICE_EGP,
     customizable: true,
+    allowImage: true,
+    allowText: true,
     views: [
       {
         id: "front",
@@ -255,6 +273,11 @@ export const SEED_PRODUCTS: Product[] = [
     taglineAr: "كوستر خشب دائري جاهز للنقش أو الطباعة.",
     description: "Natural round wood coaster. 100 EGP.",
     descriptionAr: "كوستر خشب طبيعي دائري. السعر ١٠٠ جنيه.",
+    specPoints: [
+      { en: "Material: natural wood", ar: "الخامة: خشب طبيعي" },
+      { en: "Shape: round", ar: "الشكل: دائري" },
+      { en: "Price: 100 EGP", ar: "السعر: ١٠٠ جنيه" },
+    ],
     is_laser_cut: true,
     materials: ["Natural pine", "Walnut", "Cherry"],
     colors: ["Natural pine", "Walnut", "Cherry"],
@@ -268,6 +291,8 @@ export const SEED_PRODUCTS: Product[] = [
     accent: "orange",
     priceEgp: PRICE_EGP,
     customizable: true,
+    allowImage: false,
+    allowText: true,
     views: [
       {
         id: "front",
@@ -316,4 +341,33 @@ export function localizedTagline(product: Product, locale: string) {
 
 export function localizedDescription(product: Product, locale: string) {
   return locale === "ar" ? product.descriptionAr : product.description;
+}
+
+export function productSpecPoints(product: Product, locale: string) {
+  if (product.specPoints?.length) {
+    return product.specPoints
+      .map((point) => (locale === "ar" ? point.ar || point.en : point.en || point.ar).trim())
+      .filter(Boolean);
+  }
+  const raw = localizedDescription(product, locale);
+  return raw
+    .split(/\n+/)
+    .map((line) => line.replace(/^[-•*]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+export function productAllowsImage(product: Product) {
+  return product.customizable !== false && product.allowImage !== false;
+}
+
+export function productAllowsText(product: Product) {
+  return product.customizable !== false && product.allowText !== false;
+}
+
+export function productAsksDimensions(product: Product) {
+  return product.customizable !== false && Boolean(product.askDimensions);
+}
+
+export function productNeedsCanvas(product: Product) {
+  return productAllowsImage(product) || productAllowsText(product);
 }

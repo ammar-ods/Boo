@@ -22,6 +22,7 @@ export type CartItem = {
   priceEgp: number;
   kind: "product" | "bundle";
   custom?: boolean;
+  dimensions?: { length: string; width: string };
   mockup?: string;
   viewMockups?: CartDesignFile[];
   uploads?: CartDesignFile[];

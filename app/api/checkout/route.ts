@@ -10,6 +10,7 @@ type CheckoutItem = {
   priceEgp: number;
   image?: string;
   custom?: boolean;
+  dimensions?: { length?: string; width?: string };
   viewMockups?: { id?: string; label?: string; url: string }[];
   uploads?: { name?: string; url: string }[];
 };
@@ -51,7 +52,13 @@ export async function POST(request: Request) {
     }
     const reference_code = await nextReferenceCode();
     const summary = items
-      .map((item) => `${item.quantity}× ${item.name} (${item.color})`)
+      .map((item) => {
+        const size =
+          item.dimensions?.length || item.dimensions?.width
+            ? ` ${item.dimensions.length || "?"}×${item.dimensions.width || "?"}`
+            : "";
+        return `${item.quantity}× ${item.name} (${item.color}${size})`;
+      })
       .join(", ");
     const subtotal = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
     const promo = matchPromo(body.promoCode, site.promo.codes ?? []);

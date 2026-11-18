@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CANVAS_FONTS } from "@/lib/fonts";
-import { productOptions, type Product } from "@/lib/products";
+import { productAllowsImage, productAllowsText, productOptions, type Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { forgetFile, rememberFile } from "@/lib/upload-registry";
@@ -79,6 +79,9 @@ export function ControlsPanel({
     multiple: true,
   });
 
+  const allowImage = productAllowsImage(product);
+  const allowText = productAllowsText(product);
+
   return (
     <div className="space-y-6">
       {bleedWarning ? (
@@ -87,6 +90,7 @@ export function ControlsPanel({
         </div>
       ) : null}
 
+      {allowImage ? (
       <section className="space-y-2">
         <h3 className="font-heading text-lg">Upload artwork</h3>
         <p className="text-sm text-oxford/70">
@@ -134,7 +138,9 @@ export function ControlsPanel({
           </ul>
         ) : null}
       </section>
+      ) : null}
 
+      {allowText ? (
       <section className="space-y-3">
         <h3 className="font-heading text-lg">Text</h3>
         <div className="space-y-1.5">
@@ -195,6 +201,7 @@ export function ControlsPanel({
           ) : null}
         </div>
       </section>
+      ) : null}
 
       {product.is_laser_cut ? (
         <section className="flex items-start gap-3 rounded-2xl bg-secondary p-3">

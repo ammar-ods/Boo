@@ -168,14 +168,6 @@ html.locale-fading body {
   animation: banner-slide-out 520ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-html[dir="rtl"] .cms-banner-slide-in {
-  animation-name: banner-slide-in-rtl;
-}
-
-html[dir="rtl"] .cms-banner-slide-out {
-  animation-name: banner-slide-out-rtl;
-}
-
 @keyframes banner-slide-in {
   from {
     transform: translate3d(100%, 0, 0);
@@ -191,24 +183,6 @@ html[dir="rtl"] .cms-banner-slide-out {
   }
   to {
     transform: translate3d(-100%, 0, 0);
-  }
-}
-
-@keyframes banner-slide-in-rtl {
-  from {
-    transform: translate3d(-100%, 0, 0);
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes banner-slide-out-rtl {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(100%, 0, 0);
   }
 }
 

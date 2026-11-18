@@ -16,6 +16,18 @@ import {
   upsertProduct,
 } from "@/lib/local-db";
 
+function parseSpecPoints(formData: FormData) {
+  const en = formData.getAll("specPointEn").map((item) => String(item).trim());
+  const ar = formData.getAll("specPointAr").map((item) => String(item).trim());
+  const count = Math.max(en.length, ar.length);
+  const points: { ar: string; en: string }[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const row = { en: en[index] || "", ar: ar[index] || "" };
+    if (row.en || row.ar) points.push(row);
+  }
+  return points;
+}
+
 function parseSafe(formData: FormData) {
   return {
     left: Number(formData.get("safe_left") || 200),
@@ -171,6 +183,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     taglineAr: String(formData.get("taglineAr") || existing?.taglineAr || ""),
     description: String(formData.get("description") || ""),
     descriptionAr: String(formData.get("descriptionAr") || existing?.descriptionAr || ""),
+    specPoints: parseSpecPoints(formData),
     is_laser_cut: formData.get("is_laser_cut") === "on",
     materials: choices.length ? choices : ["Standard"],
     colors: choices.length ? choices : existing?.colors ?? ["White"],
@@ -183,6 +196,9 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     saleEgp: discounted && saleEgp > 0 ? saleEgp : undefined,
     discountPercent: discounted && discountPercent > 0 ? discountPercent : undefined,
     customizable: formData.get("customizable") === "on",
+    allowImage: formData.get("customizable") === "on" && formData.get("allowImage") === "on",
+    allowText: formData.get("customizable") === "on" && formData.get("allowText") === "on",
+    askDimensions: formData.get("customizable") === "on" && formData.get("askDimensions") === "on",
     canvasWidth: 800,
     canvasHeight: 800,
     safe_zone_bounds: safe,

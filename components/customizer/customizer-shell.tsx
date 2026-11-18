@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, X } from "lucide-react";
 import { BackChevron } from "@/components/ui/back-chevron";
-import { MUG_WRAP_FLAT, mugPhotoUrl, productViews, type Product, type ProductView } from "@/lib/products";
+import { MUG_WRAP_FLAT, mugPhotoUrl, productSpecPoints, productViews, type Product, type ProductView } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { clearRememberedFiles } from "@/lib/upload-registry";
 import { FabricCanvas, type CanvasHandle } from "./fabric-canvas";
@@ -185,7 +185,11 @@ export function CustomizerShell({ product }: { product: Product }) {
         <aside className="rounded-[1.6rem] bg-white p-4 ring-1 ring-foreground/10 sm:p-5 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           <p className="font-script text-2xl text-boo-pink">customize it</p>
           <h1 className="font-heading text-2xl sm:text-3xl">{product.name}</h1>
-          <p className="mb-5 mt-1 text-sm text-muted-foreground">{product.description}</p>
+          <ul className="mb-5 mt-1 list-disc space-y-1 ps-5 text-sm text-muted-foreground">
+            {productSpecPoints(product, "en").map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
           {views.length > 1 ? (
             <p className="mb-4 rounded-2xl bg-secondary px-3 py-2 text-sm">
               Adding to <span className="font-heading">{views.find((view) => view.id === activeViewId)?.label ?? "this side"}</span>

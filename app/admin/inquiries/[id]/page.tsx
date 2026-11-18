@@ -32,8 +32,16 @@ export default async function InquiryDetailPage({
   const payload = (inquiry.canvas_json ?? {}) as {
     views?: { id?: string; label?: string; url?: string }[];
     uploads?: { name?: string; url?: string }[];
+    items?: { name?: string; dimensions?: { length?: string; width?: string } }[];
     payment?: { method?: string; transferPhone?: string; receiptUrl?: string };
   };
+  const dimensionNote = (payload.items ?? [])
+    .filter((item) => item.dimensions?.length || item.dimensions?.width)
+    .map(
+      (item) =>
+        `${item.name || "Item"}: ${item.dimensions?.length || "?"} × ${item.dimensions?.width || "?"}`,
+    )
+    .join(" · ");
   const payment = payload.payment;
   const extras = (inquiry.production_paths ?? []).filter(
     (path) => path !== inquiry.mockup_path && path !== payment?.receiptUrl,
@@ -56,6 +64,7 @@ export default async function InquiryDetailPage({
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
         {inquiry.product_name} · {inquiry.customer_name} ·{" "}
         {inquiry.created_at ? new Date(inquiry.created_at).toLocaleString() : ""}
+        {dimensionNote ? ` · ${dimensionNote}` : ""}
       </p>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
