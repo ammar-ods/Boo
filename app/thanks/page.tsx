@@ -25,12 +25,7 @@ export default async function ThanksPage({
         . هنتواصل معاك لتأكيد التوصيل.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        {reference ? (
-          <Link href={`/invoice/${encodeURIComponent(reference.replace("#", ""))}`} className="btn-press">
-            تنزيل الفاتورة
-          </Link>
-        ) : null}
-        <Link href="/catalog" className="btn-press btn-press-outline">
+        <Link href="/catalog" className="btn-press">
           رجوع للمتجر
         </Link>
         <Link href="/" className="btn-press btn-press-outline">

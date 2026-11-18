@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { InvoiceActions } from "@/components/shop/invoice-actions";
 import { getOrder, getSite } from "@/lib/local-db";
@@ -7,21 +8,37 @@ import { pick } from "@/lib/site";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function InvoicePage({
+export default async function AdminInvoicePage({
   params,
 }: {
-  params: Promise<{ ref: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { ref } = await params;
-  const inquiry = await getOrder(ref);
+  const { id } = await params;
+  let inquiry;
+  try {
+    inquiry = await getOrder(id);
+  } catch {
+    inquiry = null;
+  }
   if (!inquiry) notFound();
-  const site = await getSite();
+
+  let logo = "/brand/boo-mark.png";
+  let shippingLabel = "Shipping";
+  let expressLabel = "Express order";
+  try {
+    const site = await getSite();
+    logo = site.chrome.logo || logo;
+    shippingLabel = pick(site.commerce.shippingLabel, "en") || shippingLabel;
+    expressLabel = pick(site.commerce.expressLabel, "en") || expressLabel;
+  } catch {
+    /* keep defaults if site settings fail */
+  }
+
   const items = orderLineItems(inquiry);
   const customer = orderCustomer(inquiry);
   const payload = orderPayload(inquiry);
   const commerce = payload.commerce;
   const payment = payload.payment;
-  const logo = site.chrome.logo || "/brand/boo-mark.png";
   const code = inquiry.reference_code.replace("#", "");
   const date = inquiry.created_at ? new Date(inquiry.created_at).toLocaleString("en-GB") : "";
   const subtotal = commerce?.subtotal ?? items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
@@ -32,7 +49,12 @@ export default async function InvoicePage({
 
   return (
     <div className="invoice-sheet mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
-      <InvoiceActions title="Download PDF" />
+      <Link href={`/admin/inquiries/${inquiry.id}`} className="invoice-actions text-sm text-oxford/70 hover:text-oxford">
+        ← Back to order
+      </Link>
+      <div className="mt-4">
+        <InvoiceActions title="Download PDF" />
+      </div>
       <article className="mt-6 rounded-[1.6rem] bg-white p-6 text-oxford ring-1 ring-oxford/10 sm:p-10">
         <header className="flex flex-wrap items-start justify-between gap-6 border-b border-oxford/10 pb-6">
           <div>
@@ -48,7 +70,7 @@ export default async function InvoicePage({
         </header>
 
         <section className="mt-6 grid gap-6 sm:grid-cols-2">
-          <div>
+          <div className="rounded-2xl bg-cream/60 p-4">
             <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-oxford/45">Bill to</p>
             <p className="mt-1 font-heading text-xl">{customer.name}</p>
             <p className="mt-1 text-sm" dir="ltr">
@@ -57,13 +79,18 @@ export default async function InvoicePage({
             {customer.email ? <p className="text-sm">{customer.email}</p> : null}
             {customer.address ? <p className="mt-2 text-sm leading-relaxed">{customer.address}</p> : null}
           </div>
-          <div>
+          <div className="rounded-2xl bg-cream/60 p-4">
             <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-oxford/45">Order</p>
             <p className="mt-1 text-sm">Reference #{code}</p>
             <p className="text-sm">
-              Payment: {payment?.method === "online" ? "Online transfer" : payment?.method === "cod" ? "Cash on delivery" : "—"}
+              Payment:{" "}
+              {payment?.method === "online"
+                ? "Online transfer"
+                : payment?.method === "cod"
+                  ? "Cash on delivery"
+                  : "—"}
             </p>
-            {payload.express ? <p className="text-sm">{pick(site.commerce.expressLabel, "en") || "Express order"}</p> : null}
+            {payload.express || express > 0 ? <p className="text-sm">{expressLabel}</p> : null}
           </div>
         </section>
 
@@ -81,7 +108,12 @@ export default async function InvoicePage({
               <tr key={`${item.slug || item.name}-${index}`} className="border-b border-oxford/8">
                 <td className="py-3 font-heading">{item.name}</td>
                 <td className="py-3 text-oxford/70">
-                  {[item.color, item.dimensions?.length || item.dimensions?.width ? `${item.dimensions?.length || "?"}×${item.dimensions?.width || "?"}` : ""]
+                  {[
+                    item.color,
+                    item.dimensions?.length || item.dimensions?.width
+                      ? `${item.dimensions?.length || "?"}×${item.dimensions?.width || "?"}`
+                      : "",
+                  ]
                     .filter(Boolean)
                     .join(" · ") || "—"}
                 </td>
@@ -92,7 +124,7 @@ export default async function InvoicePage({
           </tbody>
         </table>
 
-        <dl className="ms-auto mt-6 max-w-xs space-y-1 text-sm">
+        <dl className="ms-auto mt-6 max-w-xs space-y-2 text-sm">
           <div className="flex justify-between">
             <dt>Subtotal</dt>
             <dd>{subtotal} EGP</dd>
@@ -104,12 +136,12 @@ export default async function InvoicePage({
             </div>
           ) : null}
           <div className="flex justify-between">
-            <dt>{pick(site.commerce.shippingLabel, "en") || "Shipping"}</dt>
+            <dt>{shippingLabel}</dt>
             <dd>{commerce?.shippingFree ? "Free" : `${shipping} EGP`}</dd>
           </div>
           {express > 0 ? (
             <div className="flex justify-between">
-              <dt>{pick(site.commerce.expressLabel, "en") || "Express"}</dt>
+              <dt>{expressLabel}</dt>
               <dd>{express} EGP</dd>
             </div>
           ) : null}
@@ -119,12 +151,8 @@ export default async function InvoicePage({
           </div>
         </dl>
 
-        {customer.notes ? (
-          <p className="mt-8 text-sm text-oxford/70">
-            Notes: {customer.notes}
-          </p>
-        ) : null}
-        <p className="mt-8 text-xs text-oxford/45">This is the customer copy of your Boo order invoice.</p>
+        {customer.notes ? <p className="mt-8 text-sm text-oxford/70">Notes: {customer.notes}</p> : null}
+        <p className="mt-8 text-xs text-oxford/45">Customer copy of the Boo order invoice.</p>
       </article>
     </div>
   );

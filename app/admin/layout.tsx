@@ -18,8 +18,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div dir="ltr" lang="en" className="admin-desk min-h-screen bg-background text-foreground">
-      <div className="chrome-bar h-2.5" />
-      <div className="border-b border-border bg-white">
+      <div className="chrome-bar h-2.5 print:hidden" />
+      <div className="border-b border-border bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <Link href="/admin/inquiries" className="flex items-center gap-3">
             <BooLogo compact />

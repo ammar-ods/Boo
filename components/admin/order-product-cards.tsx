@@ -18,7 +18,13 @@ function itemImage(item: OrderLineItem) {
   return item.viewMockups?.find((view) => view.url)?.url || item.image || "";
 }
 
-export function OrderProductCards({ inquiry }: { inquiry: InquiryRecord }) {
+export function OrderProductCards({
+  inquiry,
+  compact = false,
+}: {
+  inquiry: InquiryRecord;
+  compact?: boolean;
+}) {
   const items = orderLineItems(inquiry);
   const [open, setOpen] = useState<OrderLineItem | null>(null);
 
@@ -32,17 +38,19 @@ export function OrderProductCards({ inquiry }: { inquiry: InquiryRecord }) {
               key={`${item.slug || item.name}-${index}`}
               type="button"
               onClick={() => setOpen(item)}
-              className="overflow-hidden rounded-[1.2rem] bg-cream/70 text-start ring-1 ring-oxford/8 transition hover:-translate-y-0.5"
+              className={`overflow-hidden bg-white text-start ring-1 ring-oxford/8 transition hover:-translate-y-0.5 ${
+                compact ? "flex items-center gap-3 rounded-2xl p-2" : "rounded-[1.2rem] bg-cream/70"
+              }`}
             >
-              <div className="h-28 bg-[#f6f3ee]">
+              <div className={`shrink-0 bg-[#f6f3ee] ${compact ? "size-16 overflow-hidden rounded-xl" : "h-28"}`}>
                 {image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={image} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="grid h-full place-items-center text-xs text-muted-foreground">No preview</div>
+                  <div className="grid h-full place-items-center text-[10px] text-muted-foreground">No preview</div>
                 )}
               </div>
-              <div className="p-3">
+              <div className={compact ? "min-w-0 py-1 pe-2" : "p-3"}>
                 <p className="truncate font-heading text-oxford">{item.name}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   qty {item.quantity}
