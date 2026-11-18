@@ -287,11 +287,13 @@ function SectionShell({
   cover?: { src?: string; srcMobile?: string; height: number; href?: string };
 }) {
   const surface = sectionSurface(section.style);
-  const pad = Math.max(0, section.style.paddingY ?? 48);
+  const padTop = Math.max(0, section.style.paddingTop ?? section.style.paddingY ?? 48);
+  const padBottom = Math.max(0, section.style.paddingBottom ?? section.style.paddingY ?? 48);
   const width = Math.min(100, Math.max(20, section.style.blockWidth ?? 100));
   const minHeight = Math.max(0, section.style.minHeight ?? 0);
   const marginX = Math.max(0, section.style.marginX ?? 0);
-  const marginY = Math.max(0, section.style.marginY ?? 0);
+  const marginTop = Math.max(0, section.style.marginTop ?? section.style.marginY ?? 0);
+  const marginBottom = Math.max(0, section.style.marginBottom ?? section.style.marginY ?? 0);
   const rounded = Boolean(section.style.rounded);
   const resolvedMin = cover ? Math.max(minHeight, cover.height) : minHeight;
   return (
@@ -299,7 +301,8 @@ function SectionShell({
       className="cms-block-frame"
       style={{
         ["--cms-mx" as string]: `${marginX}px`,
-        ["--cms-my" as string]: `${marginY}px`,
+        ["--cms-my-t" as string]: `${marginTop}px`,
+        ["--cms-my-b" as string]: `${marginBottom}px`,
       }}
     >
       <section
@@ -308,7 +311,8 @@ function SectionShell({
           background: cover || section.type === "banner" || section.type === "slideshow" ? undefined : surface.background,
           color: surface.color,
           ["--cms-w" as string]: `${width}%`,
-          ["--cms-pad" as string]: `${pad}px`,
+          ["--cms-pad-t" as string]: `${padTop}px`,
+          ["--cms-pad-b" as string]: `${padBottom}px`,
           ["--cms-min-h" as string]: `${resolvedMin}px`,
           animationDelay: `${index * 80}ms`,
         }}
@@ -353,7 +357,11 @@ function SectionView({
   const placement: ImagePlacement =
     section.style.imagePlacement ?? (image || imageMobile ? "below" : "hidden");
   const showImage = placement !== "hidden" && Boolean(image || imageMobile);
-  const widthPct = section.style.imageWidth ?? (placement === "bleed" || placement === "cover" ? 100 : 70);
+  const widthPct =
+    section.style.imageWidth ??
+    (placement === "bleed" || placement === "cover" || section.type === "banner" || section.type === "slideshow"
+      ? 100
+      : 70);
   const height = section.style.imageHeight ?? 280;
   const rounded =
     section.style.imageRounded ?? (placement === "below" || placement === "start" || placement === "end");
@@ -414,6 +422,27 @@ function SectionView({
   ) : null;
 
   const aspect = imageAspect(section);
+
+  if (section.type === "banner" && showImage && (placement === "bleed" || placement === "cover")) {
+    return (
+      <SectionShell section={section} index={index}>
+        <BannerSlideshow
+          items={[{ src: image, srcMobile: imageMobile, href: imageHref }]}
+          height={height}
+          widthPct={widthPct}
+          aspect={aspect || "5 / 2"}
+          rounded={Boolean(section.style.imageRounded)}
+          intervalMs={8000}
+        />
+        {pick(section.content.title, locale) || pick(section.content.body, locale) || actions ? (
+          <div className={`cms-copy pt-5 sm:pt-6 ${centered ? "text-center" : "text-start"}`}>
+            {copy}
+            {actions}
+          </div>
+        ) : null}
+      </SectionShell>
+    );
+  }
 
   if (section.type === "slideshow") {
     return (

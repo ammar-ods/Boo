@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       notes?: string;
       fields?: Record<string, string>;
       promoCode?: string;
+      express?: boolean;
       payment?: { method?: string; transferPhone?: string; receiptUrl?: string };
       items?: CheckoutItem[];
     };
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       .join(", ");
     const subtotal = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
     const promo = matchPromo(body.promoCode, site.promo.codes ?? []);
-    const breakdown = cartBreakdown(subtotal, site.commerce, promo);
+    const breakdown = cartBreakdown(subtotal, site.commerce, promo, { express: Boolean(body.express) });
     const total = breakdown.total;
     const now = new Date().toISOString();
     const first = items[0];
@@ -119,6 +120,7 @@ export async function POST(request: Request) {
         fields.notes || body.notes,
         breakdown.discount ? `Promo ${breakdown.promoCode} −${breakdown.discount} EGP` : "",
         breakdown.shippingFree ? "Shipping: free" : `Shipping ${breakdown.shippingCharged} EGP`,
+        breakdown.expressCharged ? `Express ${breakdown.expressCharged} EGP` : "",
         `Total ${total} EGP`,
         paymentMethod === "online"
           ? `Payment: online transfer from ${body.payment?.transferPhone}`
@@ -136,6 +138,7 @@ export async function POST(request: Request) {
         views: viewFiles,
         uploads: uploadFiles,
         commerce: breakdown,
+        express: breakdown.express,
         payment: {
           method: paymentMethod,
           transferPhone: body.payment?.transferPhone?.trim() || "",

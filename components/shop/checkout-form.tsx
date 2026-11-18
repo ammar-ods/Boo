@@ -42,13 +42,15 @@ export function CheckoutForm({
   const [receiptName, setReceiptName] = useState("");
   const [promoInput, setPromoInput] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
+  const [express, setExpress] = useState(false);
   const subtotal = cartTotal(items);
   const payPhone = site.chrome.payPhone || "01000000000";
   const promo = useMemo(
     () => matchPromo(appliedCode, site.promo.codes ?? []),
     [appliedCode, site.promo.codes],
   );
-  const breakdown = cartBreakdown(subtotal, site.commerce, promo);
+  const breakdown = cartBreakdown(subtotal, site.commerce, promo, { express });
+  const expressOffered = site.commerce.expressEnabled !== false && (site.commerce.expressPrice ?? 0) >= 0;
   const checkoutFields = site.commerce.checkoutFields?.length
     ? site.commerce.checkoutFields
     : [];
@@ -106,6 +108,7 @@ export function CheckoutForm({
         notes: fields.notes || data.get("notes"),
         fields,
         promoCode: appliedCode,
+        express,
         shipping: breakdown.shippingCharged,
         shippingFree: breakdown.shippingFree,
         discount: breakdown.discount,
@@ -191,7 +194,26 @@ export function CheckoutForm({
           );
         })}
       </div>
-      <dl className={`space-y-1 text-sm ${embedded ? "mt-4" : "mt-5"}`}>
+      {expressOffered ? (
+        <label className={`flex cursor-pointer items-start justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm ring-1 ring-oxford/10 ${embedded ? "mt-4" : "mt-5"}`}>
+          <span>
+            <span className="block font-medium text-oxford">
+              {pick(site.commerce.expressLabel, locale) || t("expressOrder")}
+            </span>
+            <span className="text-xs text-muted-foreground">{t("expressHint")}</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-oxford">{formatPrice(site.commerce.expressPrice ?? 0)}</span>
+            <input
+              type="checkbox"
+              className="size-4 accent-oxford"
+              checked={express}
+              onChange={(event) => setExpress(event.target.checked)}
+            />
+          </span>
+        </label>
+      ) : null}
+      <dl className={`space-y-1 text-sm ${expressOffered ? "mt-3" : embedded ? "mt-4" : "mt-5"}`}>
         <div className="flex justify-between">
           <dt>{t("subtotal")}</dt>
           <dd>{formatPrice(breakdown.subtotal)}</dd>
@@ -203,6 +225,12 @@ export function CheckoutForm({
               {breakdown.promoCode ? ` (${breakdown.promoCode})` : ""}
             </dt>
             <dd>−{formatPrice(breakdown.discount)}</dd>
+          </div>
+        ) : null}
+        {breakdown.expressCharged > 0 ? (
+          <div className="flex justify-between">
+            <dt>{pick(site.commerce.expressLabel, locale) || t("expressOrder")}</dt>
+            <dd>{formatPrice(breakdown.expressCharged)}</dd>
           </div>
         ) : null}
         <div className="flex justify-between">

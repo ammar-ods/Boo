@@ -127,6 +127,12 @@ export async function saveShopSettings(formData: FormData) {
       contactFields: parseFormFields(formData.get("contactFields"), DEFAULT_CONTACT_FIELDS),
       checkoutFields: parseFormFields(formData.get("checkoutFields"), DEFAULT_CHECKOUT_FIELDS),
       codBlockCustom: formData.get("codBlockCustom") === "on",
+      expressEnabled: formData.get("expressEnabled") === "on",
+      expressPrice: Math.max(0, Number(formData.get("expressPrice") || 0)),
+      expressLabel: {
+        ar: String(formData.get("expressLabelAr") ?? site.commerce.expressLabel?.ar ?? "طلب سريع"),
+        en: String(formData.get("expressLabelEn") ?? site.commerce.expressLabel?.en ?? "Express order"),
+      },
     },
   });
   revalidatePath("/");

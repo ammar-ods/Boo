@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { DeleteOrderButton } from "@/components/admin/delete-order-button";
+import { OrderProductCards } from "@/components/admin/order-product-cards";
 import { OrdersFilters } from "@/components/admin/orders-filters";
 import { listOrders } from "@/lib/local-db";
+import { orderLineItems } from "@/lib/order-view";
 import type { InquiryStatus } from "@/lib/schemas/inquiry";
 
 export const dynamic = "force-dynamic";
@@ -49,51 +51,55 @@ export default async function InquiriesPage({
       <OrdersFilters status={current} from={from} to={to} />
 
       <div className="grid gap-4">
-        {rows.map((row) => (
+        {rows.map((row) => {
+          const lines = orderLineItems(row);
+          return (
           <div
             key={row.id}
-            className="flex flex-col overflow-hidden rounded-[1.6rem] bg-white shadow-[0_12px_32px_-24px_rgba(10,37,64,0.28)] ring-1 ring-oxford/8 sm:flex-row"
+            className="overflow-hidden rounded-[1.6rem] bg-white shadow-[0_12px_32px_-24px_rgba(10,37,64,0.28)] ring-1 ring-oxford/8"
           >
-            <Link
-              href={`/admin/inquiries/${row.id}`}
-              className="flex min-w-0 flex-1 flex-col transition hover:bg-cream/70 sm:flex-row"
-            >
-              <div className="h-36 w-full shrink-0 bg-[#f6f3ee] sm:h-auto sm:w-32">
-                {row.mockup_path ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={row.mockup_path} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full min-h-28 items-center justify-center px-3 text-center text-xs text-muted-foreground">
-                    No preview
-                  </div>
-                )}
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col sm:flex-row">
+              <Link
+                href={`/admin/inquiries/${row.id}`}
+                className="flex min-w-0 flex-1 items-center justify-between gap-4 p-5 transition hover:bg-cream/70"
+              >
                 <div className="min-w-0">
                   <p className="font-heading text-base text-boo-teal">
                     #{row.reference_code.replace("#", "")}
                   </p>
-                  <p className="mt-1 truncate font-heading text-xl text-oxford">{row.product_name}</p>
+                  <p className="mt-1 font-heading text-xl text-oxford">{row.customer_name}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    {row.customer_name} · {row.customer_phone} · qty {row.quantity}
+                    {row.customer_phone} · {lines.length} {lines.length === 1 ? "product" : "products"} · qty {row.quantity}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {row.created_at ? new Date(row.created_at).toLocaleString() : ""}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
+                <div className="flex shrink-0 flex-col items-end gap-2">
                   <span className="rounded-full bg-secondary px-3 py-1 text-xs font-heading capitalize">
                     {row.status}
                   </span>
-                  <p className="text-sm font-heading text-oxford">Open</p>
+                  <span className="text-sm font-heading text-oxford">Open order</span>
                 </div>
+              </Link>
+              <div className="flex items-center border-t border-oxford/8 p-4 sm:w-40 sm:border-s sm:border-t-0">
+                <DeleteOrderButton id={row.id} reference={row.reference_code} compact />
               </div>
-            </Link>
-            <div className="flex items-center border-t border-oxford/8 p-4 sm:w-40 sm:border-s sm:border-t-0">
-              <DeleteOrderButton id={row.id} reference={row.reference_code} compact />
+            </div>
+            <div className="border-t border-oxford/8 p-4">
+              <OrderProductCards inquiry={row} />
+              <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                <Link href={`/admin/inquiries/${row.id}`} className="font-heading text-oxford">
+                  Full details
+                </Link>
+                <a href={`/invoice/${encodeURIComponent(row.reference_code.replace("#", ""))}`} className="font-heading text-boo-teal">
+                  Customer invoice
+                </a>
+              </div>
             </div>
           </div>
-        ))}
+          );
+        })}
         {rows.length === 0 ? (
           <div className="rounded-[1.6rem] bg-white px-6 py-14 text-center text-muted-foreground ring-1 ring-oxford/8">
             No orders in this filter yet. Customizer inquiries land here automatically.

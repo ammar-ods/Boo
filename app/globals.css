@@ -230,15 +230,16 @@ html.locale-fading body {
 
 .cms-block-frame {
   padding-inline: max(var(--cms-mx, 0px), 0px);
-  padding-block: max(var(--cms-my, 0px), 0px);
+  padding-top: max(var(--cms-my-t, var(--cms-my, 0px)), 0px);
+  padding-bottom: max(var(--cms-my-b, var(--cms-my, 0px)), 0px);
 }
 
 .cms-block {
   width: var(--cms-w, 100%);
   max-width: 100%;
   margin-inline: auto;
-  padding-top: var(--cms-pad, 48px);
-  padding-bottom: var(--cms-pad, 48px);
+  padding-top: var(--cms-pad-t, var(--cms-pad, 48px));
+  padding-bottom: var(--cms-pad-b, var(--cms-pad, 48px));
   min-height: var(--cms-min-h, 0px);
 }
 
@@ -297,7 +298,8 @@ html.locale-fading body {
 @media (max-width: 767px) {
   .cms-block-frame {
     padding-inline: max(var(--cms-mx, 0px), 0px);
-    padding-block: max(var(--cms-my, 0px), 0px);
+    padding-top: max(var(--cms-my-t, var(--cms-my, 0px)), 0px);
+    padding-bottom: max(var(--cms-my-b, var(--cms-my, 0px)), 0px);
   }
 
   .cms-copy {
@@ -306,8 +308,8 @@ html.locale-fading body {
 
   .cms-block {
     width: 100%;
-    padding-top: max(1.25rem, min(var(--cms-pad, 48px), 8vw));
-    padding-bottom: max(1.25rem, min(var(--cms-pad, 48px), 8vw));
+    padding-top: max(0px, min(var(--cms-pad-t, var(--cms-pad, 48px)), 8vw));
+    padding-bottom: max(0px, min(var(--cms-pad-b, var(--cms-pad, 48px)), 8vw));
     min-height: min(var(--cms-min-h, 0px), 46vh);
   }
 
@@ -610,6 +612,30 @@ html.dark:not(:has(.admin-desk)) .bg-cream\/80 {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@media print {
+  header,
+  footer,
+  .chrome-bar,
+  .invoice-actions,
+  .fixed {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .invoice-sheet {
+    max-width: none;
+    padding: 0;
+  }
+
+  .invoice-sheet article {
+    box-shadow: none;
+    border-radius: 0;
   }
 }
 

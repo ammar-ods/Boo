@@ -261,7 +261,7 @@ export function FabricCanvas({
       };
       addImageRef.current = addImageFromFile;
 
-      const addText = () => {
+      const addText = (startEditing = true) => {
         const draft = textDraftRef.current;
         const safe = viewRef.current.safe_zone_bounds;
         const text = new fabric.IText(draft.content || "BOO", {
@@ -278,15 +278,24 @@ export function FabricCanvas({
         (text as { isDesignLayer?: boolean }).isDesignLayer = true;
         canvas.add(text);
         canvas.setActiveObject(text);
-        text.enterEditing();
+        if (startEditing) text.enterEditing();
         canvas.requestRenderAll();
         checkBleed();
       };
 
       const applyTextDraft = () => {
-        const obj = canvas.getActiveObject();
         const draft = textDraftRef.current;
-        if (!obj || (obj.type !== "i-text" && obj.type !== "text")) return;
+        const isText = (obj: { type?: string } | null | undefined) =>
+          obj?.type === "i-text" || obj?.type === "text";
+        let obj = canvas.getActiveObject();
+        if (!isText(obj)) {
+          obj = canvas.getObjects().find((item) => isText(item) && isDesign(item));
+        }
+        if (!obj) {
+          if (!draft.content.trim()) return;
+          addText(false);
+          return;
+        }
         obj.set({
           text: draft.content,
           fontFamily: draft.fontFamily,

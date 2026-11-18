@@ -20,6 +20,8 @@ export type SectionStyle = {
   color?: string;
   fontSize?: number;
   paddingY?: number;
+  paddingTop?: number;
+  paddingBottom?: number;
   align?: "start" | "center";
   imageHeight?: number;
   imagePlacement?: ImagePlacement;
@@ -38,6 +40,8 @@ export type SectionStyle = {
   minHeight?: number;
   marginX?: number;
   marginY?: number;
+  marginTop?: number;
+  marginBottom?: number;
   rounded?: boolean;
   showOnMobile?: boolean;
   showOnDesktop?: boolean;
@@ -165,6 +169,9 @@ export type Commerce = {
   contactFields: ShopFormField[];
   checkoutFields: ShopFormField[];
   codBlockCustom?: boolean;
+  expressEnabled?: boolean;
+  expressPrice?: number;
+  expressLabel: Localized;
 };
 
 export type CmsPage = {
@@ -198,6 +205,7 @@ export const RESERVED_PAGE_SLUGS = new Set([
   "p",
   "product",
   "thanks",
+  "invoice",
 ]);
 
 export function pageSlugify(value: string) {
@@ -464,6 +472,9 @@ export const DEFAULT_COMMERCE: Commerce = {
   contactFields: DEFAULT_CONTACT_FIELDS,
   checkoutFields: DEFAULT_CHECKOUT_FIELDS,
   codBlockCustom: true,
+  expressEnabled: true,
+  expressPrice: 120,
+  expressLabel: loc("طلب سريع", "Express order"),
 };
 
 export function newSection(type: SectionType): SiteSection {
@@ -495,7 +506,9 @@ export function newSection(type: SectionType): SiteSection {
         background: "#0a2540",
         color: "#ffffff",
         fontSize: 32,
-        paddingY: 48,
+        paddingY: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
         align: "start",
         imageHeight: 0,
         aspect: "5 / 2",
@@ -905,6 +918,11 @@ function migrateCommerce(raw: Partial<Commerce> | undefined): Commerce {
     contactFields: migrateFormFields(src.contactFields, DEFAULT_CONTACT_FIELDS),
     checkoutFields: migrateFormFields(src.checkoutFields, DEFAULT_CHECKOUT_FIELDS),
     codBlockCustom: src.codBlockCustom !== false,
+    expressEnabled: src.expressEnabled !== false,
+    expressPrice: Math.max(0, Number(src.expressPrice ?? DEFAULT_COMMERCE.expressPrice) || 0),
+    expressLabel:
+      fillLoc(asLoc(src.expressLabel, DEFAULT_COMMERCE.expressLabel.ar), DEFAULT_COMMERCE.expressLabel) ??
+      DEFAULT_COMMERCE.expressLabel,
   };
 }
 

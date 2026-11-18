@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MediaLightbox } from "@/components/admin/media-lightbox";
+import { OrderProductCards } from "@/components/admin/order-product-cards";
 import { DeleteOrderButton } from "@/components/admin/delete-order-button";
 import { OrderSaveForm } from "@/components/admin/order-save-form";
 import { Label } from "@/components/ui/label";
@@ -66,6 +67,18 @@ export default async function InquiryDetailPage({
         {inquiry.created_at ? new Date(inquiry.created_at).toLocaleString() : ""}
         {dimensionNote ? ` · ${dimensionNote}` : ""}
       </p>
+      <div className="mt-4 flex flex-wrap gap-3 text-sm">
+        <a
+          href={`/invoice/${encodeURIComponent(inquiry.reference_code.replace("#", ""))}`}
+          className="font-heading text-boo-teal"
+        >
+          Customer invoice (PDF)
+        </a>
+      </div>
+      <div className="mt-6 rounded-[1.6rem] bg-white p-4 ring-1 ring-oxford/8">
+        <p className="mb-3 text-[11px] font-semibold tracking-[0.14em] uppercase text-oxford/45">Products</p>
+        <OrderProductCards inquiry={inquiry} />
+      </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-5">

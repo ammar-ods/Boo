@@ -44,9 +44,9 @@ type CustomizerState = {
 };
 
 const defaultText: TextDraft = {
-  content: "BOO",
+  content: "",
   fontFamily: "Playfair Display",
-  fill: "#333333",
+  fill: "#0a2540",
 };
 
 export const useCustomizerStore = create<CustomizerState>((set) => ({

@@ -218,21 +218,35 @@ function LayoutTab({
         </div>
       </Group>
       <Group title="Spacing">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <NumberField
-            label="Padding Y"
-            value={section.style.paddingY ?? 48}
-            onChange={(paddingY) => patch(section.id, { style: { paddingY: Math.max(0, paddingY) } })}
+            label="Padding top"
+            value={section.style.paddingTop ?? section.style.paddingY ?? 48}
+            onChange={(paddingTop) => patch(section.id, { style: { paddingTop: Math.max(0, paddingTop) } })}
+          />
+          <NumberField
+            label="Padding bottom"
+            value={section.style.paddingBottom ?? section.style.paddingY ?? 48}
+            onChange={(paddingBottom) =>
+              patch(section.id, { style: { paddingBottom: Math.max(0, paddingBottom) } })
+            }
+          />
+          <NumberField
+            label="Margin top"
+            value={section.style.marginTop ?? section.style.marginY ?? 0}
+            onChange={(marginTop) => patch(section.id, { style: { marginTop: Math.max(0, marginTop) } })}
+          />
+          <NumberField
+            label="Margin bottom"
+            value={section.style.marginBottom ?? section.style.marginY ?? 0}
+            onChange={(marginBottom) =>
+              patch(section.id, { style: { marginBottom: Math.max(0, marginBottom) } })
+            }
           />
           <NumberField
             label="Margin X"
             value={section.style.marginX ?? 0}
             onChange={(marginX) => patch(section.id, { style: { marginX: Math.max(0, marginX) } })}
-          />
-          <NumberField
-            label="Margin Y"
-            value={section.style.marginY ?? 0}
-            onChange={(marginY) => patch(section.id, { style: { marginY: Math.max(0, marginY) } })}
           />
         </div>
       </Group>
@@ -305,7 +319,8 @@ function LayoutTab({
             value={section.style.aspect ?? "5 / 2"}
             onChange={(aspect) => patch(section.id, { style: { aspect } })}
             options={[
-              ["5 / 2", "5:2"],
+              ["5 / 2", "Auto banner"],
+              ["3 / 1", "In-between"],
               ["16 / 9", "16:9"],
               ["2 / 1", "2:1"],
               ["1 / 1", "1:1"],

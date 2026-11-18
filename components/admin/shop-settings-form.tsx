@@ -133,6 +133,47 @@ export function ShopSettingsForm({
             />
           </label>
         </div>
+        <label className="flex items-start justify-between gap-3 rounded-2xl bg-cream px-4 py-3 text-sm">
+          <span>
+            <span className="block">Offer express order at checkout</span>
+            <span className="text-xs text-muted-foreground">Adds a paid rush option on the checkout form.</span>
+          </span>
+          <input
+            type="checkbox"
+            name="expressEnabled"
+            defaultChecked={commerce.expressEnabled !== false}
+            className="mt-0.5 size-4 accent-oxford"
+          />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="block text-sm">
+            Express fee (EGP)
+            <input
+              name="expressPrice"
+              type="number"
+              min={0}
+              defaultValue={commerce.expressPrice ?? 120}
+              className="mt-1 h-11 w-full rounded-full border border-input px-4 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            Express label · عربي
+            <input
+              name="expressLabelAr"
+              dir="rtl"
+              defaultValue={commerce.expressLabel?.ar ?? "طلب سريع"}
+              className="mt-1 h-11 w-full rounded-full border border-input px-4 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            Express label · English
+            <input
+              name="expressLabelEn"
+              defaultValue={commerce.expressLabel?.en ?? "Express order"}
+              className="mt-1 h-11 w-full rounded-full border border-input px-4 text-sm"
+            />
+          </label>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             Shipping label · عربي

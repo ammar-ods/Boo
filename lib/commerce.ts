@@ -6,12 +6,19 @@ export function matchPromo(code: string | undefined, codes: PromoCode[]) {
   return codes.find((item) => item.active && item.code.toUpperCase() === needle) ?? null;
 }
 
-export function cartBreakdown(subtotal: number, commerce: Commerce, promo?: PromoCode | null) {
+export function cartBreakdown(
+  subtotal: number,
+  commerce: Commerce,
+  promo?: PromoCode | null,
+  options?: { express?: boolean },
+) {
   const discount = promo ? Math.min(subtotal, Math.round((subtotal * promo.percent) / 100)) : 0;
   const afterPromo = Math.max(0, subtotal - discount);
   const shipping = commerce.shippingPrice || 0;
   const free = commerce.freeShippingMin > 0 && afterPromo >= commerce.freeShippingMin;
   const shippingCharged = free ? 0 : shipping;
+  const expressOn = Boolean(options?.express && commerce.expressEnabled !== false);
+  const expressCharged = expressOn ? Math.max(0, Number(commerce.expressPrice) || 0) : 0;
   return {
     subtotal,
     discount,
@@ -20,6 +27,8 @@ export function cartBreakdown(subtotal: number, commerce: Commerce, promo?: Prom
     shipping,
     shippingFree: free,
     shippingCharged,
-    total: afterPromo + shippingCharged,
+    express: expressOn,
+    expressCharged,
+    total: afterPromo + shippingCharged + expressCharged,
   };
 }

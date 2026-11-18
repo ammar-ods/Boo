@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Minus, Plus, Sparkles, Type, Upload } from "lucide-react";
+import { Minus, Plus, Sparkles, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CANVAS_FONTS } from "@/lib/fonts";
 import { productAllowsImage, productAllowsText, productOptions, type Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
@@ -151,55 +150,14 @@ export function ControlsPanel({
               setTextDraft({ content: e.target.value });
               canvas?.applyTextDraft();
             }}
+            placeholder="Type to add text on the product"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>Font</Label>
-            <Select
-              value={textDraft.fontFamily}
-              onValueChange={(value) => {
-                if (typeof value !== "string") return;
-                setTextDraft({ fontFamily: value });
-                canvas?.applyTextDraft();
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CANVAS_FONTS.map((font) => (
-                  <SelectItem key={font.value} value={font.value}>
-                    {font.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Color</Label>
-            <Input
-              type="color"
-              value={textDraft.fill}
-              onChange={(e) => {
-                setTextDraft({ fill: e.target.value });
-                canvas?.applyTextDraft();
-              }}
-              className="h-8 p-1"
-            />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="secondary" onClick={() => canvas?.addText()}>
-            <Type />
-            Add text layer
+        {selectedKind !== "none" ? (
+          <Button type="button" variant="outline" onClick={() => canvas?.deleteSelected()}>
+            Remove
           </Button>
-          {selectedKind !== "none" ? (
-            <Button type="button" variant="outline" onClick={() => canvas?.deleteSelected()}>
-              Remove
-            </Button>
-          ) : null}
-        </div>
+        ) : null}
       </section>
       ) : null}
 
