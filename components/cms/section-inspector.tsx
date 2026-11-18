@@ -427,6 +427,34 @@ function MediaTab({
           })
         }
       />
+      <ImageUpload
+        label="Arabic mobile image"
+        value={section.content.imageMobile?.ar}
+        onChange={(url) =>
+          patch(section.id, {
+            content: { imageMobile: { ar: url, en: section.content.imageMobile?.en || url } },
+          })
+        }
+        onClear={() =>
+          patch(section.id, {
+            content: { imageMobile: { ar: "", en: section.content.imageMobile?.en || "" } },
+          })
+        }
+      />
+      <ImageUpload
+        label="English mobile image"
+        value={section.content.imageMobile?.en}
+        onChange={(url) =>
+          patch(section.id, {
+            content: { imageMobile: { ar: section.content.imageMobile?.ar || url, en: url } },
+          })
+        }
+        onClear={() =>
+          patch(section.id, {
+            content: { imageMobile: { ar: section.content.imageMobile?.ar || "", en: "" } },
+          })
+        }
+      />
       <button
         type="button"
         className="h-10 w-full rounded-full bg-red-50 text-sm font-semibold text-red-700"
@@ -664,6 +692,18 @@ function GalleryEditor({
               onChange(items.map((row, i) => (i === index ? { ...row, href: event.target.value } : row)))
             }
           />
+          <div className="mb-2">
+            <ImageUpload
+              label="Mobile image (optional)"
+              value={item.srcMobile}
+              onChange={(srcMobile) =>
+                onChange(items.map((row, i) => (i === index ? { ...row, srcMobile } : row)))
+              }
+              onClear={() =>
+                onChange(items.map((row, i) => (i === index ? { ...row, srcMobile: undefined } : row)))
+              }
+            />
+          </div>
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-1">
               <button

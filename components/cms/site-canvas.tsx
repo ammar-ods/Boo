@@ -7,6 +7,9 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { DisciplineCarousel } from "@/components/home/discipline-carousel";
 import { AutoScroller } from "@/components/cms/auto-scroller";
 import { BannerSlideshow } from "@/components/cms/banner-slideshow";
+import { ResponsiveImg } from "@/components/cms/responsive-img";
+import { BundlesGrid } from "@/components/shop/bundles-grid";
+import type { Bundle } from "@/lib/bundles";
 import { PageProducts } from "@/components/cms/page-products";
 import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
@@ -23,7 +26,7 @@ import {
   type SiteSection,
 } from "@/lib/site";
 
-export function SiteCanvas({ products }: { products: Product[] }) {
+export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bundles?: Bundle[] }) {
   const { editing, selectedId, setSelectedId, patchSection, moveSection, removeSection, addSection, pageSections } =
     useEdit();
   const { locale } = useI18n();
@@ -150,6 +153,7 @@ export function SiteCanvas({ products }: { products: Product[] }) {
           <SectionView
             section={section}
             products={products}
+            bundles={bundles}
             locale={locale}
             index={visible.indexOf(section)}
           />
@@ -188,6 +192,7 @@ function imageAspect(section: SiteSection) {
 
 function SectionMedia({
   src,
+  srcMobile,
   height,
   widthPct,
   bleed,
@@ -196,6 +201,7 @@ function SectionMedia({
   aspect,
 }: {
   src: string;
+  srcMobile?: string;
   height: number;
   widthPct: number;
   bleed?: boolean;
@@ -215,10 +221,9 @@ function SectionMedia({
         ["--cms-img-aspect" as string]: aspect || "5 / 2",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <ResponsiveImg
         src={src}
-        alt=""
+        srcMobile={srcMobile}
         className={`cms-media-img ${rounded ? "rounded-[20px] sm:rounded-[28px]" : ""}`}
       />
     </div>
@@ -278,7 +283,7 @@ function SectionShell({
   index: number;
   children: React.ReactNode;
   className?: string;
-  cover?: { src: string; height: number; href?: string };
+  cover?: { src: string; srcMobile?: string; height: number; href?: string };
 }) {
   const surface = sectionSurface(section.style);
   const pad = Math.max(0, section.style.paddingY ?? 48);
@@ -312,12 +317,10 @@ function SectionShell({
             <div className="absolute inset-0">
               {cover.href ? (
                 <Link href={cover.href} className="absolute inset-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={cover.src} alt="" className="h-full w-full object-cover object-top" />
+                  <ResponsiveImg src={cover.src} srcMobile={cover.srcMobile} className="h-full w-full object-cover object-top" />
                 </Link>
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={cover.src} alt="" className="h-full w-full object-cover object-top" />
+                <ResponsiveImg src={cover.src} srcMobile={cover.srcMobile} className="h-full w-full object-cover object-top" />
               )}
             </div>
             <div className="pointer-events-none absolute inset-0 bg-oxford/35" />
@@ -332,17 +335,20 @@ function SectionShell({
 function SectionView({
   section,
   products,
+  bundles,
   locale,
   index = 0,
 }: {
   section: SiteSection;
   products: Product[];
+  bundles: Bundle[];
   locale: string;
   index?: number;
 }) {
   const { pageKey, site } = useEdit();
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
+  const imageMobile = pick(section.content.imageMobile, locale);
   const placement: ImagePlacement =
     section.style.imagePlacement ?? (image ? "below" : "hidden");
   const showImage = placement !== "hidden" && Boolean(image);
@@ -438,6 +444,19 @@ function SectionView({
     );
   }
 
+  if (section.type === "bundles") {
+    return (
+      <SectionShell section={section} index={index}>
+        <div className={`cms-copy ${centered ? "text-center" : "text-start"}`}>
+          {copy}
+        </div>
+        <div className="mt-8">
+          <BundlesGrid bundles={bundles} products={products} hideIntro />
+        </div>
+      </SectionShell>
+    );
+  }
+
   if (section.type === "collections") {
     return (
       <SectionShell section={section} index={index}>
@@ -474,7 +493,7 @@ function SectionView({
 
   if (placement === "cover" && showImage) {
     return (
-      <SectionShell section={section} index={index} cover={{ src: image, height, href: imageHref }}>
+      <SectionShell section={section} index={index} cover={{ src: image, srcMobile: imageMobile, height, href: imageHref }}>
         <div className={`cms-copy relative z-10 ${centered ? "text-center" : "text-start"}`}>
           {copy}
           {actions}
@@ -485,7 +504,7 @@ function SectionView({
 
   if ((placement === "start" || placement === "end") && showImage) {
     const imageCol = (
-      <SectionMedia src={image} height={height} widthPct={100} rounded={rounded} href={imageHref} aspect={aspect} />
+      <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={100} rounded={rounded} href={imageHref} aspect={aspect} />
     );
     return (
       <SectionShell section={section} index={index}>
@@ -504,13 +523,13 @@ function SectionView({
   return (
     <SectionShell section={section} index={index}>
       {placement === "bleed" && showImage ? (
-        <SectionMedia src={image} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} aspect={aspect} />
+        <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} aspect={aspect} />
       ) : null}
       <div className={`cms-copy ${placement === "bleed" && showImage ? "pt-5 sm:pt-6" : ""} ${centered ? "text-center" : "text-start"}`}>
         {copy}
         {placement === "below" && showImage ? (
           <div className={`mt-5 ${centered ? "flex justify-center" : ""} sm:mt-6`}>
-            <SectionMedia src={image} height={height} widthPct={widthPct} rounded={rounded} href={imageHref} aspect={aspect} />
+            <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={widthPct} rounded={rounded} href={imageHref} aspect={aspect} />
           </div>
         ) : null}
         {actions}

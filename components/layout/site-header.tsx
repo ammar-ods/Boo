@@ -48,7 +48,7 @@ export function SiteHeader() {
     ) : null}
     <header className="sticky top-0 z-40">
       {site.chrome.showAnnouncement ? (
-        <div className="bg-oxford text-[11px] tracking-[0.12em] text-white/85">
+        <div className="bg-oxford tracking-[0.12em] text-white/85" style={{ fontSize: "var(--announce-font-size, 11px)" }}>
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-2 sm:px-8 lg:px-12">
             <div className="flex items-center gap-3">
               <ThemeToggle />
@@ -60,7 +60,7 @@ export function SiteHeader() {
           </div>
         </div>
       ) : (
-        <div className="bg-oxford text-[11px] text-white/85">
+        <div className="bg-oxford text-white/85" style={{ fontSize: "var(--announce-font-size, 11px)" }}>
           <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-2 sm:px-8 lg:px-12">
             <ThemeToggle />
             <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>

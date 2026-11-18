@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { flashStatus } from "@/components/status-flash";
 import { upsertNavCategory } from "@/lib/categories";
 import {
+  APP_CMS_SLUGS,
   blankCmsPage,
   cmsPagePath,
+  DEFAULT_BUNDLES_PAGE,
   loc,
   migrateSite,
   newSection,
@@ -310,12 +312,17 @@ export function EditProvider({
 
   const ensurePage = useCallback((slug: string, title?: { ar: string; en: string }) => {
     const safe = pageSlugify(slug);
-    if (!safe || RESERVED_PAGE_SLUGS.has(safe)) return;
+    if (!safe) return;
+    if (RESERVED_PAGE_SLUGS.has(safe) && !APP_CMS_SLUGS.has(safe)) return;
     setSite((current) => {
       if (current.pages.some((page) => page.slug === safe)) return current;
+      const page =
+        safe === "bundles"
+          ? { ...DEFAULT_BUNDLES_PAGE, title: title ? loc(title.ar, title.en) : DEFAULT_BUNDLES_PAGE.title }
+          : blankCmsPage(safe, title ? loc(title.ar, title.en) : undefined);
       return {
         ...current,
-        pages: [...current.pages, blankCmsPage(safe, title ? loc(title.ar, title.en) : undefined)],
+        pages: [...current.pages, page],
       };
     });
   }, []);
@@ -325,7 +332,9 @@ export function EditProvider({
       const currentPage = current.pages.find((page) => page.id === id);
       if (!currentPage) return current;
       const slug = next.slug ? pageSlugify(next.slug) : currentPage.slug;
-      if (!slug || RESERVED_PAGE_SLUGS.has(slug)) return current;
+      if (!slug) return current;
+      if (RESERVED_PAGE_SLUGS.has(slug) && !APP_CMS_SLUGS.has(slug)) return current;
+      if (APP_CMS_SLUGS.has(currentPage.slug) && slug !== currentPage.slug) return current;
       const title = next.title ? { ...currentPage.title, ...next.title } : currentPage.title;
       return {
         ...current,

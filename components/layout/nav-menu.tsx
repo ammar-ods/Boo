@@ -28,7 +28,10 @@ export function NavMenu({
   }
 
   return (
-    <nav className="hidden items-center gap-7 text-[13px] font-semibold tracking-[0.08em] text-oxford/70 md:flex">
+    <nav
+      className="hidden items-center gap-7 font-semibold tracking-[0.08em] text-oxford/70 md:flex"
+      style={{ fontSize: "var(--nav-font-size, 13px)" }}
+    >
       {visible.map((link) => (
         <DesktopItem key={link.id} link={link} locale={locale} />
       ))}
@@ -61,7 +64,7 @@ function DesktopItem({ link, locale }: { link: NavLink; locale: string }) {
             <NavAnchor
               key={child.id}
               link={child}
-              className="block px-4 py-2.5 text-sm text-oxford hover:bg-cream"
+              className="block px-4 py-2.5 text-oxford hover:bg-cream"
             >
               {pick(child.label, locale)}
             </NavAnchor>
@@ -91,8 +94,8 @@ function MobileItem({
       <NavAnchor
         link={link}
         onClick={onNavigate}
-        className="flex min-h-12 items-center text-base font-medium text-oxford"
-        style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
+        className="flex min-h-12 items-center font-medium text-oxford"
+        style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
       >
         {pick(link.label, locale)}
       </NavAnchor>
@@ -108,16 +111,16 @@ function MobileItem({
           <NavAnchor
             link={link}
             onClick={onNavigate}
-            className="flex-1 text-base font-medium text-oxford"
-            style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
+            className="flex-1 font-medium text-oxford"
+            style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
           >
             {pick(link.label, locale)}
           </NavAnchor>
         ) : (
           <button
             type="button"
-            className="flex-1 text-start text-base font-medium text-oxford"
-            style={{ paddingInlineStart: depth ? depth * 16 : undefined }}
+            className="flex-1 text-start font-medium text-oxford"
+            style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
             onClick={() => setOpen((value) => !value)}
           >
             {pick(link.label, locale)}

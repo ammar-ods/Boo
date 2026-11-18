@@ -8,7 +8,8 @@ export type SectionType =
   | "collections"
   | "cta"
   | "faq"
-  | "marquee";
+  | "marquee"
+  | "bundles";
 
 export type Localized = { ar: string; en: string };
 
@@ -42,6 +43,7 @@ export type SectionStyle = {
 
 export type GalleryItem = {
   src: string;
+  srcMobile?: string;
   href?: string;
 };
 
@@ -54,6 +56,7 @@ export type SectionContent = {
   secondaryCtaLabel?: Localized;
   secondaryCtaHref?: string;
   image?: Localized;
+  imageMobile?: Localized;
   imageHref?: string;
   gallery?: GalleryItem[];
   galleryAr?: GalleryItem[];
@@ -122,6 +125,10 @@ export type SiteChrome = {
   contactWaIcon: string;
   fontEn: string;
   fontAr: string;
+  navFontSize: number;
+  announcementFontSize: number;
+  footerFontSize: number;
+  shopAllLabel: Localized;
 };
 
 export type PromoPopup = {
@@ -174,6 +181,8 @@ export type SiteDocument = {
   commerce: Commerce;
 };
 
+export const APP_CMS_SLUGS = new Set(["bundles"]);
+
 export const RESERVED_PAGE_SLUGS = new Set([
   "admin",
   "api",
@@ -198,6 +207,7 @@ export function pageSlugify(value: string) {
 }
 
 export function cmsPagePath(slug: string) {
+  if (APP_CMS_SLUGS.has(slug)) return `/${slug}`;
   return `/p/${slug}`;
 }
 
@@ -223,6 +233,7 @@ export function normalizeNavHref(href: string) {
 
 export function pathPageKey(pathname: string): "home" | string | null {
   if (pathname === "/") return "home";
+  if (pathname === "/bundles") return "bundles";
   const nested = pathname.match(/^\/p\/([^/]+)\/?$/);
   if (nested) return pageSlugify(decodeURIComponent(nested[1]));
   const loose = pathname.match(/^\/([^/]+)\/?$/);
@@ -258,6 +269,7 @@ export const SECTION_TYPES: { type: SectionType; label: string; labelAr: string 
   { type: "cta", label: "Call to action", labelAr: "دعوة للشراء" },
   { type: "faq", label: "FAQ / about", labelAr: "أسئلة / عنّا" },
   { type: "marquee", label: "Auto-scroll images", labelAr: "شريط تمرير" },
+  { type: "bundles", label: "Bundles", labelAr: "باقات" },
 ];
 
 export function loc(ar: string, en: string): Localized {
@@ -312,7 +324,11 @@ export function parseGalleryItems(value: unknown): GalleryItem[] {
       if (typeof item === "string") return { src: item };
       if (item && typeof item === "object" && "src" in item && typeof (item as GalleryItem).src === "string") {
         const row = item as GalleryItem;
-        return { src: row.src, href: row.href };
+        return {
+          src: row.src,
+          href: row.href,
+          srcMobile: typeof row.srcMobile === "string" && row.srcMobile.trim() ? row.srcMobile : undefined,
+        };
       }
       return null;
     })
@@ -399,6 +415,10 @@ export const DEFAULT_CHROME: SiteChrome = {
   contactWaIcon: "whatsapp",
   fontEn: "jakarta",
   fontAr: "ibm-plex-arabic",
+  navFontSize: 13,
+  announcementFontSize: 11,
+  footerFontSize: 14,
+  shopAllLabel: loc("الكل", "All"),
 };
 
 export const DEFAULT_PROMO: PromoPopup = {
@@ -600,15 +620,44 @@ export function newSection(type: SectionType): SiteSection {
         ),
       },
     },
+    bundles: {
+      id,
+      type,
+      visible: true,
+      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 40, paddingY: 48, align: "start" },
+      content: {
+        title: loc("الباقات", "Bundles"),
+        body: loc("اختار باقة جاهزة وضيفها للسلة بسعر واحد.", "Ready packs at a single price. Add the set to your bag."),
+      },
+    },
   };
   return defaults[type];
 }
+
+export const DEFAULT_BUNDLES_PAGE: CmsPage = {
+  id: "page-bundles",
+  slug: "bundles",
+  title: loc("الباقات", "Bundles"),
+  visible: true,
+  sections: [
+    {
+      id: "bundles-grid",
+      type: "bundles",
+      visible: true,
+      style: { background: "#f6f3ea", color: "#0a2540", fontSize: 48, paddingY: 48, align: "start" },
+      content: {
+        title: loc("الباقات", "Bundles"),
+        body: loc("اختار باقة جاهزة وضيفها للسلة بسعر واحد.", "Ready packs at a single price. Add the set to your bag."),
+      },
+    },
+  ],
+};
 
 export const DEFAULT_SITE: SiteDocument = {
   chrome: DEFAULT_CHROME,
   promo: DEFAULT_PROMO,
   commerce: DEFAULT_COMMERCE,
-  pages: [],
+  pages: [DEFAULT_BUNDLES_PAGE],
   sections: [
     newSection("hero"),
     newSection("collections"),
@@ -660,6 +709,7 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
     secondaryCtaLabel: src.secondaryCtaLabel ? asLoc(src.secondaryCtaLabel) : undefined,
     secondaryCtaHref: typeof src.secondaryCtaHref === "string" ? src.secondaryCtaHref : undefined,
     image: src.image ? asLoc(src.image) : undefined,
+    imageMobile: src.imageMobile ? asLoc(src.imageMobile) : undefined,
     imageHref: typeof src.imageHref === "string" ? src.imageHref : undefined,
     gallery: parseGalleryItems(src.gallery),
     galleryAr: parseGalleryItems(src.galleryAr).length ? parseGalleryItems(src.galleryAr) : parseGalleryItems(src.gallery),
@@ -747,6 +797,12 @@ export function migrateSite(raw: unknown): SiteDocument {
           : DEFAULT_CHROME.contactWaIcon,
       fontEn: typeof chrome.fontEn === "string" && chrome.fontEn.trim() ? chrome.fontEn.trim() : DEFAULT_CHROME.fontEn,
       fontAr: typeof chrome.fontAr === "string" && chrome.fontAr.trim() ? chrome.fontAr.trim() : DEFAULT_CHROME.fontAr,
+      navFontSize: Math.min(28, Math.max(10, Number(chrome.navFontSize) || DEFAULT_CHROME.navFontSize)),
+      announcementFontSize: Math.min(22, Math.max(9, Number(chrome.announcementFontSize) || DEFAULT_CHROME.announcementFontSize)),
+      footerFontSize: Math.min(24, Math.max(10, Number(chrome.footerFontSize) || DEFAULT_CHROME.footerFontSize)),
+      shopAllLabel:
+        fillLoc(asLoc(chrome.shopAllLabel, DEFAULT_CHROME.shopAllLabel.ar), DEFAULT_CHROME.shopAllLabel) ??
+        DEFAULT_CHROME.shopAllLabel,
     },
     promo: {
       live: Boolean(promo.live),
@@ -772,23 +828,35 @@ export function migrateSite(raw: unknown): SiteDocument {
     sections: Array.isArray(data.sections)
       ? data.sections.map((section, index) => migrateSection(section, index))
       : DEFAULT_SITE.sections,
-    pages: Array.isArray(data.pages)
-      ? data.pages
-          .map((page, index) => {
-            const row = page as CmsPage & { sections?: Array<Record<string, unknown>> };
-            const slug = pageSlugify(String(row.slug || row.title?.en || row.title?.ar || `page-${index}`));
-            if (!slug || RESERVED_PAGE_SLUGS.has(slug)) return null;
-            return {
-              id: String(row.id || `page-${index}`),
-              slug,
-              title: asLoc(row.title, slug),
-              visible: row.visible !== false,
-              sections: Array.isArray(row.sections) ? row.sections.map((section, i) => migrateSection(section, i)) : [],
-            } satisfies CmsPage;
-          })
-          .filter((page): page is CmsPage => Boolean(page))
-      : [],
+    pages: migratePages(data.pages),
   };
+}
+
+function migratePages(raw: CmsPage[] | Array<Record<string, unknown>> | undefined): CmsPage[] {
+  const pages = Array.isArray(raw)
+    ? raw
+        .map((page, index) => {
+          const row = page as CmsPage & { sections?: Array<Record<string, unknown>> };
+          const slug = pageSlugify(String(row.slug || row.title?.en || row.title?.ar || `page-${index}`));
+          if (!slug) return null;
+          if (RESERVED_PAGE_SLUGS.has(slug) && !APP_CMS_SLUGS.has(slug)) return null;
+          return {
+            id: String(row.id || `page-${index}`),
+            slug,
+            title: asLoc(row.title, slug),
+            visible: row.visible !== false,
+            sections: Array.isArray(row.sections) ? row.sections.map((section, i) => migrateSection(section, i)) : [],
+          } satisfies CmsPage;
+        })
+        .filter((page): page is CmsPage => Boolean(page))
+    : [];
+  if (!pages.some((page) => page.slug === "bundles")) {
+    pages.push({
+      ...DEFAULT_BUNDLES_PAGE,
+      sections: DEFAULT_BUNDLES_PAGE.sections.map((section, index) => migrateSection(section, index)),
+    });
+  }
+  return pages;
 }
 
 function migrateNavLink(link: Partial<NavLink> | undefined, index: number): NavLink {

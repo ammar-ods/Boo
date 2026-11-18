@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ResponsiveImg } from "@/components/cms/responsive-img";
 import { useI18n } from "@/lib/i18n";
 import type { GalleryItem } from "@/lib/site";
 
@@ -10,8 +11,7 @@ const SLIDE_MS = 520;
 
 function SlideImage({ item }: { item: GalleryItem }) {
   const image = (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={item.src} alt="" className="h-full w-full object-cover" draggable={false} />
+    <ResponsiveImg src={item.src} srcMobile={item.srcMobile} className="h-full w-full object-cover" />
   );
   if (item.href) {
     return (

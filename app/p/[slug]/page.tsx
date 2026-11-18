@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { EnsureCmsPage } from "@/components/cms/ensure-cms-page";
 import { SiteCanvas } from "@/components/cms/site-canvas";
 import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
-import { getLiveCatalog, getSite } from "@/lib/local-db";
+import { getBundles, getLiveCatalog, getSite } from "@/lib/local-db";
 import { pageSlugify, pick, RESERVED_PAGE_SLUGS } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +30,11 @@ export default async function CmsPageView({
   const page = site.pages.find((item) => item.slug === slug);
   const isAdmin = await adminSession();
   if (!isAdmin && (!page || !page.visible)) notFound();
-  const products = await getLiveCatalog();
+  const [products, bundles] = await Promise.all([getLiveCatalog(), getBundles()]);
   return (
     <>
       <EnsureCmsPage slug={slug} />
-      <SiteCanvas products={products} />
+      <SiteCanvas products={products} bundles={bundles} />
     </>
   );
 }

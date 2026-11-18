@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
-import { useShopNavItems } from "@/components/shop/shop-sidebar";
+import { ShopFilterBar } from "@/components/shop/shop-filter-bar";
 import { normalizeCategoryId, sellingPrice, type Product, type ProductCategory } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -38,7 +37,6 @@ export function ProductGrid({
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const mapped = collection ? COLLECTIONS[collection] : undefined;
-  const shopItems = useShopNavItems();
 
   const items = useMemo(() => {
     let next = products;
@@ -105,24 +103,7 @@ export function ProductGrid({
 
   return (
     <div className="space-y-8">
-      <div className="flex gap-2.5 overflow-x-auto pb-1">
-        {shopItems.map((item) => {
-          const active =
-            (item.id === "all" && !collection && !query) || (collection != null && item.id === collection);
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={cn(
-                "shrink-0 rounded-full px-5 py-2.5 text-[12px] font-semibold tracking-[0.08em] uppercase transition",
-                active ? "bg-[#f0e092] text-[#6e6322] shadow-sm" : "bg-white text-oxford/55 shadow-sm hover:text-oxford",
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
+      <ShopFilterBar collection={collection} query={query} />
 
       <div className="flex flex-col justify-between gap-4 rounded-xl bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:p-5">
         <div className="flex flex-wrap items-center gap-3">

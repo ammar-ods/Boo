@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
 import { ProductGrid } from "@/components/catalog/product-grid";
+import { ShopFilterBar } from "@/components/shop/shop-filter-bar";
 import { ShopRail } from "@/components/shop/shop-sidebar";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
@@ -41,6 +42,7 @@ export function PageProducts({
 
   const body = (
       <div className="space-y-5">
+        {editing ? <ShopFilterBar collection={isCategoryPage ? pageKey || undefined : section.content.collection} /> : null}
         {editing ? (
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-8">
           {selected.map((product) => (

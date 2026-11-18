@@ -55,7 +55,7 @@ export function useShopNavItems(): ShopNavItem[] {
     items.push({ id, href, label });
   }
 
-  push("all", "/catalog?all=1", locale === "ar" ? "الكل" : "All");
+  push("all", "/catalog?all=1", pick(site.chrome.shopAllLabel, locale) || (locale === "ar" ? "الكل" : "All"));
   for (const section of site.chrome.catalogSections ?? []) {
     if (section.visible === false) continue;
     push(section.id, section.href, pick(section.label, locale) || section.id);

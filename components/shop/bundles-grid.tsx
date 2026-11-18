@@ -7,15 +7,27 @@ import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
 
-export function BundlesGrid({ bundles, products }: { bundles: Bundle[]; products: Product[] }) {
+export function BundlesGrid({
+  bundles,
+  products,
+  hideIntro = false,
+}: {
+  bundles: Bundle[];
+  products: Product[];
+  hideIntro?: boolean;
+}) {
   const { t, locale, formatPrice } = useI18n();
   const addItem = useCart((s) => s.addItem);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
-      <h1 className="font-heading text-5xl text-oxford">{t("bundlesTitle")}</h1>
-      <p className="mt-3 max-w-xl text-muted-foreground">{t("bundlesBody")}</p>
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
+    <div className={hideIntro ? "" : "mx-auto w-full max-w-6xl px-5 py-12 sm:px-8"}>
+      {hideIntro ? null : (
+        <>
+          <h1 className="font-heading text-5xl text-oxford">{t("bundlesTitle")}</h1>
+          <p className="mt-3 max-w-xl text-muted-foreground">{t("bundlesBody")}</p>
+        </>
+      )}
+      <div className={hideIntro ? "grid gap-6 sm:grid-cols-2" : "mt-10 grid gap-6 sm:grid-cols-2"}>
         {bundles.map((bundle) => {
           const names = bundle.productSlugs
             .map((slug) => products.find((product) => product.slug === slug))

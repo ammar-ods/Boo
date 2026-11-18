@@ -18,7 +18,10 @@ export function SiteFonts() {
     const root = document.documentElement;
     root.style.setProperty("--font-site", stack);
     root.style.setProperty("--font-site-heading", stack);
-  }, [stack]);
+    root.style.setProperty("--nav-font-size", `${site.chrome.navFontSize ?? 13}px`);
+    root.style.setProperty("--announce-font-size", `${site.chrome.announcementFontSize ?? 11}px`);
+    root.style.setProperty("--footer-font-size", `${site.chrome.footerFontSize ?? 14}px`);
+  }, [site.chrome.announcementFontSize, site.chrome.footerFontSize, site.chrome.navFontSize, stack]);
 
   return (
     <>

@@ -186,6 +186,41 @@ export function StudioChromePanel() {
                     onEn={(fontEn) => setChrome({ fontEn })}
                     onAr={(fontAr) => setChrome({ fontAr })}
                   />
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <label className="block text-[11px] text-oxford/60">
+                      Nav
+                      <input
+                        type="number"
+                        min={10}
+                        max={28}
+                        className="mt-1 h-9 w-full rounded-xl border border-oxford/12 px-2 text-sm"
+                        value={site.chrome.navFontSize ?? 13}
+                        onChange={(event) => setChrome({ navFontSize: Number(event.target.value) || 13 })}
+                      />
+                    </label>
+                    <label className="block text-[11px] text-oxford/60">
+                      Bar
+                      <input
+                        type="number"
+                        min={9}
+                        max={22}
+                        className="mt-1 h-9 w-full rounded-xl border border-oxford/12 px-2 text-sm"
+                        value={site.chrome.announcementFontSize ?? 11}
+                        onChange={(event) => setChrome({ announcementFontSize: Number(event.target.value) || 11 })}
+                      />
+                    </label>
+                    <label className="block text-[11px] text-oxford/60">
+                      Footer
+                      <input
+                        type="number"
+                        min={10}
+                        max={24}
+                        className="mt-1 h-9 w-full rounded-xl border border-oxford/12 px-2 text-sm"
+                        value={site.chrome.footerFontSize ?? 14}
+                        onChange={(event) => setChrome({ footerFontSize: Number(event.target.value) || 14 })}
+                      />
+                    </label>
+                  </div>
                 </div>
                 <div className="rounded-2xl bg-white p-3">
                   <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">
@@ -953,7 +988,7 @@ function CatalogSectionsEditor({
         </button>
       </div>
       <p className="mb-3 text-xs text-muted-foreground">
-        These tiles appear on the shop page. Add or hide categories in Studio → Categories.
+        These tiles and the filter bar above product cards. Add, rename, or hide options here.
       </p>
       <div className="grid gap-3">
         {sections.map((section, index) => (

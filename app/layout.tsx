@@ -53,7 +53,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang="ar"
       dir="rtl"
       suppressHydrationWarning
-      style={{ "--font-site": initialStack, "--font-site-heading": initialStack } as CSSProperties}
+      style={
+        {
+          "--font-site": initialStack,
+          "--font-site-heading": initialStack,
+          "--nav-font-size": `${site.chrome.navFontSize ?? 13}px`,
+          "--announce-font-size": `${site.chrome.announcementFontSize ?? 11}px`,
+          "--footer-font-size": `${site.chrome.footerFontSize ?? 14}px`,
+        } as CSSProperties
+      }
     >
       <body className={`${geistMono.variable} flex min-h-full flex-col font-sans`}>
         <AppTheme>
