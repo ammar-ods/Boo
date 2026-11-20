@@ -11,13 +11,7 @@ import {
 } from "@/lib/admin-auth";
 import { inquiryStatusSchema } from "@/lib/schemas/inquiry";
 import { deleteOrder, getOrder, getSite, saveOrder, saveSite } from "@/lib/local-db";
-import {
-  DEFAULT_CHECKOUT_FIELDS,
-  DEFAULT_CONTACT_FIELDS,
-  loc,
-  type PromoCode,
-  type ShopFormField,
-} from "@/lib/site";
+import { loc, type PromoCode, type ShopFormField } from "@/lib/site";
 
 export async function loginAdmin(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -124,8 +118,8 @@ export async function saveShopSettings(formData: FormData) {
         en: String(formData.get("shippingDetailsEn") ?? site.commerce.shippingDetails.en),
       },
       contactEmail: String(formData.get("contactEmail") ?? "").trim(),
-      contactFields: parseFormFields(formData.get("contactFields"), DEFAULT_CONTACT_FIELDS),
-      checkoutFields: parseFormFields(formData.get("checkoutFields"), DEFAULT_CHECKOUT_FIELDS),
+      contactFields: site.commerce.contactFields,
+      checkoutFields: site.commerce.checkoutFields,
       codBlockCustom: formData.get("codBlockCustom") === "on",
       expressEnabled: formData.get("expressEnabled") === "on",
       expressPrice: Math.max(0, Number(formData.get("expressPrice") || 0)),
@@ -140,6 +134,25 @@ export async function saveShopSettings(formData: FormData) {
   revalidatePath("/checkout");
   revalidatePath("/contact");
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/forms");
+}
+
+export async function saveFormsSettings(formData: FormData) {
+  const token = (await cookies()).get(adminCookieName())?.value;
+  if (!(await isValidAdminSession(token))) redirect("/admin/login");
+  const site = await getSite();
+  await saveSite({
+    ...site,
+    commerce: {
+      ...site.commerce,
+      contactFields: parseFormFields(formData.get("contactFields"), site.commerce.contactFields),
+      checkoutFields: parseFormFields(formData.get("checkoutFields"), site.commerce.checkoutFields),
+    },
+  });
+  revalidatePath("/");
+  revalidatePath("/checkout");
+  revalidatePath("/contact");
+  revalidatePath("/admin/forms");
 }
 
 function parsePromoCodes(raw: FormDataEntryValue | null, fallback: PromoCode[]): PromoCode[] {

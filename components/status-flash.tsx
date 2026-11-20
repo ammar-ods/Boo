@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-let showFlash: ((message: string, hold?: boolean) => void) | null = null;
+type FlashTone = "default" | "success";
+
+let showFlash: ((message: string, hold?: boolean, tone?: FlashTone) => void) | null = null;
 let hideFlashFn: (() => void) | null = null;
 
-export function flashStatus(message: string, hold = false) {
-  showFlash?.(message, hold);
+export function flashStatus(message: string, hold = false, tone: FlashTone = "default") {
+  showFlash?.(message, hold, tone);
 }
 
 export function hideFlash() {
@@ -16,12 +18,14 @@ export function hideFlash() {
 export function StatusFlashHost() {
   const [message, setMessage] = useState<string | null>(null);
   const [hold, setHold] = useState(false);
+  const [tone, setTone] = useState<FlashTone>("default");
   const [token, setToken] = useState(0);
 
   useEffect(() => {
-    showFlash = (next, nextHold = false) => {
+    showFlash = (next, nextHold = false, nextTone = "default") => {
       setMessage(next);
       setHold(nextHold);
+      setTone(nextTone);
       setToken((value) => value + 1);
     };
     hideFlashFn = () => {
@@ -47,7 +51,9 @@ export function StatusFlashHost() {
       <div
         key={token}
         role="status"
-        className="saved-toast flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full bg-oxford px-7 py-4 text-center font-heading text-lg text-white shadow-xl ring-1 ring-white/30 sm:text-xl"
+        className={`saved-toast flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full px-7 py-4 text-center font-heading text-lg text-white shadow-xl ring-1 ring-white/30 sm:text-xl ${
+          tone === "success" ? "bg-emerald-600" : "bg-oxford"
+        }`}
       >
         {hold ? (
           <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white" />

@@ -4,9 +4,14 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 let start: (() => void) | null = null;
+let stop: (() => void) | null = null;
 
 export function startRouteLoading() {
   start?.();
+}
+
+export function hideRouteLoading() {
+  stop?.();
 }
 
 function isInternalHref(anchor: HTMLAnchorElement) {
@@ -27,8 +32,10 @@ export function RouteLoading() {
 
   useEffect(() => {
     start = () => setVisible(true);
+    stop = () => setVisible(false);
     return () => {
       start = null;
+      stop = null;
     };
   }, []);
 

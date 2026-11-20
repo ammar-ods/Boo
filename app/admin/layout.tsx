@@ -38,6 +38,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/promo" className="rounded-full px-3 py-1.5 hover:bg-secondary">
               Promo
             </Link>
+            <Link href="/admin/forms" className="rounded-full px-3 py-1.5 hover:bg-secondary">
+              Forms
+            </Link>
             <Link href="/admin/settings" className="rounded-full px-3 py-1.5 hover:bg-secondary">
               Settings
             </Link>

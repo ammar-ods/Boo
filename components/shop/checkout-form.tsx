@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { pick } from "@/lib/site";
 import { BackChevron } from "@/components/ui/back-chevron";
 import { DynamicShopFields } from "@/components/shop/dynamic-fields";
+import { flashStatus } from "@/components/status-flash";
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -36,6 +37,8 @@ export function CheckoutForm({
   const clear = useCart((s) => s.clear);
   const [busy, setBusy] = useState(false);
   const [placed, setPlaced] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const skipLeaveGuard = useRef(false);
   const hasCustom = cartHasCustom(items);
   const blockCod = site.commerce.codBlockCustom !== false && hasCustom;
   const [method, setMethod] = useState<"cod" | "online">(blockCod ? "online" : "cod");
@@ -63,6 +66,7 @@ export function CheckoutForm({
       return;
     }
     setAppliedCode(found.code);
+    flashStatus(t("applied"), false, "success");
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -138,6 +142,7 @@ export function CheckoutForm({
       return;
     }
     const payload = (await response.json()) as { ref: string };
+    skipLeaveGuard.current = true;
     setPlaced(true);
     clear();
     router.push(`/thanks?ref=${encodeURIComponent(payload.ref)}`);
@@ -146,6 +151,28 @@ export function CheckoutForm({
   useEffect(() => {
     if (blockCod && method === "cod") setMethod("online");
   }, [blockCod, method]);
+
+  useEffect(() => {
+    window.history.pushState({ booCheckout: true }, "");
+    function onPop() {
+      if (skipLeaveGuard.current || placed) return;
+      window.history.pushState({ booCheckout: true }, "");
+      setLeaveOpen(true);
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [placed]);
+
+  function requestLeave() {
+    setLeaveOpen(true);
+  }
+
+  function confirmLeave() {
+    skipLeaveGuard.current = true;
+    setLeaveOpen(false);
+    if (onBack) onBack();
+    else router.push("/cart");
+  }
 
   useEffect(() => {
     if (!hydrated || items.length > 0 || placed || busy) return;
@@ -161,16 +188,14 @@ export function CheckoutForm({
 
   return (
     <div className={embedded ? "" : "mx-auto w-full max-w-2xl px-5 py-12 sm:px-8"}>
-      {onBack ? (
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex min-h-9 items-center gap-1 text-sm text-oxford/70 hover:text-oxford"
-        >
-          <BackChevron />
-          {t("backDetails")}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={requestLeave}
+        className="inline-flex min-h-9 items-center gap-1 text-sm text-oxford/70 hover:text-oxford"
+      >
+        <BackChevron />
+        {onBack ? t("backDetails") : t("yourBag")}
+      </button>
       <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-5xl"}`}>
         {t("checkout")}
       </h1>
@@ -351,6 +376,26 @@ export function CheckoutForm({
           {busy ? "…" : t("placeOrder")}
         </button>
       </form>
+      {leaveOpen ? (
+        <div className="fixed inset-0 z-[140] grid place-items-center bg-oxford/45 p-4">
+          <div className="w-full max-w-sm rounded-[1.6rem] bg-white p-6 text-center shadow-2xl">
+            <h2 className="font-heading text-2xl text-oxford">{t("leaveCheckout")}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("leaveCheckoutBody")}</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                className="h-11 flex-1 rounded-full bg-cream text-sm font-semibold text-oxford"
+                onClick={() => setLeaveOpen(false)}
+              >
+                {t("stayCheckout")}
+              </button>
+              <button type="button" className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white" onClick={confirmLeave}>
+                {t("confirmLeave")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

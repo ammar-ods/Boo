@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
 import { ShopFilterBar } from "@/components/shop/shop-filter-bar";
 import { normalizeCategoryId, sellingPrice, type Product, type ProductCategory } from "@/lib/products";
@@ -70,8 +70,9 @@ export function ProductGrid({
   }, [collection, inStock, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const shownCount = showAll ? items.length : Math.min(items.length, page * PAGE_SIZE);
-  const visible = items.slice(0, shownCount);
+  const pageStart = (page - 1) * PAGE_SIZE;
+  const visible = showAll ? items : items.slice(pageStart, pageStart + PAGE_SIZE);
+  const shownCount = showAll ? items.length : Math.min(items.length, pageStart + visible.length);
 
   const grid = (
     <div
@@ -174,6 +175,7 @@ export function ProductGrid({
                 onClick={() => {
                   setShowAll(false);
                   setPage(number);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
                 {number}
@@ -184,20 +186,26 @@ export function ProductGrid({
                 type="button"
                 className="grid size-10 place-items-center rounded-lg bg-[#f4f3f0] text-oxford hover:bg-chip"
                 aria-label={locale === "ar" ? "التالي" : "Next"}
-                onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+                onClick={() => {
+                  setShowAll(false);
+                  setPage((value) => Math.min(pageCount, value + 1));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
                 <ChevronRight className={`size-4 ${locale === "ar" ? "rotate-180" : ""}`} />
               </button>
             ) : null}
           </div>
-          {!showAll && shownCount < items.length ? (
+          {!showAll && page < pageCount ? (
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#f4f3f0] px-8 py-3 text-[12px] font-semibold tracking-[0.14em] text-oxford uppercase transition hover:bg-chip"
-              onClick={() => setShowAll(true)}
+              className="text-sm text-oxford/50 underline-offset-4 transition hover:text-oxford hover:underline"
+              onClick={() => {
+                setShowAll(true);
+                setPage(pageCount);
+              }}
             >
-              {t("loadRemaining")}
-              <ChevronDown className="size-4" />
+              {t("showMore")}
             </button>
           ) : null}
         </div>

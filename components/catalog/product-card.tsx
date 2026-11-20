@@ -20,9 +20,8 @@ import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
 import { pick } from "@/lib/site";
-import { flashStatus } from "@/components/status-flash";
 import { startRouteLoading } from "@/components/layout/route-loading";
-import { useStorefrontUi } from "@/lib/storefront-ui";
+import { revealCartAfterPause } from "@/lib/storefront-ui";
 
 export function ProductCard({
   product,
@@ -44,7 +43,6 @@ export function ProductCard({
   const categoryLabel =
     pick(site.chrome.catalogSections?.find((item) => item.id === categoryId)?.label, locale) || product.category;
   const addItem = useCart((s) => s.addItem);
-  const setCartOpen = useStorefrontUi((s) => s.setCartOpen);
   const [pressed, setPressed] = useState(false);
   const name = localizedName(product, locale);
   const tagline = localizedTagline(product, locale);
@@ -77,8 +75,7 @@ export function ProductCard({
       priceEgp: sellingPrice(product) || 100,
       kind: "product",
     });
-    flashStatus(t("addedSuccess"));
-    setCartOpen(true);
+    revealCartAfterPause(t("addedSuccess"));
   }
 
   if (layout === "list") {
@@ -107,7 +104,7 @@ export function ProductCard({
 
   return (
     <article
-      className={`group flex flex-col bg-white p-3 shadow-sm transition duration-300 hover:shadow-xl sm:p-4 ${cardRadius} ${
+      className={`group flex h-full flex-col bg-white p-3 shadow-sm transition duration-300 hover:shadow-xl sm:p-4 ${cardRadius} ${
         pressed ? "scale-[0.97]" : ""
       }`}
     >
@@ -141,23 +138,23 @@ export function ProductCard({
           <p className="mb-1 text-[10px] font-bold tracking-[0.16em] text-oxford/40 uppercase">
             {categoryLabel || product.category}
           </p>
-          <h3 className="font-heading text-[15px] leading-snug text-oxford sm:text-lg">{name}</h3>
-          <p className="mt-1 line-clamp-1 text-[13px] text-muted-foreground">{tagline}</p>
+          <h3 className="line-clamp-2 min-h-[2.5em] font-heading text-[15px] leading-snug text-oxford sm:text-lg">{name}</h3>
+          <p className="mt-1 line-clamp-1 min-h-[1.25rem] text-[13px] text-muted-foreground">{tagline}</p>
         </div>
-        <div className="mt-4 flex items-end justify-between gap-3 border-t border-oxford/6 pt-3">
+        <div className="mt-4 flex min-h-8 items-end justify-between gap-3 border-t border-oxford/6 pt-3">
           <PriceTag product={product} size="sm" />
-          {swatches.length > 1 ? (
-            <div className="flex items-center gap-1.5">
-              {swatches.map((choice) => (
-                <span
-                  key={choice}
-                  title={choice}
-                  className="size-3.5 rounded-full shadow-inner ring-1 ring-oxford/10"
-                  style={{ background: optionSwatch(choice) }}
-                />
-              ))}
-            </div>
-          ) : null}
+          <div className="flex h-3.5 min-w-[4.5rem] items-center justify-end gap-1.5">
+            {swatches.length > 1
+              ? swatches.map((choice) => (
+                  <span
+                    key={choice}
+                    title={choice}
+                    className="size-3.5 rounded-full shadow-inner ring-1 ring-oxford/10"
+                    style={{ background: optionSwatch(choice) }}
+                  />
+                ))
+              : null}
+          </div>
         </div>
       </Link>
     </article>

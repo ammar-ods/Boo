@@ -486,16 +486,13 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#f6f3ea", color: "#0a2540", fontSize: 56, paddingY: 72, align: "center", showPrimaryCta: true, showSecondaryCta: true },
       content: {
-        eyebrow: loc(" · ", "Boo · Oxford atelier"),
-        title: loc("قطع  للمكتب والهدايا.", "Pieces chosen for the desk and for gifting."),
-        body: loc(
-          "تيشيرت ، مج حراري، وكوستر خشب.  ١٠٠ جنيه.",
-          "Printable tee, thermal tumbler, and a wood coaster. 100 EGP each.",
-        ),
-        ctaLabel: loc("تسوّق الآن", "Shop now"),
-        ctaHref: "/catalog",
-        secondaryCtaLabel: loc("الباقات", "Bundles"),
-        secondaryCtaHref: "/bundles",
+        eyebrow: loc("", ""),
+        title: loc("", ""),
+        body: loc("", ""),
+        ctaLabel: loc("", ""),
+        ctaHref: "",
+        secondaryCtaLabel: loc("", ""),
+        secondaryCtaHref: "",
       },
     },
     banner: {
@@ -519,11 +516,11 @@ export function newSection(type: SectionType): SiteSection {
         showSecondaryCta: false,
       },
       content: {
-        eyebrow: loc("إصدار جديد", "New drop"),
-        title: loc("بانر المنتج الجديد", "New product banner"),
-        body: loc("اكتب تفاصيل الإصدار هنا.", "Write the drop details here."),
-        ctaLabel: loc("تسوق", "Shop"),
-        ctaHref: "/catalog",
+        eyebrow: loc("", ""),
+        title: loc("", ""),
+        body: loc("", ""),
+        ctaLabel: loc("", ""),
+        ctaHref: "",
       },
     },
     slideshow: {
@@ -564,8 +561,8 @@ export function newSection(type: SectionType): SiteSection {
         rounded: false,
       },
       content: {
-        title: loc("قسم نص", "Text section"),
-        body: loc("اكتب أي محتوى هنا.", "Write any copy here."),
+        title: loc("", ""),
+        body: loc("", ""),
       },
     },
     products: {
@@ -574,8 +571,8 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#f6f3ea", color: "#0a2540", fontSize: 32, paddingY: 56, align: "start" },
       content: {
-        title: loc("المنتجات", "Products"),
-        body: loc("أضف قطع من الكتالوج.", "Add pieces from the catalog."),
+        title: loc("", ""),
+        body: loc("", ""),
         productSlugs: [],
         collection: "all",
       },
@@ -585,7 +582,7 @@ export function newSection(type: SectionType): SiteSection {
       type,
       visible: true,
       style: { background: "#f6f3ea", color: "#0a2540", fontSize: 40, paddingY: 40, align: "center" },
-      content: { title: loc("الأقسام", "Collections") },
+      content: { title: loc("", "") },
     },
     cta: {
       id,
@@ -593,11 +590,11 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#0a2540", color: "#ffffff", fontSize: 32, paddingY: 48, align: "start" },
       content: {
-        eyebrow: loc("باقات", "Bundles"),
-        title: loc("جهّز هدية كاملة", "Build a complete gift"),
-        body: loc("التيشيرت والمجر والكوستر في باقة واحدة.", "Tee, tumbler, and coaster in one pack."),
-        ctaLabel: loc("شوف الباقات", "See bundles"),
-        ctaHref: "/bundles",
+        eyebrow: loc("", ""),
+        title: loc("", ""),
+        body: loc("", ""),
+        ctaLabel: loc("", ""),
+        ctaHref: "",
       },
     },
     marquee: {
@@ -614,7 +611,7 @@ export function newSection(type: SectionType): SiteSection {
         imageRounded: true,
       },
       content: {
-        title: loc("منتجات تتحرك", "In motion"),
+        title: loc("", ""),
         gallery: [],
       },
     },
@@ -624,11 +621,8 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#ffffff", color: "#0a2540", fontSize: 28, paddingY: 56, align: "start" },
       content: {
-        title: loc("", "."),
-        body: loc(
-          "بو للطباعة المخصصة والهدايا. .",
-          "Boo is for custom print and gifting. .",
-        ),
+        title: loc("", ""),
+        body: loc("", ""),
       },
     },
     bundles: {
@@ -637,8 +631,8 @@ export function newSection(type: SectionType): SiteSection {
       visible: true,
       style: { background: "#f6f3ea", color: "#0a2540", fontSize: 40, paddingY: 48, align: "start" },
       content: {
-        title: loc("الباقات", "Bundles"),
-        body: loc("اختار باقة جاهزة وضيفها للسلة بسعر واحد.", "Ready packs at a single price. Add the set to your bag."),
+        title: loc("", ""),
+        body: loc("", ""),
       },
     },
   };

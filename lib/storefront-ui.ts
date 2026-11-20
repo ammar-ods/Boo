@@ -1,6 +1,8 @@
 "use client";
 
 import { create } from "zustand";
+import { hideRouteLoading, startRouteLoading } from "@/components/layout/route-loading";
+import { flashStatus } from "@/components/status-flash";
 
 type StorefrontUi = {
   searchOpen: boolean;
@@ -33,3 +35,12 @@ export const useStorefrontUi = create<StorefrontUi>((set) => ({
     })),
   closeOverlays: () => set({ searchOpen: false, cartOpen: false, sectionsOpen: false, menuOpen: false }),
 }));
+
+export function revealCartAfterPause(message?: string) {
+  startRouteLoading();
+  window.setTimeout(() => {
+    hideRouteLoading();
+    if (message) flashStatus(message);
+    useStorefrontUi.getState().setCartOpen(true);
+  }, 700);
+}

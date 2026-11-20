@@ -25,7 +25,7 @@ import {
 } from "@/lib/products";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { useCart } from "@/lib/cart";
-import { useStorefrontUi } from "@/lib/storefront-ui";
+import { revealCartAfterPause } from "@/lib/storefront-ui";
 import { useI18n } from "@/lib/i18n";
 import { FabricCanvas, type CanvasHandle } from "@/components/customizer/fabric-canvas";
 import { ControlsPanel } from "@/components/customizer/controls-panel";
@@ -45,7 +45,6 @@ export function ProductWorkspace({ product }: { product: Product }) {
   const activeViewId = useCustomizerStore((s) => s.activeViewId);
   const setActiveViewId = useCustomizerStore((s) => s.setActiveViewId);
   const addItem = useCart((s) => s.addItem);
-  const setCartOpen = useStorefrontUi((s) => s.setCartOpen);
   const addAsset = useCustomizerStore((s) => s.addAsset);
   const assets = useCustomizerStore((s) => s.assets);
   const [canvases, setCanvases] = useState<Record<string, CanvasHandle>>({});
@@ -159,8 +158,8 @@ export function ProductWorkspace({ product }: { product: Product }) {
           uploads: [],
         });
         if (!options?.quiet) {
-          flashStatus(t("addedSuccess"));
-          setCartOpen(true);
+          hideFlash();
+          revealCartAfterPause(t("addedSuccess"));
         }
         return true;
       }
@@ -212,10 +211,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
         uploads,
       });
       hideFlash();
-      if (!options?.quiet) {
-        flashStatus(t("addedSuccess"));
-        setCartOpen(true);
-      }
+      if (!options?.quiet) revealCartAfterPause(t("addedSuccess"));
       return true;
     } catch (error) {
       hideFlash();

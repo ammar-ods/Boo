@@ -11,7 +11,7 @@ export default async function AdminSettingsPage() {
       <p className="font-script text-2xl text-boo-teal">studio</p>
       <h1 className="mt-1 font-heading text-4xl text-oxford">Settings</h1>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Fonts, shipping, WhatsApp, contact destination, and the fields shown on contact and checkout.
+        Fonts, shipping fees, WhatsApp, and shop options. Form fields live under Forms.
       </p>
       <ShopSettingsForm
         commerce={site.commerce}
