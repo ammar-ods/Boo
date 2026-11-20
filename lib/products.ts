@@ -72,8 +72,17 @@ export function mugPhotoUrl(product: Product) {
   return src;
 }
 
+function viewPhoto(product: Product, mockup?: string) {
+  const src = (mockup || "").trim();
+  const thumb = (product.thumbnail || product.gallery?.[0] || "").trim();
+  if (!src) return thumb || product.mockup || "";
+  if (product.customizable === false && thumb) return thumb;
+  return src;
+}
+
 export function productViews(product: Product): ProductView[] {
   const wrapAll = Boolean(product.wrapPreview);
+  const fallback = viewPhoto(product, product.mockup);
   const raw =
     product.views && product.views.length > 0
       ? product.views
@@ -81,7 +90,7 @@ export function productViews(product: Product): ProductView[] {
           {
             id: "front",
             label: wrapAll ? "Wrap" : "Front",
-            mockup: product.mockup,
+            mockup: fallback,
             safe_zone_bounds: product.safe_zone_bounds,
             wrap: wrapAll,
             wrapBounds: wrapAll ? MUG_WRAP_BOUNDS : undefined,
@@ -90,7 +99,8 @@ export function productViews(product: Product): ProductView[] {
 
   return raw.map((view) => {
     const wrap = Boolean(view.wrap) || wrapAll;
-    if (!wrap) return { ...view, wrap: false };
+    const mockup = viewPhoto(product, view.mockup);
+    if (!wrap) return { ...view, mockup, wrap: false };
     return {
       ...view,
       wrap: true,
@@ -319,15 +329,16 @@ export function productThumbnail(product: Product) {
 }
 
 export function productGallery(product: Product) {
-  if (product.gallery?.length) return product.gallery.filter(Boolean);
+  const extras = (product.gallery ?? []).filter(Boolean);
   if (product.customizable === false) {
-    const views = productViews(product)
+    const thumb = productThumbnail(product);
+    const photos = [thumb, ...extras.filter((src) => src !== thumb)].filter(Boolean);
+    if (photos.length) return photos;
+    return productViews(product)
       .map((view) => view.mockup)
       .filter(Boolean);
-    if (views.length) return views;
-    if (product.thumbnail) return [product.thumbnail];
-    if (product.mockup) return [product.mockup];
   }
+  if (extras.length) return extras;
   return [];
 }
 

@@ -117,13 +117,15 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   }
 
   if (wrapPreview && mugPhoto) mockup = mugPhoto;
+  const customizable = formData.get("customizable") === "on";
+  if (!customizable && thumbnail) mockup = thumbnail;
 
   const safe = parseSafe(formData);
   const views: ProductView[] = [
     {
       id: "front",
       label: String(formData.get("primary_label") || (wrapPreview ? "Wrap" : "Front")),
-      mockup: wrapPreview ? wrapTemplate || MUG_WRAP_FLAT.mockup : mockup,
+      mockup: wrapPreview ? wrapTemplate || MUG_WRAP_FLAT.mockup : mockup || thumbnail,
       safe_zone_bounds: wrapPreview ? MUG_WRAP_FLAT.safe_zone_bounds : safe,
       wrap: wrapPreview,
     },
@@ -155,6 +157,7 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
   }
 
   for (let index = 0; index < extraLabels.length; index += 1) {
+    if (!customizable) break;
     const extraFile = extraFiles[index];
     let extraMockup = extraExisting[index] || "";
     if (extraFile instanceof File && extraFile.size > 0) {
@@ -195,10 +198,10 @@ async function productFromForm(formData: FormData, existing?: Product): Promise<
     discounted,
     saleEgp: discounted && saleEgp > 0 ? saleEgp : undefined,
     discountPercent: discounted && discountPercent > 0 ? discountPercent : undefined,
-    customizable: formData.get("customizable") === "on",
-    allowImage: formData.get("customizable") === "on" && formData.get("allowImage") === "on",
-    allowText: formData.get("customizable") === "on" && formData.get("allowText") === "on",
-    askDimensions: formData.get("customizable") === "on" && formData.get("askDimensions") === "on",
+    customizable,
+    allowImage: customizable && formData.get("allowImage") === "on",
+    allowText: customizable && formData.get("allowText") === "on",
+    askDimensions: customizable && formData.get("askDimensions") === "on",
     canvasWidth: 800,
     canvasHeight: 800,
     safe_zone_bounds: safe,
