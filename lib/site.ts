@@ -396,7 +396,7 @@ export const DEFAULT_CHROME: SiteChrome = {
     {
       id: "apparel",
       href: "/p/apparel",
-      image: "/products/white-tee-front.jpg",
+      image: "",
       label: loc("ملابس", "Apparel"),
       visible: true,
     },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCatalogProduct, persistOrderMedia, saveOrder, nextReferenceCode, getSite } from "@/lib/local-db";
 import { cartBreakdown, matchPromo } from "@/lib/commerce";
+import { productThumbnail } from "@/lib/products";
 
 type CheckoutItem = {
   slug: string;
@@ -102,8 +103,8 @@ export async function POST(request: Request) {
     const mockup =
       previewPaths[0] ||
       first?.image ||
-      catalogItem?.mockup ||
-      "/products/white-tee-front.jpg";
+      (catalogItem ? productThumbnail(catalogItem) : "") ||
+      "";
 
     const order = await saveOrder({
       id: crypto.randomUUID(),

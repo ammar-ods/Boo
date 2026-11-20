@@ -72,10 +72,16 @@ export function mugPhotoUrl(product: Product) {
   return src;
 }
 
+function isLeftoverSeedMockup(product: Product, src: string) {
+  if (product.slug === "white-tee") return false;
+  return src === "/products/white-tee-front.jpg" || src === "/products/white-tee-back.jpg";
+}
+
 function viewPhoto(product: Product, mockup?: string) {
   const src = (mockup || "").trim();
   const thumb = (product.thumbnail || product.gallery?.[0] || "").trim();
-  if (!src) return thumb || product.mockup || "";
+  if (isLeftoverSeedMockup(product, src)) return thumb || "";
+  if (!src) return thumb || (isLeftoverSeedMockup(product, product.mockup) ? "" : product.mockup) || "";
   if (product.customizable === false && thumb) return thumb;
   return src;
 }
@@ -325,7 +331,11 @@ export function slugify(value: string) {
 }
 
 export function productThumbnail(product: Product) {
-  return product.thumbnail || product.gallery?.[0] || product.mockup || "";
+  const thumb = product.thumbnail || product.gallery?.[0] || "";
+  if (thumb) return thumb;
+  const mockup = product.mockup || "";
+  if (isLeftoverSeedMockup(product, mockup)) return "";
+  return mockup;
 }
 
 export function productGallery(product: Product) {

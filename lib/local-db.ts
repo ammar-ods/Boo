@@ -149,16 +149,29 @@ function rowToProduct(row: Record<string, unknown>): Product {
   const slug = String(row.slug);
   const seed = SEED_PRODUCTS.find((item) => item.slug === slug);
   let views = parseViews(bounds, mockup, overlay, wrapPreview);
+  const customPhoto = String(bounds.thumbnail || mockup || "");
   if ((!views || views.length === 0) && seed?.views) {
-    views = seed.views.map((view, index) =>
-      index === 0
-        ? {
-            ...view,
-            mockup: wrapPreview ? MUG_WRAP_FLAT.mockup : mockup,
-            wrap: wrapPreview || view.wrap,
-          }
-        : view,
-    );
+    if (customPhoto && customPhoto !== seed.mockup) {
+      views = [
+        {
+          id: "front",
+          label: "Front",
+          mockup: wrapPreview ? MUG_WRAP_FLAT.mockup : customPhoto,
+          safe_zone_bounds: seed.safe_zone_bounds,
+          wrap: wrapPreview,
+        },
+      ];
+    } else {
+      views = seed.views.map((view, index) =>
+        index === 0
+          ? {
+              ...view,
+              mockup: wrapPreview ? MUG_WRAP_FLAT.mockup : mockup || view.mockup,
+              wrap: wrapPreview || view.wrap,
+            }
+          : view,
+      );
+    }
   }
 
   return {

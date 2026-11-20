@@ -4,37 +4,37 @@ import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
+import { normalizeCategoryId, productThumbnail, type Product } from "@/lib/products";
+import { pick } from "@/lib/site";
 
-const ITEMS = [
-  {
-    title: "White tee",
-    titleAr: "تيشيرت أبيض",
-    href: "/product/white-tee",
-    image: "/products/white-tee-front.jpg",
-  },
-  {
-    title: "Thermal tumbler",
-    titleAr: "مج حراري",
-    href: "/product/thermal-tumbler",
-    image: "/products/thermal-tumbler.jpg",
-  },
-  {
-    title: "Wood coaster",
-    titleAr: "كوستر خشب",
-    href: "/product/wood-coaster",
-    image: "/products/wood-coaster.png",
-  },
-];
-
-export function DisciplineCarousel() {
+export function DisciplineCarousel({ products = [] }: { products?: Product[] }) {
   const scroller = useRef<HTMLDivElement>(null);
   const { locale } = useI18n();
+  const { site } = useEdit();
   const flip = locale === "ar" ? "rotate-180" : "";
+  const items = (site.chrome.catalogSections ?? [])
+    .filter((section) => section.visible !== false)
+    .map((section) => {
+      const fromCategory = products.find(
+        (product) => normalizeCategoryId(product.category) === section.id,
+      );
+      const image = section.image || (fromCategory ? productThumbnail(fromCategory) : "");
+      return {
+        id: section.id,
+        href: section.href || `/p/${section.id}`,
+        title: pick(section.label, locale) || section.id,
+        image,
+      };
+    })
+    .filter((item) => item.image);
 
   function scroll(direction: -1 | 1) {
     scroller.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
   }
+
+  if (!items.length) return null;
 
   return (
     <section className="relative py-6">
@@ -60,8 +60,8 @@ export function DisciplineCarousel() {
           className="flex gap-4 overflow-x-auto scroll-px-12 px-12 pb-6 sm:gap-5 sm:scroll-px-16 sm:px-20 sm:pb-8"
           style={{ scrollbarWidth: "none" }}
         >
-          {ITEMS.map((item) => (
-            <Link key={item.href} href={item.href} className="group w-[min(68vw,240px)] shrink-0 sm:w-[280px]">
+          {items.map((item) => (
+            <Link key={item.id} href={item.href} className="group w-[min(68vw,240px)] shrink-0 sm:w-[280px]">
               <div className="relative overflow-hidden rounded-[28px] bg-card shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]">
                 <div className="relative aspect-[4/5] bg-chip">
                   <Image
@@ -72,9 +72,7 @@ export function DisciplineCarousel() {
                   />
                 </div>
               </div>
-              <h3 className="mt-3 font-heading text-2xl text-oxford">
-                {locale === "ar" ? item.titleAr : item.title}
-              </h3>
+              <h3 className="mt-3 font-heading text-2xl text-oxford">{item.title}</h3>
             </Link>
           ))}
         </div>

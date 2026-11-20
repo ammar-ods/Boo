@@ -493,7 +493,7 @@ function SectionView({
         <div className={`cms-copy ${centered ? "text-center" : "text-start"}`}>
           {text("title", "font-heading", "h2")}
         </div>
-        <DisciplineCarousel />
+        <DisciplineCarousel products={products} />
       </SectionShell>
     );
   }
