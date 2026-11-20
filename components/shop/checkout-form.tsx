@@ -39,6 +39,7 @@ export function CheckoutForm({
   const [placed, setPlaced] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const skipLeaveGuard = useRef(false);
+  const popGuardRef = useRef<(() => void) | null>(null);
   const hasCustom = cartHasCustom(items);
   const blockCod = site.commerce.codBlockCustom !== false && hasCustom;
   const [method, setMethod] = useState<"cod" | "online">(blockCod ? "online" : "cod");
@@ -159,19 +160,52 @@ export function CheckoutForm({
       window.history.pushState({ booCheckout: true }, "");
       setLeaveOpen(true);
     }
+    popGuardRef.current = onPop;
     window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    return () => {
+      popGuardRef.current = null;
+      window.removeEventListener("popstate", onPop);
+    };
   }, [placed]);
 
   function requestLeave() {
     setLeaveOpen(true);
   }
 
-  function confirmLeave() {
+  function leaveHref() {
+    const last = items[items.length - 1];
+    if (last?.kind === "bundle") return "/bundles";
+    if (last?.slug) return `/product/${encodeURIComponent(last.slug)}`;
+    return "/catalog";
+  }
+
+  function dropLeaveGuard() {
     skipLeaveGuard.current = true;
+    const onPop = popGuardRef.current;
+    if (onPop) {
+      window.removeEventListener("popstate", onPop);
+      popGuardRef.current = null;
+    }
+  }
+
+  function confirmLeave() {
+    dropLeaveGuard();
     setLeaveOpen(false);
-    if (onBack) onBack();
-    else router.push("/cart");
+    if (onBack) {
+      if (window.history.state?.booCheckout) window.history.back();
+      onBack();
+      return;
+    }
+    const dest = leaveHref();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      router.replace(dest);
+    };
+    window.addEventListener("popstate", finish, { once: true });
+    window.setTimeout(finish, 120);
+    window.history.go(-2);
   }
 
   useEffect(() => {
