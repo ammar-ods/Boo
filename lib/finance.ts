@@ -108,7 +108,7 @@ export function migrateFinance(raw: unknown): FinanceDocument {
     ? settings.spendingCategories.map((item, index) => ({
         id: String(item.id || `cat-${index}`),
         label: String(item.label || "Category"),
-        type: item.type === "material" ? "material" : "operational",
+        type: (item.type === "material" ? "material" : "operational") as SpendingType,
       }))
     : DEFAULT_SPENDING_CATEGORIES;
   return {
