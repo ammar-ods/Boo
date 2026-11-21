@@ -1,6 +1,20 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { startRouteLoading } from "@/components/layout/route-loading";
+
+export function useFinanceBusy() {
+  const [busy, setBusy] = useState(false);
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    if (busy) {
+      event.preventDefault();
+      return;
+    }
+    setBusy(true);
+    startRouteLoading();
+  }
+  return { busy, onSubmit };
+}
 
 export function FinanceDialog({
   open,

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { deleteFinanceSale, saveFinanceSale } from "@/actions/finance";
-import { Field, FinanceDialog, inputClass } from "@/components/admin/finance-dialog";
+import { Field, FinanceDialog, inputClass, useFinanceBusy } from "@/components/admin/finance-dialog";
 import {
   CUSTOM_PRODUCT_SLUG,
   formatEgp,
@@ -109,9 +109,10 @@ function SaleForm({
   const product = products.find((item) => item.slug === slug);
   const name = slug === CUSTOM_PRODUCT_SLUG ? "Custom" : product?.name || sale?.productName || "Custom";
   const preset = (doc.settings.productCosts[slug] || 0) * (sale?.quantity || 1);
+  const { busy, onSubmit } = useFinanceBusy();
 
   return (
-    <form action={saveFinanceSale} className="space-y-3">
+    <form action={saveFinanceSale} className="space-y-3" onSubmit={onSubmit}>
       {sale ? <input type="hidden" name="id" value={sale.id} /> : null}
       <input type="hidden" name="productName" value={name} />
       <Field label="Date">
@@ -158,14 +159,15 @@ function SaleForm({
         <p className="text-xs text-muted-foreground">From website order {sale.orderRef}. Cost can still be edited.</p>
       ) : null}
       <div className="flex gap-2 pt-2">
-        <button type="submit" className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white">
-          Save
+        <button type="submit" disabled={busy} className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white disabled:opacity-60">
+          {busy ? "…" : "Save"}
         </button>
         {sale ? (
           <button
             type="submit"
             formAction={deleteFinanceSale}
-            className="h-11 rounded-full bg-red-50 px-4 text-sm font-semibold text-red-700"
+            disabled={busy}
+            className="h-11 rounded-full bg-red-50 px-4 text-sm font-semibold text-red-700 disabled:opacity-60"
           >
             Delete
           </button>

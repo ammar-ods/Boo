@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { saveFinanceSettings } from "@/actions/finance";
-import { Field, inputClass } from "@/components/admin/finance-dialog";
+import { Field, inputClass, useFinanceBusy } from "@/components/admin/finance-dialog";
 import { catalogCostRows, type FinanceDocument, type SpendingCategory, type SpendingType } from "@/lib/finance";
 import type { Product } from "@/lib/products";
 
@@ -16,9 +16,10 @@ export function FinanceSettingsForm({
 }) {
   const rows = catalogCostRows(products, doc);
   const [categories, setCategories] = useState<SpendingCategory[]>(doc.settings.spendingCategories);
+  const { busy, onSubmit } = useFinanceBusy();
 
   return (
-    <form action={saveFinanceSettings} className="space-y-8">
+    <form action={saveFinanceSettings} className="space-y-8" onSubmit={onSubmit}>
       <section className="rounded-[1.6rem] bg-white p-6 ring-1 ring-oxford/8">
         <h2 className="font-heading text-2xl text-oxford">General</h2>
         <p className="mt-1 mb-5 text-sm text-muted-foreground">Starting capital feeds Free cash on the dashboard.</p>
@@ -112,8 +113,8 @@ export function FinanceSettingsForm({
         </div>
       </section>
 
-      <button type="submit" className="h-11 w-full rounded-full bg-oxford font-heading text-white sm:w-auto sm:px-8">
-        Save settings
+      <button type="submit" disabled={busy} className="h-11 w-full rounded-full bg-oxford font-heading text-white disabled:opacity-60 sm:w-auto sm:px-8">
+        {busy ? "…" : "Save settings"}
       </button>
     </form>
   );

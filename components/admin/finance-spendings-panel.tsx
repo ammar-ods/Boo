@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { deleteFinanceSpending, saveFinanceSpending } from "@/actions/finance";
-import { Field, FinanceDialog, inputClass } from "@/components/admin/finance-dialog";
+import { Field, FinanceDialog, inputClass, useFinanceBusy } from "@/components/admin/finance-dialog";
 import { formatEgp, type FinanceDocument, type FinanceSpending, type SpendingType } from "@/lib/finance";
 import { cn } from "@/lib/utils";
 
@@ -124,10 +124,13 @@ export function FinanceSpendingsPanel({ doc }: { doc: FinanceDocument }) {
             onClick={() => setOpen(row)}
             className="flex w-full items-center justify-between gap-4 rounded-[1.5rem] bg-white p-5 text-start shadow-sm ring-1 ring-oxford/8 hover:bg-cream/60"
           >
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold tracking-[0.12em] text-oxford/40 uppercase">{row.date}</p>
-              <p className="mt-1 font-heading text-xl text-oxford">{row.category}</p>
-              <p className="mt-1 text-sm capitalize text-muted-foreground">{row.type === "material" ? "Material / products" : "Operational"}</p>
+              <p className="mt-1 flex flex-wrap items-baseline gap-x-2 font-heading text-xl text-oxford">
+                <span>{row.type === "material" ? "Material" : "Operational"}</span>
+                <span className="text-sm font-semibold tracking-normal text-oxford/45">{row.category}</span>
+              </p>
+              {row.notes ? <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{row.notes}</p> : null}
             </div>
             <p className="font-heading text-lg text-oxford">{formatEgp(row.amount)}</p>
           </button>
@@ -161,9 +164,10 @@ function SpendingForm({
 }) {
   const [kind, setKind] = useState<SpendingType>(spending?.type || "operational");
   const options = categories.filter((item) => item.type === kind);
+  const { busy, onSubmit } = useFinanceBusy();
 
   return (
-    <form action={saveFinanceSpending} className="space-y-3">
+    <form action={saveFinanceSpending} className="space-y-3" onSubmit={onSubmit}>
       {spending ? <input type="hidden" name="id" value={spending.id} /> : null}
       <Field label="Date">
         <input className={inputClass} type="date" name="date" defaultValue={spending?.date || new Date().toISOString().slice(0, 10)} required />
@@ -198,11 +202,11 @@ function SpendingForm({
         <input className={inputClass} name="notes" defaultValue={spending?.notes || ""} />
       </Field>
       <div className="flex gap-2 pt-2">
-        <button type="submit" className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white">
-          Save
+        <button type="submit" disabled={busy} className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white disabled:opacity-60">
+          {busy ? "…" : "Save"}
         </button>
         {spending ? (
-          <button type="submit" formAction={deleteFinanceSpending} className="h-11 rounded-full bg-red-50 px-4 text-sm font-semibold text-red-700">
+          <button type="submit" formAction={deleteFinanceSpending} disabled={busy} className="h-11 rounded-full bg-red-50 px-4 text-sm font-semibold text-red-700 disabled:opacity-60">
             Delete
           </button>
         ) : null}

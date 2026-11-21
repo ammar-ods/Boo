@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { deleteFinanceAsset, saveFinanceAsset } from "@/actions/finance";
-import { Field, FinanceDialog, inputClass } from "@/components/admin/finance-dialog";
+import { Field, FinanceDialog, inputClass, useFinanceBusy } from "@/components/admin/finance-dialog";
 import { formatEgp, type FinanceAsset, type FinanceDocument } from "@/lib/finance";
 
 export function FinanceAssetsPanel({ doc }: { doc: FinanceDocument }) {
@@ -53,8 +53,9 @@ export function FinanceAssetsPanel({ doc }: { doc: FinanceDocument }) {
 }
 
 function AssetForm({ asset }: { asset: FinanceAsset | null }) {
+  const { busy, onSubmit } = useFinanceBusy();
   return (
-    <form action={saveFinanceAsset} className="space-y-3">
+    <form action={saveFinanceAsset} className="space-y-3" onSubmit={onSubmit}>
       {asset ? <input type="hidden" name="id" value={asset.id} /> : null}
       <Field label="Name">
         <input className={inputClass} name="name" defaultValue={asset?.name || ""} required />
@@ -69,11 +70,11 @@ function AssetForm({ asset }: { asset: FinanceAsset | null }) {
         <input className={inputClass} name="notes" defaultValue={asset?.notes || ""} />
       </Field>
       <div className="flex gap-2 pt-2">
-        <button type="submit" className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white">
-          Save
+        <button type="submit" disabled={busy} className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white disabled:opacity-60">
+          {busy ? "…" : "Save"}
         </button>
         {asset ? (
-          <button type="submit" formAction={deleteFinanceAsset} className="h-11 rounded-full bg-red-50 px-4 text-sm font-semibold text-red-700">
+          <button type="submit" formAction={deleteFinanceAsset} disabled={busy} className="h-11 rounded-full bg-red-50 px-4 text-sm font-semibold text-red-700 disabled:opacity-60">
             Delete
           </button>
         ) : null}
