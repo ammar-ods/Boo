@@ -55,8 +55,8 @@ export function SiteHeader() {
     ) : null}
     {site.chrome.showNav ? (
       <div
-        className={`fixed inset-y-0 start-0 z-[46] flex w-[min(22rem,88vw)] flex-col bg-white shadow-[0_18px_50px_-20px_rgba(10,37,64,0.45)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
-          menuOpen ? "translate-x-0" : "pointer-events-none -translate-x-full rtl:translate-x-full"
+        className={`fixed inset-y-0 end-0 z-[46] flex w-[min(22rem,88vw)] flex-col bg-white shadow-[0_18px_50px_-20px_rgba(10,37,64,0.45)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
+          menuOpen ? "translate-x-0" : "pointer-events-none translate-x-full rtl:-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between border-b border-oxford/8 px-5 py-4">

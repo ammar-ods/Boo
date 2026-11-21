@@ -14,7 +14,7 @@ export function AdminEditFab() {
       <Link href="/?edit=1" className="btn-press btn-press-sm">
         {t("editSite")}
       </Link>
-      <Link href="/admin/inquiries" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford shadow">
+      <Link href="/admin" className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-oxford shadow">
         {t("studio")}
       </Link>
     </div>

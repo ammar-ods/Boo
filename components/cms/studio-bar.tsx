@@ -54,7 +54,7 @@ export function StudioNavButtons() {
           </button>
         )}
         <a
-          href="/admin/inquiries"
+          href="/admin"
           className="h-9 rounded-full bg-white px-3.5 text-sm font-semibold leading-9 text-oxford ring-1 ring-oxford/10"
         >
           {t("studio")}
