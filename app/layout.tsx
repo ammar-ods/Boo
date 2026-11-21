@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { Suspense, type CSSProperties } from "react";
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
@@ -73,7 +73,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <I18nProvider>
             <EditProvider initial={site} isAdmin={isAdmin}>
               <SiteFonts />
-              <SiteHeader />
+              <Suspense fallback={null}>
+                <SiteHeader />
+              </Suspense>
               <main className="flex flex-1 flex-col pb-16 md:pb-0">{children}</main>
               <SiteFooter />
               <PromoPopup />

@@ -12,6 +12,7 @@ import { pick } from "@/lib/site";
 import { BackChevron } from "@/components/ui/back-chevron";
 import { DynamicShopFields } from "@/components/shop/dynamic-fields";
 import { flashStatus } from "@/components/status-flash";
+import { shopReturnPath } from "@/lib/storefront-ui";
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -173,10 +174,7 @@ export function CheckoutForm({
   }
 
   function leaveHref() {
-    const last = items[items.length - 1];
-    if (last?.kind === "bundle") return "/bundles";
-    if (last?.slug) return `/product/${encodeURIComponent(last.slug)}`;
-    return "/catalog";
+    return shopReturnPath();
   }
 
   function dropLeaveGuard() {

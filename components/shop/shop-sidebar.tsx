@@ -14,7 +14,7 @@ export type ShopNavItem = {
   label: string;
 };
 
-function itemMatches(href: string, pathname: string, search: string) {
+export function itemMatches(href: string, pathname: string, search: string) {
   const normalized = normalizeNavHref(href);
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
   let hrefUrl: URL | null = null;
@@ -29,7 +29,7 @@ function itemMatches(href: string, pathname: string, search: string) {
     const all = params.get("all");
     const hrefCollection = hrefUrl?.searchParams.get("collection");
     const hrefAll = hrefUrl?.searchParams.get("all");
-    if (hrefAll === "1") return all === "1" || (!collection && !hrefCollection);
+    if (hrefAll === "1") return all === "1";
     if (hrefCollection) return collection === hrefCollection;
     if (normalized === "/catalog" && !hrefCollection && hrefAll !== "1") {
       return !collection && all !== "1";
@@ -76,6 +76,18 @@ export function ShopRail({
   );
 }
 
+export function useShopNavActiveId(activeId?: string) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const items = useShopNavItems();
+  return (
+    items.find((item) => itemMatches(item.href, pathname, search))?.id ??
+    items.find((item) => activeId && activeId !== "all" && item.id === activeId)?.id ??
+    ""
+  );
+}
+
 export function ShopSidebar({ activeId }: { activeId?: string }) {
   const { site } = useEdit();
   if (site.chrome.showDiscipline === false) return null;
@@ -87,14 +99,8 @@ export function ShopSidebar({ activeId }: { activeId?: string }) {
 }
 
 function ShopSidebarNav({ activeId }: { activeId?: string }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const search = searchParams.toString();
   const items = useShopNavItems();
-  const current =
-    items.find((item) => itemMatches(item.href, pathname, search))?.id ??
-    items.find((item) => activeId && activeId !== "all" && item.id === activeId)?.id ??
-    items[0]?.id;
+  const current = useShopNavActiveId(activeId) || items[0]?.id;
 
   return (
     <aside className="sticky top-28 hidden w-44 shrink-0 self-start border-e border-oxford/15 pe-5 me-6 xl:block xl:w-52 xl:pe-6 xl:me-8">

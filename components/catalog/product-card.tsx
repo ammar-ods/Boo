@@ -80,25 +80,31 @@ export function ProductCard({
 
   if (layout === "list") {
     return (
-      <Link
-        href={`/product/${product.slug}`}
-        onClick={pulse}
-        className={`flex gap-4 bg-white p-4 shadow-sm transition duration-300 hover:shadow-xl ${cardRadius} ${
+      <article
+        className={`relative flex gap-4 bg-white p-4 shadow-sm transition duration-300 hover:shadow-xl ${cardRadius} ${
           pressed ? "scale-[0.97]" : ""
         }`}
       >
-        <div className={`relative size-24 shrink-0 overflow-hidden bg-chip sm:size-28 ${thumbRadius}`}>
+        <Link href={`/product/${product.slug}`} onClick={pulse} className={`relative size-24 shrink-0 overflow-hidden bg-chip sm:size-28 ${thumbRadius}`}>
           {image ? <Image src={image} alt={name} fill className="object-cover" /> : null}
-        </div>
-        <div className="min-w-0 py-1">
+        </Link>
+        <Link href={`/product/${product.slug}`} onClick={pulse} className="min-w-0 flex-1 py-1 pe-12">
           <p className="text-[10px] font-bold tracking-[0.16em] text-oxford/45 uppercase">
             {categoryLabel || product.category}
           </p>
           <h3 className="font-heading text-lg text-oxford sm:text-xl">{name}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{tagline}</p>
           <PriceTag product={product} size="sm" className="mt-2" />
-        </div>
-      </Link>
+        </Link>
+        <button
+          type="button"
+          className="icon-circle absolute end-3 top-1/2 z-10 size-10 -translate-y-1/2 shadow-md"
+          aria-label={customizable ? t("customize") : t("addToCart")}
+          onClick={onPlus}
+        >
+          <Plus className="size-4 sm:size-5" />
+        </button>
+      </article>
     );
   }
 

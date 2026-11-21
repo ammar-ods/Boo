@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
-import { useShopNavItems } from "@/components/shop/shop-sidebar";
+import { useShopNavActiveId, useShopNavItems } from "@/components/shop/shop-sidebar";
 import { upsertNavCategory } from "@/lib/categories";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
@@ -174,10 +174,27 @@ export function ShopFilterBar({
   }
 
   return (
+    <Suspense fallback={<div className="h-11" />}>
+      <FilterPills collection={collection} query={query} items={items} />
+    </Suspense>
+  );
+}
+
+function FilterPills({
+  collection,
+  query,
+  items,
+}: {
+  collection?: string;
+  query?: string;
+  items: ReturnType<typeof useShopNavItems>;
+}) {
+  const matched = useShopNavActiveId(collection);
+  const current = matched || collection || (!query ? "all" : "");
+  return (
     <div className="flex gap-2.5 overflow-x-auto pb-1">
       {items.map((item) => {
-        const active =
-          (item.id === "all" && !collection && !query) || (collection != null && item.id === collection);
+        const active = item.id === current;
         return (
           <Link
             key={item.id}

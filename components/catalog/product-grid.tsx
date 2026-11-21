@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
 import { ShopFilterBar } from "@/components/shop/shop-filter-bar";
@@ -36,6 +36,8 @@ export function ProductGrid({
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
+  const skipPageScroll = useRef(true);
   const mapped = collection ? COLLECTIONS[collection] : undefined;
 
   const items = useMemo(() => {
@@ -68,6 +70,14 @@ export function ProductGrid({
     setPage(1);
     setShowAll(false);
   }, [collection, inStock, query, sort]);
+
+  useEffect(() => {
+    if (skipPageScroll.current) {
+      skipPageScroll.current = false;
+      return;
+    }
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [page]);
 
   const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const pageStart = (page - 1) * PAGE_SIZE;
@@ -103,7 +113,7 @@ export function ProductGrid({
     .replace("{total}", String(items.length));
 
   return (
-    <div className="space-y-8">
+    <div ref={topRef} className="scroll-mt-28 space-y-8">
       <ShopFilterBar collection={collection} query={query} />
 
       <div className="flex flex-col justify-between gap-4 rounded-xl bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:p-5">
@@ -175,7 +185,6 @@ export function ProductGrid({
                 onClick={() => {
                   setShowAll(false);
                   setPage(number);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
                 {number}
@@ -189,7 +198,6 @@ export function ProductGrid({
                 onClick={() => {
                   setShowAll(false);
                   setPage((value) => Math.min(pageCount, value + 1));
-                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
                 <ChevronRight className={`size-4 ${locale === "ar" ? "rotate-180" : ""}`} />

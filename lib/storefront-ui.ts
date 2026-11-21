@@ -36,6 +36,29 @@ export const useStorefrontUi = create<StorefrontUi>((set) => ({
   closeOverlays: () => set({ searchOpen: false, cartOpen: false, sectionsOpen: false, menuOpen: false }),
 }));
 
+export const CHECKOUT_RETURN_KEY = "boo-checkout-return";
+
+export function rememberShopPath(path: string) {
+  if (typeof window === "undefined") return;
+  if (!path || path.startsWith("/checkout") || path.startsWith("/admin") || path.startsWith("/thanks")) return;
+  sessionStorage.setItem(CHECKOUT_RETURN_KEY, path);
+}
+
+export function shopReturnPath() {
+  if (typeof window === "undefined") return "/catalog";
+  const stored = sessionStorage.getItem(CHECKOUT_RETURN_KEY) || "";
+  if (stored && !stored.startsWith("/checkout")) return stored;
+  try {
+    const ref = document.referrer ? new URL(document.referrer) : null;
+    if (ref && ref.origin === window.location.origin && !ref.pathname.startsWith("/checkout")) {
+      return `${ref.pathname}${ref.search}${ref.hash}`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return "/catalog";
+}
+
 export function revealCartAfterPause(message?: string) {
   startRouteLoading();
   window.setTimeout(() => {

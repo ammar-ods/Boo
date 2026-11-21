@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 let start: (() => void) | null = null;
 let stop: (() => void) | null = null;
@@ -27,7 +27,17 @@ function isInternalHref(anchor: HTMLAnchorElement) {
 }
 
 export function RouteLoading() {
+  return (
+    <Suspense fallback={null}>
+      <RouteLoadingInner />
+    </Suspense>
+  );
+}
+
+function RouteLoadingInner() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -54,7 +64,7 @@ export function RouteLoading() {
 
   useEffect(() => {
     setVisible(false);
-  }, [pathname]);
+  }, [pathname, search]);
 
   useEffect(() => {
     if (!visible) return;

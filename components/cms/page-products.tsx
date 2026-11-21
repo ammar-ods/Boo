@@ -103,6 +103,7 @@ export function PageProducts({
         ) : (
           <ProductGrid
             products={selected}
+            collection={isCategoryPage ? pageKey || undefined : section.content.collection}
             compact={isHome}
             cardRounded={cardRounded}
             thumbRounded={thumbRounded}
