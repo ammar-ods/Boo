@@ -58,6 +58,7 @@ export function FinanceSalesPanel({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {sale.source === "order" ? `Website · ${sale.orderRef || "order"}` : "Manual"} · qty {sale.quantity}
                 </p>
+                {sale.notes ? <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{sale.notes}</p> : null}
               </div>
               <div className="mt-4 grid grid-cols-3 gap-4 sm:mt-0 sm:text-end">
                 <div>
