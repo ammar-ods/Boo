@@ -17,7 +17,7 @@ const CARDS = [
   {
     href: "/admin/accounting",
     title: "Accounting sheet",
-    body: "Books and money for the studio. This section is ready — details come next.",
+    body: "Free cash, revenue, sales, spendings, and assets.",
     icon: Sheet,
   },
 ];

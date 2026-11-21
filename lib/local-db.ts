@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, supabaseServiceKey } from "@/lib/supabase/env";
 import { syncCategoriesIntoSite } from "@/lib/categories";
 import { DEFAULT_SITE, migrateSite, type SiteDocument } from "@/lib/site";
+import { DEFAULT_FINANCE, migrateFinance, mergeFulfilledSales, type FinanceDocument } from "@/lib/finance";
 import { SEED_BUNDLES, type Bundle } from "@/lib/bundles";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -929,4 +930,64 @@ export async function getBundles() {
     return SEED_BUNDLES;
   }
   return stored;
+}
+
+const FINANCE_FILE = path.join(DATA_DIR, "finance.json");
+const FINANCE_OBJECT = "cms/finance.json";
+let memoryFinance: FinanceDocument | null = null;
+
+async function readRemoteFinance(): Promise<unknown | null> {
+  if (!useSupabase()) return null;
+  try {
+    const supabase = createAdminClient();
+    const file = await supabase.storage.from(UPLOADS_BUCKET).download(FINANCE_OBJECT);
+    if (file.data) return JSON.parse(await file.data.text());
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function writeRemoteFinance(document: FinanceDocument) {
+  if (!useSupabase()) return false;
+  try {
+    const supabase = createAdminClient();
+    await ensureUploadsBucket();
+    const uploaded = await supabase.storage.from(UPLOADS_BUCKET).upload(
+      FINANCE_OBJECT,
+      Buffer.from(JSON.stringify(document), "utf8"),
+      { contentType: "application/json", upsert: true },
+    );
+    return !uploaded.error;
+  } catch {
+    return false;
+  }
+}
+
+export async function getFinance(): Promise<FinanceDocument> {
+  noStore();
+  const remote = await readRemoteFinance();
+  if (remote) {
+    memoryFinance = migrateFinance(remote);
+    return memoryFinance;
+  }
+  if (memoryFinance) return memoryFinance;
+  const stored = await readJson<unknown>(FINANCE_FILE, null);
+  memoryFinance = migrateFinance(stored ?? DEFAULT_FINANCE);
+  return memoryFinance;
+}
+
+export async function saveFinance(document: FinanceDocument): Promise<FinanceDocument> {
+  const migrated = migrateFinance(document);
+  memoryFinance = migrated;
+  await writeJson(FINANCE_FILE, migrated);
+  await writeRemoteFinance(migrated);
+  return migrated;
+}
+
+export async function getFinanceBooks() {
+  const [doc, orders, catalog] = await Promise.all([getFinance(), listOrders(), getLiveCatalog()]);
+  const merged = mergeFulfilledSales(doc, orders);
+  const saved = merged.changed ? await saveFinance(merged.doc) : merged.doc;
+  return { doc: saved, catalog, orders };
 }
