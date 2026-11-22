@@ -68,7 +68,7 @@ export function SiteHeader() {
     ) : null}
     {site.chrome.showNav ? (
       <div
-        className={`fixed inset-y-0 end-0 z-[46] flex w-[min(22rem,88vw)] flex-col bg-white shadow-[0_18px_50px_-20px_rgba(10,37,64,0.45)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
+        className={`fixed inset-y-0 end-0 z-[46] flex w-[min(22rem,88vw)] flex-col bg-card text-foreground shadow-[0_18px_50px_-20px_rgba(10,37,64,0.45)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden ${
           menuOpen ? "translate-x-0" : "pointer-events-none translate-x-full rtl:-translate-x-full"
         }`}
       >
@@ -84,21 +84,29 @@ export function SiteHeader() {
       </div>
     ) : null}
     <header className="sticky top-0 z-40 overflow-visible">
-      <div className="bg-oxford text-white/90" style={{ fontSize: "var(--announce-font-size, 12px)" }}>
+      <div className="bg-oxford text-white/90 dark:bg-[#111820] dark:text-foreground/90" style={{ fontSize: "var(--announce-font-size, 12px)" }}>
         <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 py-2 sm:px-8 lg:px-12">
           <div className="flex min-w-0 items-center gap-3">
             <ThemeToggle />
-            <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 p-0.5 text-[12px] font-medium backdrop-blur-sm">
+            <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 p-0.5 text-[12px] font-medium backdrop-blur-sm dark:border-foreground/20 dark:bg-foreground/8">
               <button
                 type="button"
-                className={`rounded-full px-2.5 py-0.5 leading-tight ${locale === "ar" ? "bg-white font-bold text-oxford shadow-sm" : "text-white/70 hover:text-white"}`}
+                className={`rounded-full px-2.5 py-0.5 leading-tight ${
+                  locale === "ar"
+                    ? "bg-white font-bold text-oxford shadow-sm dark:bg-foreground dark:text-background"
+                    : "text-white/70 hover:text-white dark:text-foreground/55 dark:hover:text-foreground"
+                }`}
                 onClick={() => setLocale("ar")}
               >
                 العربية
               </button>
               <button
                 type="button"
-                className={`rounded-full px-2 py-0.5 leading-tight ${locale === "en" ? "bg-white font-bold text-oxford shadow-sm" : "text-white/70 hover:text-white"}`}
+                className={`rounded-full px-2 py-0.5 leading-tight ${
+                  locale === "en"
+                    ? "bg-white font-bold text-oxford shadow-sm dark:bg-foreground dark:text-background"
+                    : "text-white/70 hover:text-white dark:text-foreground/55 dark:hover:text-foreground"
+                }`}
                 onClick={() => setLocale("en")}
               >
                 EN
@@ -111,7 +119,7 @@ export function SiteHeader() {
                   href={chatHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-white transition-colors hover:text-[#25D366]"
+                  className="flex items-center gap-1 text-white transition-colors hover:text-[#25D366] dark:text-foreground"
                 >
                   <MessageCircle className="size-4" />
                   <span className="hidden sm:inline">
@@ -147,14 +155,14 @@ export function SiteHeader() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={pick(site.chrome.copy.searchPlaceholder, locale) || t("searchPlaceholder")}
-                className="w-full rounded-full bg-white py-2.5 ps-11 pe-4 text-sm text-oxford shadow-[0_2px_10px_rgba(10,37,64,0.04)] outline-none placeholder:text-oxford/40 focus:ring-2 focus:ring-oxford/20"
+                className="w-full rounded-full bg-background py-2.5 ps-11 pe-4 text-sm text-foreground shadow-[0_2px_10px_rgba(10,37,64,0.04)] outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-oxford/20"
               />
             </form>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="grid size-10 place-items-center rounded-[12px] bg-white text-oxford shadow-[0_2px_8px_rgba(10,37,64,0.04)] md:hidden"
+                className="grid size-10 place-items-center rounded-[12px] bg-background text-foreground shadow-[0_2px_8px_rgba(10,37,64,0.04)] md:hidden"
                 aria-label={t("search")}
               >
                 <Search className="size-[18px]" />
@@ -162,7 +170,7 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={toggleCart}
-                className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-oxford shadow-[0_2px_8px_rgba(10,37,64,0.04)]"
+                className="flex items-center gap-2 rounded-[12px] bg-background px-3 py-2 text-foreground shadow-[0_2px_8px_rgba(10,37,64,0.04)]"
                 aria-label={t("cart")}
               >
                 <span className="relative grid place-items-center">
@@ -174,7 +182,7 @@ export function SiteHeader() {
                   ) : null}
                 </span>
                 <span className="hidden flex-col text-start sm:flex">
-                  <span className="text-[11px] font-semibold text-oxford/50">
+                  <span className="text-[11px] font-semibold text-foreground/50">
                     <EditableCopy k="cart" />
                   </span>
                   <span className="text-[15px] font-bold leading-none">{formatPrice(total)}</span>
@@ -182,7 +190,7 @@ export function SiteHeader() {
               </button>
               <button
                 type="button"
-                className="rounded-[12px] bg-white p-2 shadow-[0_2px_8px_rgba(10,37,64,0.04)] md:hidden"
+                className="rounded-[12px] bg-background p-2 text-foreground shadow-[0_2px_8px_rgba(10,37,64,0.04)] md:hidden"
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label="Menu"
               >
@@ -191,7 +199,7 @@ export function SiteHeader() {
             </div>
           </div>
           {site.chrome.showNav ? (
-            <div className="relative z-50 hidden overflow-visible bg-[#f5f3ef] shadow-[0_1px_4px_rgba(0,0,0,0.02)] md:block">
+            <div className="relative z-50 hidden overflow-visible bg-cream shadow-[0_1px_4px_rgba(0,0,0,0.02)] md:block">
               <div className="mx-auto flex min-h-12 max-w-7xl items-center justify-center overflow-visible px-5 sm:px-8 lg:px-12">
                 <NavMenu links={links} locale={locale} />
               </div>
@@ -211,7 +219,7 @@ export function SiteHeader() {
           onClick={() => setSearchOpen(false)}
         >
           <form
-            className="mx-auto w-full max-w-xl rounded-2xl bg-white p-4 shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]"
+            className="mx-auto w-full max-w-xl rounded-2xl bg-card p-4 text-foreground shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]"
             onClick={(event) => event.stopPropagation()}
             onSubmit={submitSearch}
           >

@@ -51,6 +51,7 @@ export function CartSuggestions({
             product={product}
             cardRounded={cardRounded}
             thumbRounded={thumbRounded}
+            compact
           />
         ))}
       </div>

@@ -558,7 +558,7 @@ function SectionView({
       );
     }
     return (
-      <SectionShell section={section} index={index}>
+      <SectionShell section={section} index={index} className="border-y border-oxford/8">
         {placement === "bleed" && showImage ? (
           <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} aspect={aspect} />
         ) : null}

@@ -435,6 +435,11 @@ function isThemeCardFill(value?: string) {
   return key === "#ffffff" || key === "#fff" || key === "var(--card)";
 }
 
+function isThemeChipFill(value?: string) {
+  const key = (value || "").trim().toLowerCase();
+  return key === "#ede6d2" || key === "#eae8e4" || key === "#eceae6" || key === "var(--chip)" || key === "var(--muted)";
+}
+
 export function isThemeInk(value?: string) {
   const key = (value || "").trim().toLowerCase();
   return (
@@ -454,7 +459,9 @@ export function sectionSurface(style: SectionStyle): { background?: string; colo
       ? "var(--background)"
       : isThemeCardFill(background)
         ? "var(--card)"
-        : background,
+        : isThemeChipFill(background)
+          ? "var(--chip)"
+          : background,
     color: isThemeInk(color) ? "var(--foreground)" : color,
   };
 }
@@ -906,10 +913,10 @@ export function newSection(type: SectionType): SiteSection {
       type,
       visible: true,
       style: {
-        background: "#f6f3ea",
+        background: "#ffffff",
         color: "#0a2540",
         fontSize: 16,
-        paddingY: 20,
+        paddingY: 24,
         align: "start",
         cardRounded: true,
         imageRounded: true,
@@ -1025,10 +1032,10 @@ export const DEFAULT_CART_PAGE: CmsPage = {
       type: "suggestions",
       visible: true,
       style: {
-        background: "#f6f3ea",
+        background: "#ffffff",
         color: "#0a2540",
         fontSize: 16,
-        paddingY: 16,
+        paddingY: 24,
         align: "start",
         cardRounded: true,
         imageRounded: true,
@@ -1084,6 +1091,19 @@ export function migrateSection(section: SiteSection | Record<string, unknown>, i
   const style = { ...(row.style ?? {}) };
   if ((type === "banner" || type === "slideshow") && (!style.aspect || style.aspect === "3 / 2")) {
     style.aspect = "5 / 2";
+  }
+  if (type === "suggestions") {
+    const fill = (style.background || "").trim().toLowerCase();
+    if (
+      !fill ||
+      fill === "#f6f3ea" ||
+      fill === "#ede6d2" ||
+      fill === "var(--background)" ||
+      fill === "var(--cream)" ||
+      fill === "var(--chip)"
+    ) {
+      style.background = "#ffffff";
+    }
   }
   const migrated: SiteSection = {
     id: String(row.id || `section-${index}`),

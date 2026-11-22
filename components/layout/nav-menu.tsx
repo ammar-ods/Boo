@@ -39,7 +39,7 @@ export function NavMenu({
 
   return (
     <nav
-      className="hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 overflow-visible py-1.5 text-oxford/70 sm:gap-x-6 md:flex"
+      className="hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 overflow-visible py-1.5 text-foreground/70 sm:gap-x-6 md:flex"
       style={{ fontSize: "var(--nav-font-size, 14px)" }}
     >
       {visible.map((link) => (
@@ -55,7 +55,7 @@ function DesktopItem({ link, locale, current }: { link: NavLink; locale: string;
   const rootRef = useRef<HTMLDivElement>(null);
   const itemClass = cn(
     "rounded-lg px-4 py-2 transition-colors",
-    current ? "bg-[#eae8e4] font-bold text-oxford" : "hover:text-oxford",
+    current ? "bg-chip font-bold text-foreground" : "hover:text-foreground",
   );
 
   useEffect(() => {
@@ -102,7 +102,7 @@ function DesktopItem({ link, locale, current }: { link: NavLink; locale: string;
         </NavAnchor>
         <button
           type="button"
-          className="grid size-7 place-items-center rounded-md text-oxford/60 hover:text-oxford"
+          className="grid size-7 place-items-center rounded-md text-foreground/60 hover:text-foreground"
           aria-expanded={open}
           aria-haspopup="menu"
           aria-label={pick(link.label, locale)}
@@ -117,7 +117,7 @@ function DesktopItem({ link, locale, current }: { link: NavLink; locale: string;
       </div>
       {open ? (
         <div className="absolute top-full left-1/2 z-[80] min-w-52 -translate-x-1/2 pt-1">
-          <div className="overflow-hidden rounded-xl bg-white py-1.5 shadow-[0_18px_40px_-22px_rgba(10,37,64,0.4)] ring-1 ring-oxford/10">
+          <div className="overflow-hidden rounded-xl bg-card py-1.5 shadow-[0_18px_40px_-22px_rgba(10,37,64,0.4)] ring-1 ring-oxford/10">
             {children.map((child) => (
               <ChildLink key={child.id} link={child} locale={locale} onPick={() => setOpen(false)} />
             ))}
@@ -143,7 +143,7 @@ function ChildLink({
   return (
     <NavAnchor
       link={link}
-      className={cn("block px-4 py-2.5 text-oxford hover:bg-cream", current && "bg-cream font-semibold")}
+      className={cn("block px-4 py-2.5 text-foreground hover:bg-cream", current && "bg-cream font-semibold")}
       aria-current={current ? "page" : undefined}
       onClick={onPick}
     >
@@ -177,7 +177,7 @@ function MobileItem({
         link={link}
         onClick={onNavigate}
         aria-current={current ? "page" : undefined}
-        className={cn("flex min-h-12 items-center px-2 font-medium text-oxford", current && "rounded-lg bg-[#eae8e4] font-bold")}
+        className={cn("flex min-h-12 items-center px-2 font-medium text-foreground", current && "rounded-lg bg-chip font-bold")}
         style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
       >
         {pick(link.label, locale)}
@@ -189,12 +189,12 @@ function MobileItem({
 
   return (
     <div>
-      <div className={cn("flex min-h-12 items-center gap-1 px-2", current && "rounded-lg bg-[#eae8e4]")}>
+      <div className={cn("flex min-h-12 items-center gap-1 px-2", current && "rounded-lg bg-chip")}>
         {clickable ? (
           <NavAnchor
             link={link}
             onClick={onNavigate}
-            className="flex-1 font-medium text-oxford"
+            className="flex-1 font-medium text-foreground"
             style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
           >
             {pick(link.label, locale)}
@@ -202,7 +202,7 @@ function MobileItem({
         ) : (
           <button
             type="button"
-            className="flex-1 text-start font-medium text-oxford"
+            className="flex-1 text-start font-medium text-foreground"
             style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
             onClick={() => setOpen((value) => !value)}
           >
@@ -211,7 +211,7 @@ function MobileItem({
         )}
         <button
           type="button"
-          className="grid size-11 shrink-0 place-items-center rounded-full text-oxford"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-foreground"
           aria-expanded={open}
           aria-label={pick(link.label, locale)}
           onClick={(event) => {
