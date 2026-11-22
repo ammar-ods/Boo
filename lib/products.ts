@@ -132,9 +132,14 @@ export function normalizeCategoryId(value: string | undefined) {
     "Laser Cut Wood": "wood",
   };
   if (aliases[raw]) return aliases[raw];
-  return raw
+  const ascii = raw
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  if (ascii) return ascii.slice(0, 48);
+  return raw
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 48);
 }
