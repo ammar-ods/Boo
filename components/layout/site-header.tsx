@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Menu, MessageCircle, Search, ShoppingBag, X } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
 import { StudioChromePanel, StudioNavButtons } from "@/components/cms/studio-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { cartCount, useCart } from "@/lib/cart";
+import { cartCount, cartTotal, useCart } from "@/lib/cart";
+import { whatsappChatUrl } from "@/lib/whatsapp";
 import { NavMenu } from "@/components/layout/nav-menu";
 import { pick } from "@/lib/site";
 import { rememberShopPath, useStorefrontUi } from "@/lib/storefront-ui";
@@ -19,7 +20,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t, locale, setLocale } = useI18n();
+  const { t, locale, setLocale, formatPrice } = useI18n();
   const { site, isAdmin } = useEdit();
   const items = useCart((s) => s.items);
   const menuOpen = useStorefrontUi((s) => s.menuOpen);
@@ -29,10 +30,21 @@ export function SiteHeader() {
   const toggleCart = useStorefrontUi((s) => s.toggleCart);
   const [query, setQuery] = useState("");
   const [count, setCount] = useState(0);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     setCount(cartCount(items));
+    setTotal(cartTotal(items));
   }, [items]);
+
+  const chatHref = whatsappChatUrl(site.chrome.whatsappPhone || site.chrome.payPhone);
+
+  function submitSearch(event: React.FormEvent) {
+    event.preventDefault();
+    setSearchOpen(false);
+    startRouteLoading();
+    router.push(`/catalog?q=${encodeURIComponent(query.trim())}`);
+  }
 
   useEffect(() => {
     const search = searchParams.toString();
@@ -71,40 +83,66 @@ export function SiteHeader() {
       </div>
     ) : null}
     <header className="sticky top-0 z-40">
-      {site.chrome.showAnnouncement ? (
-        <div className="bg-oxford tracking-[0.12em] text-white/85" style={{ fontSize: "var(--announce-font-size, 11px)" }}>
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-2 sm:px-8 lg:px-12">
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
-                {locale === "ar" ? "EN" : "عربي"}
+      <div className="bg-oxford text-white/90" style={{ fontSize: "var(--announce-font-size, 12px)" }}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-2 sm:px-8 lg:px-12">
+          <div className="flex min-w-0 items-center gap-3">
+            <ThemeToggle />
+            <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 p-0.5 text-[12px] font-medium backdrop-blur-sm">
+              <button
+                type="button"
+                className={`rounded-full px-2.5 py-0.5 leading-tight ${locale === "ar" ? "bg-white font-bold text-oxford shadow-sm" : "text-white/70 hover:text-white"}`}
+                onClick={() => setLocale("ar")}
+              >
+                العربية
+              </button>
+              <button
+                type="button"
+                className={`rounded-full px-2 py-0.5 leading-tight ${locale === "en" ? "bg-white font-bold text-oxford shadow-sm" : "text-white/70 hover:text-white"}`}
+                onClick={() => setLocale("en")}
+              >
+                EN
               </button>
             </div>
-            <p className="min-w-0 truncate">{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
+            {chatHref ? (
+              <>
+                <span className="hidden opacity-30 sm:inline">|</span>
+                <a
+                  href={chatHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-white transition-colors hover:text-[#25D366]"
+                >
+                  <MessageCircle className="size-4" />
+                  <span className="hidden sm:inline">{t("quickWhatsApp")}</span>
+                </a>
+              </>
+            ) : null}
           </div>
+          {site.chrome.showAnnouncement ? (
+            <p className="min-w-0 truncate text-end">{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
+          ) : null}
         </div>
-      ) : (
-        <div className="bg-oxford text-white/85" style={{ fontSize: "var(--announce-font-size, 11px)" }}>
-          <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-2 sm:px-8 lg:px-12">
-            <ThemeToggle />
-            <button type="button" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
-              {locale === "ar" ? "EN" : "عربي"}
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
       {site.chrome.showHeader ? (
         <div className="relative border-b border-oxford/8 bg-card/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl">
-          <div className={`mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:gap-6 sm:px-8 sm:py-5 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
+          <div className={`mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:gap-6 sm:px-8 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
             <Link href="/" className="shrink-0">
               <BooLogo src={site.chrome.logo} />
             </Link>
-            {site.chrome.showNav ? <NavMenu links={links} locale={locale} /> : null}
-            <div className="flex items-center gap-1">
+            <form className="relative mx-4 hidden min-w-0 flex-1 md:block" onSubmit={submitSearch}>
+              <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-oxford/40" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="w-full rounded-full bg-white py-2.5 ps-11 pe-4 text-sm text-oxford shadow-[0_2px_10px_rgba(10,37,64,0.04)] outline-none placeholder:text-oxford/40 focus:ring-2 focus:ring-oxford/20"
+              />
+            </form>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="hidden size-10 place-items-center rounded-full text-oxford md:grid"
+                className="grid size-10 place-items-center rounded-[12px] bg-white text-oxford shadow-[0_2px_8px_rgba(10,37,64,0.04)] md:hidden"
                 aria-label={t("search")}
               >
                 <Search className="size-[18px]" />
@@ -112,19 +150,25 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={toggleCart}
-                className="relative grid size-10 place-items-center rounded-full text-oxford"
+                className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-oxford shadow-[0_2px_8px_rgba(10,37,64,0.04)]"
                 aria-label={t("cart")}
               >
-                <ShoppingBag className="size-[18px]" />
-                {count > 0 ? (
-                  <span className="absolute end-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-oxford text-[10px] text-white">
-                    {count}
-                  </span>
-                ) : null}
+                <span className="relative grid place-items-center">
+                  <ShoppingBag className="size-[22px]" />
+                  {count > 0 ? (
+                    <span className="absolute -end-1.5 -top-1.5 grid size-4 place-items-center rounded-full bg-[#C59B27] text-[10px] font-bold text-white">
+                      {count}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="hidden flex-col text-start sm:flex">
+                  <span className="text-[11px] font-semibold text-oxford/50">{t("cart")}</span>
+                  <span className="text-[15px] font-bold leading-none">{formatPrice(total)}</span>
+                </span>
               </button>
               <button
                 type="button"
-                className="rounded-full p-2 md:hidden"
+                className="rounded-[12px] bg-white p-2 shadow-[0_2px_8px_rgba(10,37,64,0.04)] md:hidden"
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label="Menu"
               >
@@ -132,6 +176,13 @@ export function SiteHeader() {
               </button>
             </div>
           </div>
+          {site.chrome.showNav ? (
+            <div className="hidden h-12 bg-[#f5f3ef] shadow-[0_1px_4px_rgba(0,0,0,0.02)] md:block">
+              <div className={`mx-auto flex h-full max-w-7xl items-center px-5 sm:px-8 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
+                <NavMenu links={links} locale={locale} />
+              </div>
+            </div>
+          ) : null}
           <StudioNavButtons />
         </div>
       ) : (
@@ -148,12 +199,7 @@ export function SiteHeader() {
           <form
             className="mx-auto w-full max-w-xl rounded-2xl bg-white p-4 shadow-[0_16px_36px_-22px_rgba(10,37,64,0.32)]"
             onClick={(event) => event.stopPropagation()}
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSearchOpen(false);
-              startRouteLoading();
-              router.push(`/catalog?q=${encodeURIComponent(query.trim())}`);
-            }}
+            onSubmit={submitSearch}
           >
             <div className="flex items-center gap-2">
               <Search className="size-4 text-muted-foreground" />

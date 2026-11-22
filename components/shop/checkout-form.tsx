@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cartHasCustom, cartTotal, useCart, useCartHydrated } from "@/lib/cart";
@@ -10,6 +9,7 @@ import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { pick } from "@/lib/site";
 import { BackChevron } from "@/components/ui/back-chevron";
+import { CartLines } from "@/components/shop/cart-lines";
 import { DynamicShopFields } from "@/components/shop/dynamic-fields";
 import { flashStatus } from "@/components/status-flash";
 import { shopReturnPath } from "@/lib/storefront-ui";
@@ -218,41 +218,55 @@ export function CheckoutForm({
   if (!hydrated) return null;
   if (items.length === 0) return null;
 
-  return (
-    <div className={embedded ? "" : "mx-auto w-full max-w-2xl px-5 py-12 sm:px-8"}>
-      <button
-        type="button"
-        onClick={requestLeave}
-        className="inline-flex min-h-9 items-center gap-1 text-sm text-oxford/70 hover:text-oxford"
-      >
-        <BackChevron />
-        {onBack ? t("backDetails") : t("yourBag")}
-      </button>
-      <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-5xl"}`}>
-        {t("checkout")}
-      </h1>
-      <div className={embedded ? "mt-4 space-y-3" : "mt-6 space-y-3"}>
-        <p className="text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">{t("yourOrder")}</p>
-        {items.map((item) => {
-          const name = locale === "ar" ? item.nameAr || item.name : item.name;
-          const line = item.priceEgp * item.quantity;
-          const detail = [item.color, `${t("quantity")}: ${item.quantity}`].filter(Boolean).join(" · ");
-          return (
-            <div key={item.id} className="flex gap-3 rounded-2xl bg-white/70 p-3 ring-1 ring-oxford/8">
-              <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-chip sm:size-20">
-                <Image src={item.image} alt="" fill className="object-cover" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-heading text-lg leading-tight text-oxford">{name}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
-                <p className="mt-1 text-sm font-semibold text-oxford">{formatPrice(line)}</p>
-              </div>
-            </div>
-          );
-        })}
+  const totals = (
+    <dl className="space-y-1 text-sm">
+      <div className="flex justify-between">
+        <dt>{t("subtotal")}</dt>
+        <dd>{formatPrice(breakdown.subtotal)}</dd>
+      </div>
+      {breakdown.discount > 0 ? (
+        <div className="flex justify-between text-emerald-700">
+          <dt>
+            {t("discount")}
+            {breakdown.promoCode ? ` (${breakdown.promoCode})` : ""}
+          </dt>
+          <dd>−{formatPrice(breakdown.discount)}</dd>
+        </div>
+      ) : null}
+      {breakdown.expressCharged > 0 ? (
+        <div className="flex justify-between">
+          <dt>{pick(site.commerce.expressLabel, locale) || t("expressOrder")}</dt>
+          <dd>{formatPrice(breakdown.expressCharged)}</dd>
+        </div>
+      ) : null}
+      <div className="flex justify-between">
+        <dt>{pick(site.commerce.shippingLabel, locale) || t("shipping")}</dt>
+        <dd className="text-end">
+          {breakdown.shippingFree ? (
+            <>
+              <span className="me-2 text-oxford/40 line-through">{formatPrice(breakdown.shipping)}</span>
+              <span className="font-medium text-emerald-600">{t("freeShipping")}</span>
+            </>
+          ) : (
+            formatPrice(breakdown.shippingCharged)
+          )}
+        </dd>
+      </div>
+      <div className="flex justify-between border-t border-oxford/10 pt-2 font-semibold text-oxford">
+        <dt>{t("total")}</dt>
+        <dd>{formatPrice(breakdown.total)}</dd>
+      </div>
+    </dl>
+  );
+
+  const bag = (
+    <aside className="rounded-[16px] bg-[#f5f3ef] p-4 sm:p-5">
+      <p className="text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">{t("yourOrder")}</p>
+      <div className="mt-3 max-h-[min(22rem,50vh)] overflow-y-auto lg:max-h-[calc(100dvh-26rem)]">
+        <CartLines items={items} compact />
       </div>
       {expressOffered ? (
-        <label className={`flex cursor-pointer items-start justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm ring-1 ring-oxford/10 ${embedded ? "mt-4" : "mt-5"}`}>
+        <label className="mt-4 flex cursor-pointer items-start justify-between gap-3 rounded-[12px] bg-white px-4 py-3 text-sm ring-1 ring-oxford/10">
           <span>
             <span className="block font-medium text-oxford">
               {pick(site.commerce.expressLabel, locale) || t("expressOrder")}
@@ -270,57 +284,51 @@ export function CheckoutForm({
           </span>
         </label>
       ) : null}
-      <dl className={`space-y-1 text-sm ${expressOffered ? "mt-3" : embedded ? "mt-4" : "mt-5"}`}>
-        <div className="flex justify-between">
-          <dt>{t("subtotal")}</dt>
-          <dd>{formatPrice(breakdown.subtotal)}</dd>
-        </div>
-        {breakdown.discount > 0 ? (
-          <div className="flex justify-between text-emerald-700">
-            <dt>
-              {t("discount")}
-              {breakdown.promoCode ? ` (${breakdown.promoCode})` : ""}
-            </dt>
-            <dd>−{formatPrice(breakdown.discount)}</dd>
-          </div>
-        ) : null}
-        {breakdown.expressCharged > 0 ? (
-          <div className="flex justify-between">
-            <dt>{pick(site.commerce.expressLabel, locale) || t("expressOrder")}</dt>
-            <dd>{formatPrice(breakdown.expressCharged)}</dd>
-          </div>
-        ) : null}
-        <div className="flex justify-between">
-          <dt>{pick(site.commerce.shippingLabel, locale) || t("shipping")}</dt>
-          <dd className="text-end">
-            {breakdown.shippingFree ? (
-              <>
-                <span className="me-2 text-oxford/40 line-through">{formatPrice(breakdown.shipping)}</span>
-                <span className="font-medium text-emerald-600">{t("freeShipping")}</span>
-              </>
-            ) : (
-              formatPrice(breakdown.shippingCharged)
-            )}
-          </dd>
-        </div>
-        <div className="flex justify-between border-t border-oxford/10 pt-2 font-semibold text-oxford">
-          <dt>{t("total")}</dt>
-          <dd>{formatPrice(breakdown.total)}</dd>
-        </div>
-      </dl>
+      <div className="mt-4 flex gap-2">
+        <input
+          value={promoInput}
+          onChange={(event) => setPromoInput(event.target.value)}
+          placeholder={t("promoCode")}
+          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-white px-4 text-sm"
+        />
+        <button type="button" className="h-11 rounded-full bg-white px-4 text-sm font-semibold ring-1 ring-oxford/10" onClick={applyPromo}>
+          {t("apply")}
+        </button>
+      </div>
+      <div className="mt-4">{totals}</div>
       <p className="mt-2 text-xs text-muted-foreground">{pick(site.commerce.shippingDetails, locale)}</p>
-      <form onSubmit={onSubmit} className={embedded ? "mt-5 space-y-4" : "mt-8 space-y-5"}>
-        <div className="flex gap-2">
-          <input
-            value={promoInput}
-            onChange={(event) => setPromoInput(event.target.value)}
-            placeholder={t("promoCode")}
-            className="h-11 min-w-0 flex-1 rounded-full border border-border bg-white px-4 text-sm"
-          />
-          <button type="button" className="h-11 rounded-full bg-cream px-4 text-sm font-semibold" onClick={applyPromo}>
-            {t("apply")}
-          </button>
-        </div>
+    </aside>
+  );
+
+  return (
+    <div className={embedded ? "" : "mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 lg:px-12 lg:py-10"}>
+      <button
+        type="button"
+        onClick={requestLeave}
+        className="inline-flex min-h-9 items-center gap-1 text-sm text-oxford/70 hover:text-oxford"
+      >
+        <BackChevron />
+        {onBack ? t("backDetails") : t("yourBag")}
+      </button>
+      <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-4xl lg:text-5xl"}`}>
+        {t("checkout")}
+      </h1>
+      <div
+        className={
+          embedded
+            ? "mt-4 space-y-5"
+            : "mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] rtl:lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]"
+        }
+      >
+        {embedded ? bag : <div className="order-1 lg:col-start-2 rtl:lg:col-start-1 lg:sticky lg:top-36">{bag}</div>}
+        <form
+          onSubmit={onSubmit}
+          className={
+            embedded
+              ? "space-y-4"
+              : "order-2 space-y-5 lg:col-start-1 rtl:lg:col-start-2 lg:row-start-1"
+          }
+        >
         <DynamicShopFields fields={checkoutFields} />
 
         <fieldset className="space-y-3">
@@ -404,10 +412,11 @@ export function CheckoutForm({
           ) : null}
         </fieldset>
 
-        <button type="submit" disabled={busy} className="btn-press w-full">
+        <button type="submit" disabled={busy} className="btn-press sticky bottom-3 z-10 w-full lg:static">
           {busy ? "…" : t("placeOrder")}
         </button>
       </form>
+      </div>
       {leaveOpen ? (
         <div className="fixed inset-0 z-[140] grid place-items-center bg-oxford/45 p-4">
           <div className="w-full max-w-sm rounded-[1.6rem] bg-white p-6 text-center shadow-2xl">

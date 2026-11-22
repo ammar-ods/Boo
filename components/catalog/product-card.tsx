@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { PencilLine, Plus } from "lucide-react";
 import {
   localizedName,
   localizedTagline,
@@ -34,8 +34,8 @@ export function ProductCard({
   cardRounded?: boolean;
   thumbRounded?: boolean;
 }) {
-  const cardRadius = cardRounded ? "rounded-xl" : "rounded-none";
-  const thumbRadius = thumbRounded ? "rounded-lg" : "rounded-none";
+  const cardRadius = cardRounded ? "rounded-[16px]" : "rounded-[12px]";
+  const thumbRadius = thumbRounded ? "rounded-[10px]" : "rounded-[8px]";
   const router = useRouter();
   const { locale, t } = useI18n();
   const { site } = useEdit();
@@ -130,14 +130,6 @@ export function ProductCard({
             </span>
           </div>
         </Link>
-        <button
-          type="button"
-          className="icon-circle absolute bottom-3 end-3 z-10 size-10 opacity-100 shadow-md transition duration-300 sm:opacity-0 sm:group-hover:opacity-100"
-          aria-label={customizable ? t("customize") : t("addToCart")}
-          onClick={onPlus}
-        >
-          <Plus className="size-4 sm:size-5" />
-        </button>
       </div>
       <Link href={`/product/${product.slug}`} onClick={pulse} className="flex flex-1 flex-col justify-between">
         <div>
@@ -163,6 +155,14 @@ export function ProductCard({
           </div>
         </div>
       </Link>
+      <button
+        type="button"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#f5f3ef] px-4 py-2.5 text-sm font-semibold text-oxford transition-all group-hover:bg-oxford group-hover:text-white"
+        onClick={onPlus}
+      >
+        {customizable ? <PencilLine className="size-4" /> : <Plus className="size-4" />}
+        <span>{customizable ? t("customizeName") : t("addToCart")}</span>
+      </button>
     </article>
   );
 }

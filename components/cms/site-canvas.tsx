@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
-import { DisciplineCarousel } from "@/components/home/discipline-carousel";
+import { GiftSetsBanner } from "@/components/home/gift-sets-banner";
+import { HowToOrder } from "@/components/home/how-to-order";
+import { ShopSectionsGrid } from "@/components/home/shop-sections-grid";
 import { AutoScroller } from "@/components/cms/auto-scroller";
 import { BannerSlideshow } from "@/components/cms/banner-slideshow";
 import { ResponsiveImg } from "@/components/cms/responsive-img";
@@ -28,11 +30,14 @@ import {
 } from "@/lib/site";
 
 export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bundles?: Bundle[] }) {
-  const { editing, selectedId, setSelectedId, patchSection, moveSection, removeSection, addSection, pageSections } =
+  const { editing, selectedId, setSelectedId, patchSection, moveSection, removeSection, addSection, pageSections, pageKey } =
     useEdit();
   const { locale } = useI18n();
   const [insertFor, setInsertFor] = useState<string | null>(null);
   const visible = editing ? pageSections : pageSections.filter((section) => section.visible);
+  const isHome = !pageKey || pageKey === "home";
+  const hasProducts = visible.some((section) => section.type === "products");
+  const hasCollections = visible.some((section) => section.type === "collections");
 
   useEffect(() => {
     if (!insertFor) return;
@@ -63,8 +68,9 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
   return (
     <div className={editing && selectedId ? "sm:pe-[24.5rem]" : ""}>
       {visible.map((section) => (
+        <Fragment key={section.id}>
+        {isHome && !editing && section.type === "products" && !hasCollections ? <ShopSectionsGrid /> : null}
         <div
-          key={section.id}
           data-section-id={section.id}
           className={`relative ${sectionViewportClass(section.style, editing)} ${editing && selectedId === section.id ? "ring-2 ring-oxford/25" : ""}`}
           onClickCapture={(event) => {
@@ -159,7 +165,21 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
             index={visible.indexOf(section)}
           />
         </div>
+        {isHome && !editing && section.type === "products" ? (
+          <>
+            <GiftSetsBanner products={products} bundles={bundles} />
+            <HowToOrder />
+          </>
+        ) : null}
+        </Fragment>
       ))}
+      {isHome && !editing && !hasProducts ? (
+        <>
+          {!hasCollections ? <ShopSectionsGrid /> : null}
+          <GiftSetsBanner products={products} bundles={bundles} />
+          <HowToOrder />
+        </>
+      ) : null}
         {visible.length === 0 ? (
           <div className="flex flex-col items-center px-5 py-20 text-center">
             {editing ? (
@@ -351,6 +371,7 @@ function SectionView({
   index?: number;
 }) {
   const { pageKey, site } = useEdit();
+  const { t } = useI18n();
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
   const imageMobile = pick(section.content.imageMobile, locale);
@@ -488,12 +509,29 @@ function SectionView({
   }
 
   if (section.type === "collections") {
+    const hasTitle = Boolean(pick(section.content.title, locale));
     return (
       <SectionShell section={section} index={index}>
-        <div className={`cms-copy ${centered ? "text-center" : "text-start"}`}>
-          {text("title", "font-heading", "h2")}
+        <div className="cms-copy">
+          {hasTitle ? (
+            <div className={centered ? "text-center" : "text-start"}>{text("title", "font-heading", "h2")}</div>
+          ) : (
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <span className="mb-1 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase">
+                  {t("shopByOccasion")}
+                </span>
+                <h2 className="font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]">
+                  {t("sectionsTitle")}
+                </h2>
+              </div>
+              <p className="max-w-md text-sm text-muted-foreground">{t("sectionsBody")}</p>
+            </div>
+          )}
+          <div className={hasTitle ? "mt-6" : ""}>
+            <ShopSectionsGrid embedded />
+          </div>
         </div>
-        <DisciplineCarousel products={products} />
       </SectionShell>
     );
   }

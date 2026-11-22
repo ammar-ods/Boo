@@ -11,22 +11,24 @@ export function NavAnchor({
   style,
   onClick,
   children,
+  "aria-current": ariaCurrent,
 }: {
   link: NavLink;
   className?: string;
   style?: React.CSSProperties;
   onClick?: () => void;
   children: React.ReactNode;
+  "aria-current"?: "page";
 }) {
   if (!isNavClickable(link)) {
     return (
-      <span className={className} style={style}>
+      <span className={className} style={style} aria-current={ariaCurrent}>
         {children}
       </span>
     );
   }
   return (
-    <Link href={link.href} className={className} style={style} onClick={onClick}>
+    <Link href={link.href} className={className} style={style} onClick={onClick} aria-current={ariaCurrent}>
       {children}
     </Link>
   );

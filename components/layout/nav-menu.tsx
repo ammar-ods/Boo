@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { NavAnchor, isNavClickable } from "@/components/layout/nav-anchor";
+import { itemMatches } from "@/components/shop/shop-sidebar";
 import { pick, type NavLink } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export function NavMenu({
   links,
@@ -16,6 +19,8 @@ export function NavMenu({
   onNavigate?: () => void;
   variant?: "desktop" | "mobile";
 }) {
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
   const visible = links.filter((link) => link.visible);
   if (variant === "mobile") {
     return (
@@ -27,23 +32,36 @@ export function NavMenu({
     );
   }
 
+  function active(link: NavLink) {
+    if (!isNavClickable(link)) {
+      return (link.children ?? []).some((child) => child.visible && itemMatches(child.href, pathname, search));
+    }
+    return itemMatches(link.href, pathname, search);
+  }
+
   return (
     <nav
-      className="hidden items-center gap-7 font-semibold tracking-[0.08em] text-oxford/70 md:flex"
-      style={{ fontSize: "var(--nav-font-size, 13px)" }}
+      className="hidden items-center gap-2 overflow-x-auto whitespace-nowrap text-oxford/70 md:flex"
+      style={{ fontSize: "var(--nav-font-size, 14px)" }}
     >
       {visible.map((link) => (
-        <DesktopItem key={link.id} link={link} locale={locale} />
+        <DesktopItem key={link.id} link={link} locale={locale} current={active(link)} />
       ))}
     </nav>
   );
 }
 
-function DesktopItem({ link, locale }: { link: NavLink; locale: string }) {
+function DesktopItem({ link, locale, current }: { link: NavLink; locale: string; current: boolean }) {
   const children = (link.children ?? []).filter((item) => item.visible);
+  const itemClass = cn(
+    "transition-colors py-1",
+    current
+      ? "font-bold text-oxford bg-[#eae8e4] rounded-lg px-3"
+      : "hover:text-oxford px-1",
+  );
   if (!children.length) {
     return (
-      <NavAnchor link={link} className="hover:text-oxford/55">
+      <NavAnchor link={link} className={itemClass} aria-current={current ? "page" : undefined}>
         {pick(link.label, locale)}
       </NavAnchor>
     );
@@ -53,7 +71,8 @@ function DesktopItem({ link, locale }: { link: NavLink; locale: string }) {
     <div className="group relative">
       <NavAnchor
         link={link}
-        className="inline-flex cursor-pointer items-center gap-1 hover:text-oxford/55"
+        className={cn(itemClass, "inline-flex cursor-pointer items-center gap-1")}
+        aria-current={current ? "page" : undefined}
       >
         {pick(link.label, locale)}
         <ChevronDown className="size-3.5 opacity-60 transition group-hover:rotate-180 group-focus-within:rotate-180" />
