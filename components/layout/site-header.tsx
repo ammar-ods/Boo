@@ -82,9 +82,9 @@ export function SiteHeader() {
         </div>
       </div>
     ) : null}
-    <header className="sticky top-0 z-40">
+    <header className="sticky top-0 z-40 overflow-visible">
       <div className="bg-oxford text-white/90" style={{ fontSize: "var(--announce-font-size, 12px)" }}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-2 sm:px-8 lg:px-12">
+        <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 py-2 sm:px-8 lg:px-12">
           <div className="flex min-w-0 items-center gap-3">
             <ThemeToggle />
             <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 p-0.5 text-[12px] font-medium backdrop-blur-sm">
@@ -119,8 +119,13 @@ export function SiteHeader() {
             ) : null}
           </div>
           {site.chrome.showAnnouncement ? (
-            <p className="min-w-0 truncate text-end">{pick(site.chrome.announcement, locale) || t("freeShip")}</p>
-          ) : null}
+            <p className="max-w-[min(42rem,46vw)] truncate text-center">
+              {pick(site.chrome.announcement, locale) || t("freeShip")}
+            </p>
+          ) : (
+            <span />
+          )}
+          <span />
         </div>
       </div>
       {site.chrome.showHeader ? (
@@ -177,8 +182,8 @@ export function SiteHeader() {
             </div>
           </div>
           {site.chrome.showNav ? (
-            <div className="hidden h-12 bg-[#f5f3ef] shadow-[0_1px_4px_rgba(0,0,0,0.02)] md:block">
-              <div className={`mx-auto flex h-full max-w-7xl items-center px-5 sm:px-8 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
+            <div className="relative z-50 hidden overflow-visible bg-[#f5f3ef] shadow-[0_1px_4px_rgba(0,0,0,0.02)] md:block">
+              <div className="mx-auto flex min-h-12 max-w-7xl items-center justify-center overflow-visible px-5 sm:px-8 lg:px-12">
                 <NavMenu links={links} locale={locale} />
               </div>
             </div>

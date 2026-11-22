@@ -22,7 +22,17 @@ export function NavAnchor({
 }) {
   if (!isNavClickable(link)) {
     return (
-      <span className={className} style={style} aria-current={ariaCurrent}>
+      <span
+        className={className}
+        style={style}
+        aria-current={ariaCurrent}
+        onClick={onClick}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") onClick?.();
+        }}
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : undefined}
+      >
         {children}
       </span>
     );

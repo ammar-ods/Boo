@@ -69,7 +69,7 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
     <div className={editing && selectedId ? "sm:pe-[24.5rem]" : ""}>
       {visible.map((section) => (
         <Fragment key={section.id}>
-        {isHome && !editing && section.type === "products" && !hasCollections ? <ShopSectionsGrid /> : null}
+        {isHome && section.type === "products" && !hasCollections ? <ShopSectionsGrid /> : null}
         <div
           data-section-id={section.id}
           className={`relative ${sectionViewportClass(section.style, editing)} ${editing && selectedId === section.id ? "ring-2 ring-oxford/25" : ""}`}

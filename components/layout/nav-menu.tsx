@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { NavAnchor, isNavClickable } from "@/components/layout/nav-anchor";
@@ -41,7 +41,7 @@ export function NavMenu({
 
   return (
     <nav
-      className="hidden items-center gap-2 overflow-x-auto whitespace-nowrap text-oxford/70 md:flex"
+      className="hidden flex-wrap items-center justify-center gap-x-1 gap-y-1 overflow-visible py-1.5 text-oxford/70 md:flex"
       style={{ fontSize: "var(--nav-font-size, 14px)" }}
     >
       {visible.map((link) => (
@@ -53,12 +53,29 @@ export function NavMenu({
 
 function DesktopItem({ link, locale, current }: { link: NavLink; locale: string; current: boolean }) {
   const children = (link.children ?? []).filter((item) => item.visible);
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const itemClass = cn(
     "transition-colors py-1",
-    current
-      ? "font-bold text-oxford bg-[#eae8e4] rounded-lg px-3"
-      : "hover:text-oxford px-1",
+    current ? "font-bold text-oxford bg-[#eae8e4] rounded-lg px-3" : "hover:text-oxford px-1",
   );
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("pointerdown", onPointer);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   if (!children.length) {
     return (
       <NavAnchor link={link} className={itemClass} aria-current={current ? "page" : undefined}>
@@ -68,28 +85,54 @@ function DesktopItem({ link, locale, current }: { link: NavLink; locale: string;
   }
 
   return (
-    <div className="group relative">
-      <NavAnchor
-        link={link}
-        className={cn(itemClass, "inline-flex cursor-pointer items-center gap-1")}
-        aria-current={current ? "page" : undefined}
-      >
-        {pick(link.label, locale)}
-        <ChevronDown className="size-3.5 opacity-60 transition group-hover:rotate-180 group-focus-within:rotate-180" />
-      </NavAnchor>
-      <div className="invisible absolute start-0 top-full z-50 min-w-48 origin-top translate-y-1 pt-2 opacity-0 transition duration-200 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-        <div className="overflow-hidden rounded-2xl bg-white py-1.5 shadow-[0_18px_40px_-22px_rgba(10,37,64,0.4)] ring-1 ring-oxford/10">
-          {children.map((child) => (
-            <NavAnchor
-              key={child.id}
-              link={child}
-              className="block px-4 py-2.5 text-oxford hover:bg-cream"
-            >
-              {pick(child.label, locale)}
-            </NavAnchor>
-          ))}
-        </div>
+    <div
+      ref={rootRef}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <div className={cn(itemClass, "inline-flex items-center gap-0.5")}>
+        <NavAnchor
+          link={link}
+          className={cn("inline-flex items-center", !isNavClickable(link) && "cursor-pointer")}
+          aria-current={current ? "page" : undefined}
+          onClick={() => {
+            if (!isNavClickable(link)) setOpen((value) => !value);
+          }}
+        >
+          {pick(link.label, locale)}
+        </NavAnchor>
+        <button
+          type="button"
+          className="grid size-7 place-items-center rounded-md text-oxford/60 hover:text-oxford"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label={pick(link.label, locale)}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen((value) => !value);
+          }}
+        >
+          <ChevronDown className={`size-3.5 transition ${open ? "rotate-180" : ""}`} />
+        </button>
       </div>
+      {open ? (
+        <div className="absolute top-full left-1/2 z-[80] min-w-52 -translate-x-1/2 pt-1">
+          <div className="overflow-hidden rounded-xl bg-white py-1.5 shadow-[0_18px_40px_-22px_rgba(10,37,64,0.4)] ring-1 ring-oxford/10">
+            {children.map((child) => (
+              <NavAnchor
+                key={child.id}
+                link={child}
+                className="block px-4 py-2.5 text-oxford hover:bg-cream"
+                onClick={() => setOpen(false)}
+              >
+                {pick(child.label, locale)}
+              </NavAnchor>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
