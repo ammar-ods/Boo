@@ -9,12 +9,13 @@ import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { isLightColor } from "@/lib/color";
 import { NavAnchor } from "@/components/layout/nav-anchor";
+import { EditableCopy, EditableLoc } from "@/components/cms/editable-copy";
 import { pick, type NavLink } from "@/lib/site";
 
 export function SiteFooter() {
   const pathname = usePathname();
   const { locale, t } = useI18n();
-  const { site } = useEdit();
+  const { site, setChrome } = useEdit();
   if (pathname.startsWith("/admin") || pathname.startsWith("/customize")) return null;
   if (!site.chrome.showFooter) return null;
 
@@ -35,26 +36,63 @@ export function SiteFooter() {
       >
         <div>
           <BooLogo onDark={!isLightColor(bg)} src={site.chrome.footerLogo || site.chrome.logo} />
-          <p className="font-script mt-4 text-2xl opacity-80">{pick(site.chrome.footerTagline, locale)}</p>
-          <p className="mt-2 max-w-sm opacity-60">{pick(site.chrome.footerBlurb, locale)}</p>
+          <EditableLoc
+            as="p"
+            className="font-script mt-4 text-2xl opacity-80"
+            value={site.chrome.footerTagline}
+            fallback=""
+            onChange={(footerTagline) => setChrome({ footerTagline })}
+          />
+          <EditableLoc
+            as="p"
+            className="mt-2 max-w-sm opacity-60"
+            value={site.chrome.footerBlurb}
+            fallback=""
+            onChange={(footerBlurb) => setChrome({ footerBlurb })}
+          />
           <FooterIconRow items={site.chrome.footerIcons ?? []} locale={locale} />
         </div>
         {showNav ? (
-          <FooterAccordion title={pick(site.chrome.footerShopTitle, locale) || t("shop")}>
+          <FooterAccordion
+            title={
+              <EditableLoc
+                value={site.chrome.footerShopTitle}
+                fallback={t("shop")}
+                onChange={(footerShopTitle) => setChrome({ footerShopTitle })}
+              />
+            }
+          >
             {links.map((link) => (
               <FooterLinkTree key={link.id} link={link} locale={locale} />
             ))}
           </FooterAccordion>
         ) : null}
-        <FooterAccordion title={pick(site.chrome.footerMetaTitle, locale) || "Boo"}>
+        <FooterAccordion
+          title={
+            <EditableLoc
+              value={site.chrome.footerMetaTitle}
+              fallback="Boo"
+              onChange={(footerMetaTitle) => setChrome({ footerMetaTitle })}
+            />
+          }
+        >
           {(site.chrome.footerMetaLines ?? []).map((line, index) => (
-            <p key={`${line.en}-${index}`} className="py-1.5 text-white/70">
-              {pick(line, locale)}
-            </p>
+            <EditableLoc
+              key={`${line.en}-${index}`}
+              as="p"
+              className="py-1.5 text-white/70"
+              value={line}
+              fallback=""
+              onChange={(next) =>
+                setChrome({
+                  footerMetaLines: (site.chrome.footerMetaLines ?? []).map((item, i) => (i === index ? next : item)),
+                })
+              }
+            />
           ))}
           {site.chrome.footerShowStudio !== false ? (
             <a href="/admin/login" className="mt-2 inline-block py-1.5 opacity-40 hover:opacity-100">
-              {t("studio")}
+              <EditableCopy k="studio" />
             </a>
           ) : null}
         </FooterAccordion>
@@ -63,7 +101,7 @@ export function SiteFooter() {
   );
 }
 
-function FooterAccordion({ title, children }: { title: string; children: ReactNode }) {
+function FooterAccordion({ title, children }: { title: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border-t border-black/10 md:border-0">

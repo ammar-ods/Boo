@@ -136,6 +136,7 @@ export type SiteChrome = {
   footerFontSize: number;
   shopAllLabel: Localized;
   shopCustomLabel: Localized;
+  copy: StorefrontCopy;
 };
 
 export type PromoPopup = {
@@ -200,10 +201,83 @@ export const COMMERCE_COPY_KEYS = [
   "freeShipRemaining",
   "freeShipUnlocked",
   "customFilter",
+  "cartSuggestTitle",
+  "cartSuggestShipping",
 ] as const;
 
 export type CommerceCopyKey = (typeof COMMERCE_COPY_KEYS)[number];
 export type CommerceCopy = Record<CommerceCopyKey, Localized>;
+
+export const STOREFRONT_COPY_KEYS = [
+  "giftSetsEyebrow",
+  "giftSetsTitle",
+  "giftSetsBody",
+  "giftSetsMatchTitle",
+  "giftSetsMatchBody",
+  "giftSetsSaveTitle",
+  "giftSetsSaveBody",
+  "giftSetsCardTitle",
+  "giftSetsCardBody",
+  "giftSetsCta",
+  "giftSetsBoxBadge",
+  "giftSetsBoxTitle",
+  "giftSetsBoxPrice",
+  "giftSetsBoxBody",
+  "howToEyebrow",
+  "howToTitle",
+  "howToBody",
+  "howTo1n",
+  "howTo1title",
+  "howTo1body",
+  "howTo2n",
+  "howTo2title",
+  "howTo2body",
+  "howTo3n",
+  "howTo3title",
+  "howTo3body",
+  "shopByOccasion",
+  "sections",
+  "sectionsTitle",
+  "sectionsBody",
+  "quickWhatsApp",
+  "searchPlaceholder",
+  "search",
+  "catalogTitle",
+  "catalogBody",
+  "contactTitle",
+  "contactBody",
+  "send",
+  "bundlesTitle",
+  "bundlesBody",
+  "customizeName",
+  "addToCart",
+  "readyToShip",
+  "sortBy",
+  "sortFeatured",
+  "sortName",
+  "sortPriceLow",
+  "showMore",
+  "showingPieces",
+  "viewCart",
+  "estimatedTotal",
+  "color",
+  "quantity",
+  "remove",
+  "dimensions",
+  "studio",
+  "chatWhatsApp",
+  "thankYou",
+  "thankBody",
+  "backShop",
+  "home",
+  "customize",
+  "layoutGrid",
+  "layoutList",
+] as const;
+
+export type StorefrontCopyKey = (typeof STOREFRONT_COPY_KEYS)[number];
+export type StorefrontCopy = Record<StorefrontCopyKey, Localized>;
+export type CopyKey = CommerceCopyKey | StorefrontCopyKey;
 
 export type Commerce = {
   shippingPrice: number;
@@ -427,6 +501,76 @@ function asLoc(value: unknown, fallback = ""): Localized {
   return { ar: fallback, en: fallback };
 }
 
+export const DEFAULT_STOREFRONT_COPY: StorefrontCopy = {
+  giftSetsEyebrow: loc("مجموعات الهدايا الكاملة", "Complete gift sets"),
+  giftSetsTitle: loc("جهّز هدية كاملة بالتصميم اللي تختاره", "Build a full gift with the design you choose"),
+  giftSetsBody: loc(
+    "شنطة، ميدالية، مج وكوستر في مجموعة واحدة متناسقة باسم وتصميم من تحب، مجهزة بكرتونة إهداء جاهزة للتقديم.",
+    "A coordinated set with the name and design you love, packed ready to give.",
+  ),
+  giftSetsMatchTitle: loc("تطابق وتناسق كامل", "Fully coordinated"),
+  giftSetsMatchBody: loc("نفس الثيم على كل المحتويات", "The same theme on every piece"),
+  giftSetsSaveTitle: loc("سعر أوفر من المفرد", "Better than buying singles"),
+  giftSetsSaveBody: loc("خصومات على الباقات", "Exclusive bundle pricing"),
+  giftSetsCardTitle: loc("كارت إهداء مجاني", "Free gift card"),
+  giftSetsCardBody: loc("مكتوب فيه رسالتك", "Your message written inside"),
+  giftSetsCta: loc("اختار مجموعة الهدايا", "Choose a gift set"),
+  giftSetsBoxBadge: loc("بوكس التميز الأكثر طلباً", "Most requested gift box"),
+  giftSetsBoxTitle: loc("طقم الإهداء المتكامل", "Complete gifting set"),
+  giftSetsBoxPrice: loc("عرض خاص", "Special offer"),
+  giftSetsBoxBody: loc("حفر مخصص للاسم على محتويات الصندوق مع تغليف أنيق.", "Custom name engraving on every piece, with elegant wrapping."),
+  howToEyebrow: loc("بكل بساطة", "Simple and flexible"),
+  howToTitle: loc("كيف تطلب هديتك المخصصة؟", "How to order a custom gift"),
+  howToBody: loc("ثلاث خطوات سريعة تصنع بها ذكرى لمن تحب.", "Three short steps to make a piece for someone you love."),
+  howTo1n: loc("١", "1"),
+  howTo1title: loc("اختار منتجك وتصميمه", "Pick the product and design"),
+  howTo1body: loc("تصفح الكتالوج وحدد نوع المنتج المناسب لمناسبتك.", "Browse the shop and choose the piece that fits the occasion."),
+  howTo2n: loc("٢", "2"),
+  howTo2title: loc("أرسل الأسماء والتفاصيل", "Send names and details"),
+  howTo2body: loc("اكتب الأسماء والتواريخ أو ارفع الصور عشان نحضّر البروفة.", "Add names, dates, or photos so we can prepare a proof."),
+  howTo3n: loc("٣", "3"),
+  howTo3title: loc("استلم هديتك لباب بيتك", "Receive it at your door"),
+  howTo3body: loc("ننّفذ الطلب ونتغلفه، ويوصلك في محافظات مصر.", "We make it, wrap it, and ship it across Egypt."),
+  shopByOccasion: loc("تسوّق حسب المناسبة", "Shop by occasion"),
+  sections: loc("الأقسام", "Sections"),
+  sectionsTitle: loc("أقسام الهدايا والتصميمات", "Gift and design sections"),
+  sectionsBody: loc("اختار القسم المناسب لمناسبتك واستكشف خيارات التخصيص.", "Pick the section for your occasion and explore customization options."),
+  quickWhatsApp: loc("واتساب الدعم السريع", "Quick WhatsApp support"),
+  searchPlaceholder: loc("ابحث عن منتج أو قسم...", "Search a product or collection..."),
+  search: loc("بحث", "Search"),
+  catalogTitle: loc("المتجر", "Shop"),
+  catalogBody: loc("تيشيرت، مج حراري، وكوستر٠.", "Tee, tumbler, and wood coaster."),
+  contactTitle: loc("تواصل معنا", "Contact us"),
+  contactBody: loc("اكتب لنا طلب خاص أو سؤال، وهنرد عليك على الواتساب.", "Send a custom request or a question. We reply on WhatsApp."),
+  send: loc("إرسال", "Send"),
+  bundlesTitle: loc("الباقات", "Bundles"),
+  bundlesBody: loc("اختار باقة جاهزة وضيفها للسلة بسعر واحد.", "Ready packs at a single price. Add the set to your bag."),
+  customizeName: loc("تخصيص بالاسم والطلب", "Customize and order"),
+  addToCart: loc("أضف للسلة", "Add to cart"),
+  readyToShip: loc("جاهز للشحن", "Ready to ship"),
+  sortBy: loc("ترتيب", "Sort by"),
+  sortFeatured: loc("مميز", "Featured"),
+  sortName: loc("الاسم", "Name"),
+  sortPriceLow: loc("السعر: من الأقل للأعلى", "Price: low to high"),
+  showMore: loc("عرض المزيد", "Show more"),
+  showingPieces: loc("عرض {shown} من {total} قطعة", "Showing {shown} of {total} curated pieces"),
+  viewCart: loc("عرض السلة", "View cart"),
+  estimatedTotal: loc("الإجمالي", "Estimated total"),
+  color: loc("اللون", "Color"),
+  quantity: loc("الكمية", "Quantity"),
+  remove: loc("حذف", "Remove"),
+  dimensions: loc("الأبعاد", "Dimensions"),
+  studio: loc("مكتب الاستوديو", "Studio desk"),
+  chatWhatsApp: loc("كلمنا على واتساب", "Chat on WhatsApp"),
+  thankYou: loc("شكرًا لطلبك", "Thank you"),
+  thankBody: loc("استلمنا طلبك وهنتواصل معاك لتأكيد التوصيل.", "We received your order and will confirm delivery shortly."),
+  backShop: loc("رجوع للمتجر", "Back to shop"),
+  home: loc("الرئيسية", "Home"),
+  customize: loc("ارفع التصميم", "Upload artwork"),
+  layoutGrid: loc("شبكة", "Grid"),
+  layoutList: loc("قائمة", "List"),
+};
+
 export const DEFAULT_CHROME: SiteChrome = {
   showAnnouncement: true,
   announcement: loc("شحن داخل مصر · كل القطع بـ ١٠٠ جنيه", "Shipping in Egypt · every piece is 100 EGP"),
@@ -486,6 +630,7 @@ export const DEFAULT_CHROME: SiteChrome = {
   footerFontSize: 14,
   shopAllLabel: loc("الكل", "All"),
   shopCustomLabel: loc("مخصص", "Custom"),
+  copy: DEFAULT_STOREFRONT_COPY,
 };
 
 export const DEFAULT_PROMO: PromoPopup = {
@@ -564,6 +709,11 @@ export const DEFAULT_COMMERCE_COPY: CommerceCopy = {
   freeShipRemaining: loc("متبقي {percent}% للوصول للشحن المجاني", "{percent}% left to free shipping"),
   freeShipUnlocked: loc("وصلت للشحن المجاني! 🎉", "You unlocked free shipping! 🎉"),
   customFilter: loc("مخصص", "Custom"),
+  cartSuggestTitle: loc("منتجات مشابهة للي في السلة", "Similar to what’s in your bag"),
+  cartSuggestShipping: loc(
+    "أضف منتج بالسعر ده أو أقل عشان توصل للشحن المجاني",
+    "Add one of these at this price or less to unlock free shipping",
+  ),
 };
 
 export const DEFAULT_COMMERCE: Commerce = {
@@ -915,6 +1065,7 @@ export function migrateSite(raw: unknown): SiteDocument {
       shopCustomLabel:
         fillLoc(asLoc(chrome.shopCustomLabel, DEFAULT_CHROME.shopCustomLabel.ar), DEFAULT_CHROME.shopCustomLabel) ??
         DEFAULT_CHROME.shopCustomLabel,
+      copy: migrateStorefrontCopy((chrome as SiteChrome).copy),
     },
     promo: {
       live: Boolean(promo.live),
@@ -1034,6 +1185,17 @@ function migrateCommerceCopy(raw: Partial<CommerceCopy> | undefined): CommerceCo
   for (const key of COMMERCE_COPY_KEYS) {
     next[key] =
       fillLoc(asLoc(src[key], DEFAULT_COMMERCE_COPY[key].ar), DEFAULT_COMMERCE_COPY[key]) ?? DEFAULT_COMMERCE_COPY[key];
+  }
+  return next;
+}
+
+function migrateStorefrontCopy(raw: Partial<StorefrontCopy> | undefined): StorefrontCopy {
+  const src = raw ?? {};
+  const next = { ...DEFAULT_STOREFRONT_COPY };
+  for (const key of STOREFRONT_COPY_KEYS) {
+    next[key] =
+      fillLoc(asLoc(src[key], DEFAULT_STOREFRONT_COPY[key].ar), DEFAULT_STOREFRONT_COPY[key]) ??
+      DEFAULT_STOREFRONT_COPY[key];
   }
   return next;
 }

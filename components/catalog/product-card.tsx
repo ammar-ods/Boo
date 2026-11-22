@@ -15,6 +15,7 @@ import {
   sellingPrice,
   type Product,
 } from "@/lib/products";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { PriceTag } from "@/components/catalog/price-tag";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
@@ -161,7 +162,7 @@ export function ProductCard({
         onClick={onPlus}
       >
         {customizable ? <PencilLine className="size-4" /> : <Plus className="size-4" />}
-        <span>{customizable ? t("customizeName") : t("addToCart")}</span>
+        <span>{customizable ? <EditableCopy k="customizeName" /> : <EditableCopy k="addToCart" />}</span>
       </button>
     </article>
   );

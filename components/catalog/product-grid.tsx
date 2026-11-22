@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/catalog/product-card";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { ShopFilterBar } from "@/components/shop/shop-filter-bar";
 import { normalizeCategoryId, sellingPrice, type Product, type ProductCategory } from "@/lib/products";
+import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
+import { pick } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const COLLECTIONS: Record<string, ProductCategory[] | "staff"> = {
@@ -32,6 +35,7 @@ export function ProductGrid({
 }) {
   const [inStock, setInStock] = useState(false);
   const { t, locale } = useI18n();
+  const { site, editing } = useEdit();
   const [sort, setSort] = useState<"featured" | "name" | "price-asc">("featured");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
@@ -115,9 +119,7 @@ export function ProductGrid({
     return grid;
   }
 
-  const showingLabel = t("showingPieces")
-    .replace("{shown}", String(shownCount))
-    .replace("{total}", String(items.length));
+  const showingVars = { shown: shownCount, total: items.length };
 
   return (
     <div ref={topRef} className="scroll-mt-28 space-y-8">
@@ -132,20 +134,20 @@ export function ProductGrid({
               checked={inStock}
               onChange={(event) => setInStock(event.target.checked)}
             />
-            {t("readyToShip")}
+            <EditableCopy k="readyToShip" />
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-[12px] font-semibold tracking-[0.08em] text-oxford/45 uppercase">
-            {t("sortBy")}
+            <EditableCopy k="sortBy" />
             <select
               value={sort}
               onChange={(event) => setSort(event.target.value as "featured" | "name" | "price-asc")}
               className="h-9 rounded-lg border-0 bg-[#f4f3f0] px-3 text-[12px] font-semibold tracking-[0.04em] text-oxford"
             >
-              <option value="featured">{t("sortFeatured")}</option>
-              <option value="name">{t("sortName")}</option>
-              <option value="price-asc">{t("sortPriceLow")}</option>
+              <option value="featured">{pick(site.chrome.copy.sortFeatured, locale) || t("sortFeatured")}</option>
+              <option value="name">{pick(site.chrome.copy.sortName, locale) || t("sortName")}</option>
+              <option value="price-asc">{pick(site.chrome.copy.sortPriceLow, locale) || t("sortPriceLow")}</option>
             </select>
           </label>
           <div className="flex rounded-lg bg-[#f4f3f0] p-1 text-[11px] font-semibold uppercase tracking-[0.08em]">
@@ -154,16 +156,23 @@ export function ProductGrid({
               onClick={() => setLayout("grid")}
               className={cn("rounded-md px-3 py-1.5", layout === "grid" && "bg-oxford text-white")}
             >
-              Grid
+              <EditableCopy k="layoutGrid" />
             </button>
             <button
               type="button"
               onClick={() => setLayout("list")}
               className={cn("rounded-md px-3 py-1.5", layout === "list" && "bg-oxford text-white")}
             >
-              List
+              <EditableCopy k="layoutList" />
             </button>
           </div>
+          {editing ? (
+            <div className="flex flex-wrap gap-2 text-[11px] text-oxford/60">
+              <EditableCopy k="sortFeatured" />
+              <EditableCopy k="sortName" />
+              <EditableCopy k="sortPriceLow" />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -178,7 +187,9 @@ export function ProductGrid({
                 style={{ width: `${items.length ? Math.round((shownCount / items.length) * 100) : 0}%` }}
               />
             </div>
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-oxford/45 uppercase">{showingLabel}</p>
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-oxford/45 uppercase">
+              <EditableCopy k="showingPieces" vars={showingVars} />
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => (
@@ -220,7 +231,7 @@ export function ProductGrid({
                 setPage(pageCount);
               }}
             >
-              {t("showMore")}
+              <EditableCopy k="showMore" />
             </button>
           ) : null}
         </div>

@@ -3,8 +3,17 @@
 import type { ElementType } from "react";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { pick, type CommerceCopyKey, type Localized } from "@/lib/site";
+import {
+  COMMERCE_COPY_KEYS,
+  pick,
+  type CommerceCopyKey,
+  type CopyKey,
+  type Localized,
+  type StorefrontCopyKey,
+} from "@/lib/site";
 import { cn } from "@/lib/utils";
+
+const COMMERCE_KEY_SET = new Set<string>(COMMERCE_COPY_KEYS);
 
 export function formatCommerceCopy(template: string, vars?: Record<string, string | number>) {
   if (!vars) return template;
@@ -31,6 +40,11 @@ export function EditableText({
       className={cn("rounded-sm outline-dashed outline-1 outline-oxford/25", className)}
       contentEditable
       suppressContentEditableWarning
+      onClick={(event: { stopPropagation: () => void; preventDefault: () => void }) => {
+        event.stopPropagation();
+        event.preventDefault();
+      }}
+      onPointerDown={(event: { stopPropagation: () => void }) => event.stopPropagation()}
       onBlur={(event: { currentTarget: HTMLElement }) => {
         onChange(event.currentTarget.textContent ?? "");
       }}
@@ -46,14 +60,16 @@ export function EditableCopy({
   as,
   className,
 }: {
-  k: CommerceCopyKey;
+  k: CopyKey;
   vars?: Record<string, string | number>;
   as?: ElementType;
   className?: string;
 }) {
-  const { site, setCommerce, editing, isAdmin } = useEdit();
+  const { site, setCommerce, setChrome, editing, isAdmin } = useEdit();
   const { locale, t } = useI18n();
-  const stored = site.commerce.copy?.[k];
+  const commerceStored = site.commerce.copy?.[k as CommerceCopyKey];
+  const chromeStored = site.chrome.copy?.[k as StorefrontCopyKey];
+  const stored = COMMERCE_KEY_SET.has(k) ? commerceStored : chromeStored;
   const raw = pick(stored, locale)?.trim() || t(k);
   const show = editing && isAdmin ? raw : formatCommerceCopy(raw, vars);
   return (
@@ -61,14 +77,14 @@ export function EditableCopy({
       as={as}
       className={className}
       value={show}
-      onChange={(next) =>
-        setCommerce({
-          copy: {
-            ...site.commerce.copy,
-            [k]: { ...(stored ?? { ar: t(k), en: t(k) }), [locale]: next },
-          },
-        })
-      }
+      onChange={(next) => {
+        const loc = { ar: stored?.ar || t(k), en: stored?.en || t(k), [locale]: next };
+        if (COMMERCE_KEY_SET.has(k)) {
+          setCommerce({ copy: { ...site.commerce.copy, [k]: loc } });
+          return;
+        }
+        setChrome({ copy: { ...site.chrome.copy, [k]: loc } });
+      }}
     />
   );
 }

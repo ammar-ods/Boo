@@ -9,12 +9,12 @@ import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { useStorefrontUi } from "@/lib/storefront-ui";
 import { NavAnchor, isNavClickable } from "@/components/layout/nav-anchor";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { pick, type NavLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const { t } = useI18n();
   const { site } = useEdit();
   const items = useCart((s) => s.items);
   const hydrated = useCartHydrated();
@@ -46,7 +46,9 @@ export function MobileBottomNav() {
           }`}
         >
           <div className="flex items-center justify-between px-4 py-3">
-            <p className="font-heading text-lg text-oxford">{t("sections")}</p>
+            <p className="font-heading text-lg text-oxford">
+              <EditableCopy k="sections" />
+            </p>
             <button type="button" className="grid size-9 place-items-center rounded-full bg-cream" onClick={closeOverlays}>
               <X className="size-4" />
             </button>
@@ -63,11 +65,11 @@ export function MobileBottomNav() {
         <div className="grid grid-cols-4">
           <Link href="/" className={tabClass(pathname === "/")} onClick={closeOverlays}>
             <Home className="size-5" />
-            {t("home")}
+            <EditableCopy k="home" />
           </Link>
           <button type="button" className={tabClass(sectionsOpen)} onClick={() => setSectionsOpen(!sectionsOpen)}>
             <LayoutGrid className="size-5" />
-            {t("sections")}
+            <EditableCopy k="sections" />
           </button>
           <button type="button" className={tabClass(cartOpen)} onClick={toggleCart}>
             <span className="relative">
@@ -78,11 +80,11 @@ export function MobileBottomNav() {
                 </span>
               ) : null}
             </span>
-            {t("cart")}
+            <EditableCopy k="cart" />
           </button>
           <button type="button" className={tabClass(false)} onClick={() => setSearchOpen(true)}>
             <Search className="size-5" />
-            {t("search")}
+            <EditableCopy k="search" />
           </button>
         </div>
       </nav>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Lock, Minus, Plus, X } from "lucide-react";
 import { cartCount, cartTotal, useCart, useCartHydrated } from "@/lib/cart";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { useI18n } from "@/lib/i18n";
 import { useStorefrontUi } from "@/lib/storefront-ui";
 
@@ -40,10 +41,12 @@ export function CartPreview() {
       >
         <div className="flex items-center justify-between gap-3 border-b border-oxford/8 px-5 py-5 sm:px-8">
           <div className="flex items-center gap-3">
-            <p className="font-heading text-2xl text-oxford md:text-3xl">{t("yourBag")}</p>
+            <p className="font-heading text-2xl text-oxford md:text-3xl">
+              <EditableCopy k="yourBag" />
+            </p>
             {hydrated && count > 0 ? (
               <span className="rounded-full bg-[#f4f3f0] px-2.5 py-0.5 text-[10px] font-bold tracking-[0.14em] text-oxford/55 uppercase">
-                {count} {t("bagItems")}
+                {count} <EditableCopy k="bagItems" />
               </span>
             ) : null}
           </div>
@@ -59,7 +62,7 @@ export function CartPreview() {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-8">
           {!hydrated ? null : items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("emptyCart")}</p>
+            <EditableCopy k="emptyCart" as="p" className="text-sm text-muted-foreground" />
           ) : (
             <div className="space-y-4">
               {items.map((item) => (
@@ -75,12 +78,12 @@ export function CartPreview() {
                         </p>
                         {item.color ? (
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {t("color")}: <span className="text-oxford">{item.color}</span>
+                            <EditableCopy k="color" />: <span className="text-oxford">{item.color}</span>
                           </p>
                         ) : null}
                         {item.dimensions?.length || item.dimensions?.width ? (
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {t("dimensions")}:{" "}
+                            <EditableCopy k="dimensions" />:{" "}
                             <span className="text-oxford">
                               {item.dimensions.length || "?"} × {item.dimensions.width || "?"}
                             </span>
@@ -114,7 +117,7 @@ export function CartPreview() {
                         className="text-[11px] font-semibold tracking-[0.12em] text-oxford/40 uppercase hover:text-red-700"
                         onClick={() => remove(item.id)}
                       >
-                        {t("remove")}
+                        <EditableCopy k="remove" />
                       </button>
                     </div>
                   </div>
@@ -127,8 +130,12 @@ export function CartPreview() {
         <div className="border-t border-oxford/8 px-5 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-8 md:pb-5">
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <div>
-              <p className="font-heading text-xl text-oxford">{t("estimatedTotal")}</p>
-              <p className="text-[11px] tracking-[0.08em] text-oxford/40 uppercase">{t("shipping")}</p>
+              <p className="font-heading text-xl text-oxford">
+                <EditableCopy k="estimatedTotal" />
+              </p>
+              <p className="text-[11px] tracking-[0.08em] text-oxford/40 uppercase">
+                <EditableCopy k="shipping" />
+              </p>
             </div>
             <p className="font-heading text-2xl font-semibold text-oxford">{formatPrice(total)}</p>
           </div>
@@ -138,14 +145,14 @@ export function CartPreview() {
             onClick={() => setCartOpen(false)}
           >
             <Lock className="size-4" />
-            {t("proceedCheckout")} — {formatPrice(total)}
+            <EditableCopy k="proceedCheckout" /> — {formatPrice(total)}
           </Link>
           <Link
             href="/cart"
             className="btn-press btn-press-outline mt-2.5 flex w-full text-center"
             onClick={() => setCartOpen(false)}
           >
-            {t("viewCart")}
+            <EditableCopy k="viewCart" />
           </Link>
         </div>
       </div>

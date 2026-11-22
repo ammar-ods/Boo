@@ -1,27 +1,35 @@
 "use client";
 
-import { useI18n } from "@/lib/i18n";
+import { EditableCopy } from "@/components/cms/editable-copy";
+import type { StorefrontCopyKey } from "@/lib/site";
+
+const STEPS: { n: StorefrontCopyKey; title: StorefrontCopyKey; body: StorefrontCopyKey; tone: "neutral" | "gold" | "green" }[] = [
+  { n: "howTo1n", title: "howTo1title", body: "howTo1body", tone: "neutral" },
+  { n: "howTo2n", title: "howTo2title", body: "howTo2body", tone: "gold" },
+  { n: "howTo3n", title: "howTo3title", body: "howTo3body", tone: "green" },
+];
 
 export function HowToOrder() {
-  const { t } = useI18n();
-  const steps = [
-    { n: t("howTo1n"), title: t("howTo1title"), body: t("howTo1body"), tone: "neutral" as const },
-    { n: t("howTo2n"), title: t("howTo2title"), body: t("howTo2body"), tone: "gold" as const },
-    { n: t("howTo3n"), title: t("howTo3title"), body: t("howTo3body"), tone: "green" as const },
-  ];
-
   return (
     <section className="bg-cream py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-5 text-center sm:px-8 lg:px-12">
-        <span className="mb-2 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase">
-          {t("howToEyebrow")}
-        </span>
-        <h2 className="mb-4 font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]">
-          {t("howToTitle")}
-        </h2>
-        <p className="mx-auto mb-12 max-w-xl text-sm text-muted-foreground sm:text-base">{t("howToBody")}</p>
+        <EditableCopy
+          k="howToEyebrow"
+          as="span"
+          className="mb-2 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase"
+        />
+        <EditableCopy
+          k="howToTitle"
+          as="h2"
+          className="mb-4 block font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]"
+        />
+        <EditableCopy
+          k="howToBody"
+          as="p"
+          className="mx-auto mb-12 block max-w-xl text-sm text-muted-foreground sm:text-base"
+        />
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {steps.map((step) => (
+          {STEPS.map((step) => (
             <div
               key={step.n}
               className="flex flex-col items-center rounded-[16px] bg-white p-8 shadow-sm transition-shadow hover:shadow-md"
@@ -35,10 +43,10 @@ export function HowToOrder() {
                       : "bg-[#eae8e4] text-oxford"
                 }`}
               >
-                {step.n}
+                <EditableCopy k={step.n} />
               </div>
-              <h3 className="mb-2 font-heading text-lg font-bold text-oxford">{step.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">{step.body}</p>
+              <EditableCopy k={step.title} as="h3" className="mb-2 block font-heading text-lg font-bold text-oxford" />
+              <EditableCopy k={step.body} as="p" className="block text-sm leading-relaxed text-muted-foreground sm:text-base" />
             </div>
           ))}
         </div>

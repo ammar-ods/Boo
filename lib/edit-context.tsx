@@ -165,7 +165,14 @@ export function EditProvider({
   }, [persistDocument, site]);
 
   const setChrome = useCallback((chrome: Partial<SiteChrome>) => {
-    setSite((current) => ({ ...current, chrome: { ...current.chrome, ...chrome } }));
+    setSite((current) => ({
+      ...current,
+      chrome: {
+        ...current.chrome,
+        ...chrome,
+        copy: chrome.copy ? { ...current.chrome.copy, ...chrome.copy } : current.chrome.copy,
+      },
+    }));
   }, []);
 
   const setCommerce = useCallback((commerce: Partial<Commerce>) => {

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { Bundle } from "@/lib/bundles";
 import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { useI18n } from "@/lib/i18n";
 
 export function BundlesGrid({
@@ -23,8 +24,8 @@ export function BundlesGrid({
     <div className={hideIntro ? "" : "mx-auto w-full max-w-6xl px-5 py-12 sm:px-8"}>
       {hideIntro ? null : (
         <>
-          <h1 className="font-heading text-5xl text-oxford">{t("bundlesTitle")}</h1>
-          <p className="mt-3 max-w-xl text-muted-foreground">{t("bundlesBody")}</p>
+          <EditableCopy k="bundlesTitle" as="h1" className="font-heading text-5xl text-oxford" />
+          <EditableCopy k="bundlesBody" as="p" className="mt-3 block max-w-xl text-muted-foreground" />
         </>
       )}
       <div className={hideIntro ? "grid gap-6 sm:grid-cols-2" : "mt-10 grid gap-6 sm:grid-cols-2"}>

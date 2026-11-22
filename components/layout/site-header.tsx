@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu, MessageCircle, Search, ShoppingBag, X } from "lucide-react";
 import { BooLogo } from "@/components/brand/boo-logo";
+import { EditableCopy, EditableLoc } from "@/components/cms/editable-copy";
 import { StudioChromePanel, StudioNavButtons } from "@/components/cms/studio-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEdit } from "@/lib/edit-context";
@@ -21,7 +22,7 @@ export function SiteHeader() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t, locale, setLocale, formatPrice } = useI18n();
-  const { site, isAdmin } = useEdit();
+  const { site, isAdmin, setChrome } = useEdit();
   const items = useCart((s) => s.items);
   const menuOpen = useStorefrontUi((s) => s.menuOpen);
   const setMenuOpen = useStorefrontUi((s) => s.setMenuOpen);
@@ -113,15 +114,21 @@ export function SiteHeader() {
                   className="flex items-center gap-1 text-white transition-colors hover:text-[#25D366]"
                 >
                   <MessageCircle className="size-4" />
-                  <span className="hidden sm:inline">{t("quickWhatsApp")}</span>
+                  <span className="hidden sm:inline">
+                    <EditableCopy k="quickWhatsApp" />
+                  </span>
                 </a>
               </>
             ) : null}
           </div>
           {site.chrome.showAnnouncement ? (
-            <p className="max-w-[min(42rem,46vw)] truncate text-center">
-              {pick(site.chrome.announcement, locale) || t("freeShip")}
-            </p>
+            <EditableLoc
+              as="p"
+              className="max-w-[min(42rem,46vw)] truncate text-center"
+              value={site.chrome.announcement}
+              fallback={t("freeShip")}
+              onChange={(announcement) => setChrome({ announcement })}
+            />
           ) : (
             <span />
           )}
@@ -139,7 +146,7 @@ export function SiteHeader() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={t("searchPlaceholder")}
+                placeholder={pick(site.chrome.copy.searchPlaceholder, locale) || t("searchPlaceholder")}
                 className="w-full rounded-full bg-white py-2.5 ps-11 pe-4 text-sm text-oxford shadow-[0_2px_10px_rgba(10,37,64,0.04)] outline-none placeholder:text-oxford/40 focus:ring-2 focus:ring-oxford/20"
               />
             </form>
@@ -167,7 +174,9 @@ export function SiteHeader() {
                   ) : null}
                 </span>
                 <span className="hidden flex-col text-start sm:flex">
-                  <span className="text-[11px] font-semibold text-oxford/50">{t("cart")}</span>
+                  <span className="text-[11px] font-semibold text-oxford/50">
+                    <EditableCopy k="cart" />
+                  </span>
                   <span className="text-[15px] font-bold leading-none">{formatPrice(total)}</span>
                 </span>
               </button>
@@ -212,7 +221,7 @@ export function SiteHeader() {
                 autoFocus
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={t("search")}
+                placeholder={pick(site.chrome.copy.searchPlaceholder, locale) || t("search")}
                 className="h-10 w-full bg-transparent outline-none"
               />
               <button type="button" className="text-sm text-muted-foreground" onClick={() => setSearchOpen(false)}>

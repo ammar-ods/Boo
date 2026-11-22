@@ -21,6 +21,7 @@ import { removeNavCategory, upsertNavCategory } from "@/lib/categories";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { loc, pageSlugify, pick, type CatalogSection } from "@/lib/site";
+import { EditableCopy } from "@/components/cms/editable-copy";
 
 const ICONS: LucideIcon[] = [MoonStar, Heart, Baby, Frame, Gift, Shirt, CupSoda, Trees, Package, Sparkles];
 
@@ -39,7 +40,7 @@ function iconFor(id: string, index: number): LucideIcon {
 
 export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
   const { site, editing, setChrome } = useEdit();
-  const { locale, t } = useI18n();
+  const { locale } = useI18n();
   const [draftEn, setDraftEn] = useState("");
   const [draftAr, setDraftAr] = useState("");
   const all = site.chrome.catalogSections ?? [];
@@ -193,14 +194,18 @@ export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:px-12">
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <span className="mb-1 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase">
-              {t("shopByOccasion")}
-            </span>
-            <h2 className="font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]">
-              {t("sectionsTitle")}
-            </h2>
+            <EditableCopy
+              k="shopByOccasion"
+              as="span"
+              className="mb-1 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase"
+            />
+            <EditableCopy
+              k="sectionsTitle"
+              as="h2"
+              className="block font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]"
+            />
           </div>
-          <p className="max-w-md text-sm text-muted-foreground">{t("sectionsBody")}</p>
+          <EditableCopy k="sectionsBody" as="p" className="max-w-md text-sm text-muted-foreground" />
         </div>
         {grid}
       </div>

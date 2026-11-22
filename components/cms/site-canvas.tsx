@@ -12,6 +12,7 @@ import { BannerSlideshow } from "@/components/cms/banner-slideshow";
 import { ResponsiveImg } from "@/components/cms/responsive-img";
 import { BundlesGrid } from "@/components/shop/bundles-grid";
 import type { Bundle } from "@/lib/bundles";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { PageProducts } from "@/components/cms/page-products";
 import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
@@ -165,7 +166,7 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
             index={visible.indexOf(section)}
           />
         </div>
-        {isHome && !editing && section.type === "products" ? (
+        {isHome && section.type === "products" ? (
           <>
             <GiftSetsBanner products={products} bundles={bundles} />
             <HowToOrder />
@@ -173,7 +174,7 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
         ) : null}
         </Fragment>
       ))}
-      {isHome && !editing && !hasProducts ? (
+      {isHome && !hasProducts ? (
         <>
           {!hasCollections ? <ShopSectionsGrid /> : null}
           <GiftSetsBanner products={products} bundles={bundles} />
@@ -371,7 +372,6 @@ function SectionView({
   index?: number;
 }) {
   const { pageKey, site } = useEdit();
-  const { t } = useI18n();
   const fontSize = section.style.fontSize ?? 36;
   const image = pick(section.content.image, locale);
   const imageMobile = pick(section.content.imageMobile, locale);
@@ -518,14 +518,18 @@ function SectionView({
           ) : (
             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <span className="mb-1 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase">
-                  {t("shopByOccasion")}
-                </span>
-                <h2 className="font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]">
-                  {t("sectionsTitle")}
-                </h2>
+                <EditableCopy
+                  k="shopByOccasion"
+                  as="span"
+                  className="mb-1 block text-[11px] font-bold tracking-[0.16em] text-[#C59B27] uppercase"
+                />
+                <EditableCopy
+                  k="sectionsTitle"
+                  as="h2"
+                  className="block font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]"
+                />
               </div>
-              <p className="max-w-md text-sm text-muted-foreground">{t("sectionsBody")}</p>
+              <EditableCopy k="sectionsBody" as="p" className="max-w-md text-sm text-muted-foreground" />
             </div>
           )}
           <div className={hasTitle ? "mt-6" : ""}>

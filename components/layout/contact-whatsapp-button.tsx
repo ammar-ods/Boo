@@ -1,8 +1,8 @@
 "use client";
 
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { darkenHex } from "@/lib/color";
 import { useEdit } from "@/lib/edit-context";
-import { useI18n } from "@/lib/i18n";
 import { whatsappChatUrl } from "@/lib/whatsapp";
 import { IconGlyph } from "@/components/layout/footer-icons";
 
@@ -23,7 +23,6 @@ function isImageIcon(value: string) {
 }
 
 export function ContactWhatsAppButton() {
-  const { t } = useI18n();
   const { site } = useEdit();
   const shape = site.chrome.contactWaShape || "pill";
   const sizeKey = site.chrome.contactWaSize || "lg";
@@ -60,7 +59,7 @@ export function ContactWhatsAppButton() {
           <IconGlyph name={icon} className={`${size.icon} fill-current`} />
         )
       ) : null}
-      {t("chatWhatsApp")}
+      <EditableCopy k="chatWhatsApp" />
     </a>
   );
 }

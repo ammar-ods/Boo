@@ -141,6 +141,8 @@ const COPY: Record<Locale, Record<string, string>> = {
     howTo3title: "استلم هديتك لباب بيتك",
     howTo3body: "ننّفذ الطلب ونتغلفه، ويوصلك في محافظات مصر.",
     customFilter: "مخصص",
+    cartSuggestTitle: "منتجات مشابهة للي في السلة",
+    cartSuggestShipping: "أضف منتج بالسعر ده أو أقل عشان توصل للشحن المجاني",
     paymentTitle: "اختر طريقة الدفع المناسبة",
     paymentSafe: "جميع الطرق آمنة 100%",
     payCodBody: "يتم سداد دفعة تأكيد حفر الاسم بقيمة 100 ج.م مسبقاً والباقي مع المندوب",
@@ -149,6 +151,8 @@ const COPY: Record<Locale, Record<string, string>> = {
     freeShipProgress: "أحسنت! أضفت منتجات بقيمة {added} — باقي لك {remaining} فقط وتستمتع بالشحن المجاني! 🎉",
     freeShipRemaining: "متبقي {percent}% للوصول للشحن المجاني",
     freeShipUnlocked: "وصلت للشحن المجاني! 🎉",
+    layoutGrid: "شبكة",
+    layoutList: "قائمة",
   },
   en: {
     shop: "Shop",
@@ -285,6 +289,8 @@ const COPY: Record<Locale, Record<string, string>> = {
     howTo3title: "Receive it at your door",
     howTo3body: "We make it, wrap it, and ship it across Egypt.",
     customFilter: "Custom",
+    cartSuggestTitle: "Similar to what’s in your bag",
+    cartSuggestShipping: "Add one of these at this price or less to unlock free shipping",
     paymentTitle: "Choose a payment method",
     paymentSafe: "All methods are 100% secure",
     payCodBody: "A 100 EGP name-engraving confirmation is paid first; the rest is paid to the courier.",
@@ -293,6 +299,8 @@ const COPY: Record<Locale, Record<string, string>> = {
     freeShipProgress: "Nice! You added {added} — add {remaining} more for free shipping! 🎉",
     freeShipRemaining: "{percent}% left to free shipping",
     freeShipUnlocked: "You unlocked free shipping! 🎉",
+    layoutGrid: "Grid",
+    layoutList: "List",
   },
 };
 

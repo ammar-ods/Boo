@@ -3,12 +3,13 @@
 import { toast } from "sonner";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { pick } from "@/lib/site";
 import { ContactWhatsAppButton } from "@/components/layout/contact-whatsapp-button";
 import { DynamicShopFields } from "@/components/shop/dynamic-fields";
 
 export default function ContactPage() {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const { site } = useEdit();
   const fields = site.commerce.contactFields ?? [];
 
@@ -44,13 +45,13 @@ export default function ContactPage() {
 
   return (
     <div className="mx-auto w-full max-w-xl px-5 py-12 sm:px-8">
-      <h1 className="font-heading text-4xl text-oxford sm:text-5xl">{t("contactTitle")}</h1>
-      <p className="mt-3 text-muted-foreground">{t("contactBody")}</p>
+      <EditableCopy k="contactTitle" as="h1" className="font-heading text-4xl text-oxford sm:text-5xl" />
+      <EditableCopy k="contactBody" as="p" className="mt-3 block text-muted-foreground" />
       <ContactWhatsAppButton />
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <DynamicShopFields fields={fields} />
         <button type="submit" className="btn-press">
-          {t("send")}
+          <EditableCopy k="send" />
         </button>
       </form>
     </div>

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Minus, Plus } from "lucide-react";
 import { useCart, type CartItem } from "@/lib/cart";
+import { EditableCopy } from "@/components/cms/editable-copy";
 import { useI18n } from "@/lib/i18n";
 
 export function CartLines({
@@ -41,17 +42,17 @@ export function CartLines({
                   <p className={`truncate font-heading text-oxford ${compact ? "text-base" : "text-lg"}`}>{name}</p>
                   {item.color ? (
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t("color")}: <span className="text-oxford">{item.color}</span>
+                      <EditableCopy k="color" />: <span className="text-oxford">{item.color}</span>
                     </p>
                   ) : null}
                   {item.dimensions?.length || item.dimensions?.width ? (
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t("dimensions")}: {item.dimensions.length || "?"} × {item.dimensions.width || "?"}
+                      <EditableCopy k="dimensions" />: {item.dimensions.length || "?"} × {item.dimensions.width || "?"}
                     </p>
                   ) : null}
                   {!editable ? (
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t("quantity")}: {item.quantity}
+                      <EditableCopy k="quantity" />: {item.quantity}
                     </p>
                   ) : null}
                 </div>
@@ -83,7 +84,7 @@ export function CartLines({
                     className="text-[11px] font-semibold tracking-[0.12em] text-oxford/40 uppercase hover:text-red-700"
                     onClick={() => remove(item.id)}
                   >
-                    {t("remove")}
+                    <EditableCopy k="remove" />
                   </button>
                 </div>
               ) : null}
