@@ -1,27 +1,40 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { useShopNavActiveId, useShopNavItems } from "@/components/shop/shop-sidebar";
 import { upsertNavCategory } from "@/lib/categories";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { loc, pageSlugify, type CatalogSection } from "@/lib/site";
+import { loc, pageSlugify, pick, type CatalogSection } from "@/lib/site";
+import { normalizeCategoryId, type Product } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
 export function ShopFilterBar({
-  collection,
-  query,
+  products = [],
+  filter = "all",
+  onFilter,
 }: {
+  products?: Product[];
   collection?: string;
   query?: string;
+  filter?: string;
+  onFilter?: (id: string) => void;
 }) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const { editing, site, setChrome } = useEdit();
-  const items = useShopNavItems();
   const [draftEn, setDraftEn] = useState("");
   const [draftAr, setDraftAr] = useState("");
+  const present = useMemo(
+    () => new Set(products.map((product) => normalizeCategoryId(product.category))),
+    [products],
+  );
+  const allLabel = pick(site.chrome.shopAllLabel, locale) || t("allProducts");
+  const customLabel = pick(site.chrome.shopCustomLabel, locale) || t("customFilter");
+  const categoryPills = (site.chrome.catalogSections ?? []).filter((section) => {
+    if (section.visible === false) return false;
+    if (editing) return true;
+    return present.has(section.id);
+  });
 
   function patchSection(id: string, next: Partial<CatalogSection>) {
     const catalogSections = (site.chrome.catalogSections ?? []).map((section) =>
@@ -43,7 +56,7 @@ export function ShopFilterBar({
     }
     const section: CatalogSection = {
       id,
-      href: `/catalog?collection=${id}`,
+      href: `/p/${id}`,
       image: "",
       label: loc(ar, en),
       visible: true,
@@ -88,6 +101,36 @@ export function ShopFilterBar({
                 })
               }
               placeholder="الكل"
+            />
+          </label>
+          <label className="flex min-w-[8rem] flex-col gap-1 rounded-2xl bg-white px-3 py-2 text-[11px] font-semibold text-oxford shadow-sm">
+            {locale === "ar" ? "مخصص" : "Custom"}
+            <input
+              className="h-8 rounded-lg border border-oxford/10 bg-white px-2 text-sm text-oxford"
+              value={site.chrome.shopCustomLabel?.en ?? "Custom"}
+              onChange={(event) =>
+                setChrome({
+                  shopCustomLabel: {
+                    ar: site.chrome.shopCustomLabel?.ar || "مخصص",
+                    en: event.target.value,
+                  },
+                })
+              }
+              placeholder="Custom"
+            />
+            <input
+              dir="rtl"
+              className="h-8 rounded-lg border border-oxford/10 bg-white px-2 text-sm text-oxford"
+              value={site.chrome.shopCustomLabel?.ar ?? "مخصص"}
+              onChange={(event) =>
+                setChrome({
+                  shopCustomLabel: {
+                    ar: event.target.value,
+                    en: site.chrome.shopCustomLabel?.en || "Custom",
+                  },
+                })
+              }
+              placeholder="مخصص"
             />
           </label>
           {(site.chrome.catalogSections ?? []).map((section) => (
@@ -173,39 +216,28 @@ export function ShopFilterBar({
     );
   }
 
-  return (
-    <Suspense fallback={<div className="h-11" />}>
-      <FilterPills collection={collection} query={query} items={items} />
-    </Suspense>
-  );
-}
+  const pills = [
+    { id: "all", label: allLabel },
+    { id: "custom", label: customLabel },
+    ...categoryPills.map((section) => ({ id: section.id, label: pick(section.label, locale) || section.id })),
+  ];
 
-function FilterPills({
-  collection,
-  query,
-  items,
-}: {
-  collection?: string;
-  query?: string;
-  items: ReturnType<typeof useShopNavItems>;
-}) {
-  const matched = useShopNavActiveId(collection);
-  const current = matched || collection || (!query ? "all" : "");
   return (
     <div className="flex gap-2.5 overflow-x-auto pb-1">
-      {items.map((item) => {
-        const active = item.id === current;
+      {pills.map((item) => {
+        const active = item.id === filter;
         return (
-          <Link
+          <button
             key={item.id}
-            href={item.href}
+            type="button"
+            onClick={() => onFilter?.(item.id)}
             className={cn(
               "shrink-0 rounded-full px-5 py-2.5 text-[12px] font-semibold tracking-[0.08em] uppercase transition",
               active ? "bg-[#f0e092] text-[#6e6322] shadow-sm" : "bg-white text-oxford/55 shadow-sm hover:text-oxford",
             )}
           >
             {item.label}
-          </Link>
+          </button>
         );
       })}
     </div>

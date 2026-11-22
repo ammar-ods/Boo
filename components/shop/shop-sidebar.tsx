@@ -38,8 +38,14 @@ export function itemMatches(href: string, pathname: string, search: string) {
 
   if (pathname === href || pathname === normalized) return true;
   const pageKey = pathPageKey(pathname);
-  if (!pageKey || pageKey === "home") return false;
-  return normalized === cmsPagePath(pageKey) || href.replace(/\/$/, "") === `/${pageKey}`;
+  const hrefCollection = hrefUrl?.searchParams.get("collection");
+  const hrefPageKey = pathPageKey(hrefUrl?.pathname || normalized) || hrefCollection || "";
+  if (pageKey && pageKey !== "home") {
+    if (hrefPageKey === pageKey) return true;
+    if (hrefCollection === pageKey) return true;
+    if (normalized === cmsPagePath(pageKey) || href.replace(/\/$/, "") === `/${pageKey}`) return true;
+  }
+  return false;
 }
 
 export function useShopNavItems(): ShopNavItem[] {

@@ -18,19 +18,17 @@ export function PageProducts({
   section: SiteSection;
   products: Product[];
 }) {
-  const { editing, patchSection, pageKey, site } = useEdit();
+  const { editing, patchSection, pageKey } = useEdit();
   const { locale } = useI18n();
   const [pick, setPick] = useState("");
   const slugs = section.content.productSlugs ?? [];
   const isHome = !pageKey || pageKey === "home";
-  const isCategoryPage = Boolean(pageKey && pageKey !== "home" && site.chrome.catalogSections?.some((item) => item.id === pageKey));
-  const fallbackAll = isHome || isCategoryPage;
   const selected = useMemo(() => {
     if (slugs.length) {
       return slugs.map((slug) => products.find((product) => product.slug === slug)).filter(Boolean) as Product[];
     }
-    return fallbackAll ? products.filter((product) => !product.archived) : [];
-  }, [fallbackAll, products, slugs]);
+    return isHome ? products.filter((product) => !product.archived) : [];
+  }, [isHome, products, slugs]);
   const selectedSlugs = selected.map((product) => product.slug);
   const available = products.filter((product) => !product.archived && !selectedSlugs.includes(product.slug));
   const cardRounded = Boolean(section.style.cardRounded);
@@ -42,30 +40,27 @@ export function PageProducts({
 
   const body = (
       <div className="space-y-5">
-        {editing ? <ShopFilterBar collection={isCategoryPage ? pageKey || undefined : section.content.collection} /> : null}
+        {editing ? <ShopFilterBar products={selected} /> : null}
         {editing ? (
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-8">
           {selected.map((product) => (
             <div key={product.slug} className="relative">
-              {!isCategoryPage ? (
-                <button
-                  type="button"
-                  className="absolute end-2 top-2 z-20 grid size-8 place-items-center rounded-full bg-white text-red-700 shadow ring-1 ring-oxford/10"
-                  aria-label="Remove product"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setSlugs(selectedSlugs.filter((slug) => slug !== product.slug));
-                  }}
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="absolute end-2 top-2 z-20 grid size-8 place-items-center rounded-full bg-white text-red-700 shadow ring-1 ring-oxford/10"
+                aria-label="Remove product"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setSlugs(selectedSlugs.filter((slug) => slug !== product.slug));
+                }}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
               <ProductCard product={product} cardRounded={cardRounded} thumbRounded={thumbRounded} />
             </div>
           ))}
-          {!isCategoryPage ? (
-            <div className="flex min-h-[180px] flex-col justify-center rounded-xl border-2 border-dashed border-oxford/20 bg-white/40 p-3 sm:min-h-[280px] sm:p-4">
+          <div className="flex min-h-[180px] flex-col justify-center rounded-xl border-2 border-dashed border-oxford/20 bg-white/40 p-3 sm:min-h-[280px] sm:p-4">
               <p className="mb-3 text-sm font-medium text-oxford">Add a product card</p>
               <select
                 value={pick}
@@ -96,14 +91,12 @@ export function PageProducts({
                 <p className="mt-3 text-xs text-oxford/50">Every catalog product is already on this page.</p>
               ) : null}
             </div>
-          ) : null}
         </div>
         ) : selected.length === 0 ? (
           <p className="text-sm text-oxford/50">No products on this page yet.</p>
         ) : (
           <ProductGrid
             products={selected}
-            collection={isCategoryPage ? pageKey || undefined : section.content.collection}
             compact={isHome}
             cardRounded={cardRounded}
             thumbRounded={thumbRounded}
@@ -113,7 +106,7 @@ export function PageProducts({
   );
 
   if (isHome) return <div className="cms-copy">{body}</div>;
-  return <ShopRail activeId={isCategoryPage ? pageKey || undefined : section.content.collection}>{body}</ShopRail>;
+  return <ShopRail>{body}</ShopRail>;
 }
 
 export function ProductShelfEditor({

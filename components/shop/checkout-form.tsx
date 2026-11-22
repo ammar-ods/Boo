@@ -8,11 +8,14 @@ import { cartBreakdown, matchPromo } from "@/lib/commerce";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
 import { pick } from "@/lib/site";
+import { EditableCopy, EditableLoc } from "@/components/cms/editable-copy";
 import { BackChevron } from "@/components/ui/back-chevron";
 import { CartLines } from "@/components/shop/cart-lines";
 import { DynamicShopFields } from "@/components/shop/dynamic-fields";
+import { FreeShippingMeter } from "@/components/shop/free-shipping-meter";
 import { flashStatus } from "@/components/status-flash";
 import { shopReturnPath } from "@/lib/storefront-ui";
+import { Banknote, Lock, QrCode } from "lucide-react";
 
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -32,7 +35,7 @@ export function CheckoutForm({
 }) {
   const router = useRouter();
   const { t, formatPrice, locale } = useI18n();
-  const { site } = useEdit();
+  const { site, setCommerce } = useEdit();
   const hydrated = useCartHydrated();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
@@ -221,13 +224,15 @@ export function CheckoutForm({
   const totals = (
     <dl className="space-y-1 text-sm">
       <div className="flex justify-between">
-        <dt>{t("subtotal")}</dt>
+        <dt>
+          <EditableCopy k="subtotal" />
+        </dt>
         <dd>{formatPrice(breakdown.subtotal)}</dd>
       </div>
       {breakdown.discount > 0 ? (
         <div className="flex justify-between text-emerald-700">
           <dt>
-            {t("discount")}
+            <EditableCopy k="discount" />
             {breakdown.promoCode ? ` (${breakdown.promoCode})` : ""}
           </dt>
           <dd>−{formatPrice(breakdown.discount)}</dd>
@@ -235,17 +240,29 @@ export function CheckoutForm({
       ) : null}
       {breakdown.expressCharged > 0 ? (
         <div className="flex justify-between">
-          <dt>{pick(site.commerce.expressLabel, locale) || t("expressOrder")}</dt>
+          <dt>
+            <EditableLoc
+              value={site.commerce.expressLabel}
+              fallback={t("expressOrder")}
+              onChange={(expressLabel) => setCommerce({ expressLabel })}
+            />
+          </dt>
           <dd>{formatPrice(breakdown.expressCharged)}</dd>
         </div>
       ) : null}
       <div className="flex justify-between">
-        <dt>{pick(site.commerce.shippingLabel, locale) || t("shipping")}</dt>
+        <dt>
+          <EditableLoc
+            value={site.commerce.shippingLabel}
+            fallback={t("shipping")}
+            onChange={(shippingLabel) => setCommerce({ shippingLabel })}
+          />
+        </dt>
         <dd className="text-end">
           {breakdown.shippingFree ? (
             <>
               <span className="me-2 text-oxford/40 line-through">{formatPrice(breakdown.shipping)}</span>
-              <span className="font-medium text-emerald-600">{t("freeShipping")}</span>
+              <EditableCopy k="freeShipping" as="span" className="font-medium text-emerald-600" />
             </>
           ) : (
             formatPrice(breakdown.shippingCharged)
@@ -253,7 +270,9 @@ export function CheckoutForm({
         </dd>
       </div>
       <div className="flex justify-between border-t border-oxford/10 pt-2 font-semibold text-oxford">
-        <dt>{t("total")}</dt>
+        <dt>
+          <EditableCopy k="total" />
+        </dt>
         <dd>{formatPrice(breakdown.total)}</dd>
       </div>
     </dl>
@@ -261,17 +280,20 @@ export function CheckoutForm({
 
   const bag = (
     <aside className="rounded-[16px] bg-[#f5f3ef] p-4 sm:p-5">
-      <p className="text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">{t("yourOrder")}</p>
+      <EditableCopy k="yourOrder" as="p" className="text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase" />
       <div className="mt-3 max-h-[min(22rem,50vh)] overflow-y-auto lg:max-h-[calc(100dvh-26rem)]">
         <CartLines items={items} compact />
       </div>
       {expressOffered ? (
         <label className="mt-4 flex cursor-pointer items-start justify-between gap-3 rounded-[12px] bg-white px-4 py-3 text-sm ring-1 ring-oxford/10">
           <span>
-            <span className="block font-medium text-oxford">
-              {pick(site.commerce.expressLabel, locale) || t("expressOrder")}
-            </span>
-            <span className="text-xs text-muted-foreground">{t("expressHint")}</span>
+            <EditableLoc
+              className="block font-medium text-oxford"
+              value={site.commerce.expressLabel}
+              fallback={t("expressOrder")}
+              onChange={(expressLabel) => setCommerce({ expressLabel })}
+            />
+            <EditableCopy k="expressHint" as="span" className="text-xs text-muted-foreground" />
           </span>
           <span className="flex items-center gap-2">
             <span className="text-xs font-semibold text-oxford">{formatPrice(site.commerce.expressPrice ?? 0)}</span>
@@ -288,15 +310,20 @@ export function CheckoutForm({
         <input
           value={promoInput}
           onChange={(event) => setPromoInput(event.target.value)}
-          placeholder={t("promoCode")}
+          placeholder={pick(site.commerce.copy.promoCode, locale) || t("promoCode")}
           className="h-11 min-w-0 flex-1 rounded-full border border-border bg-white px-4 text-sm"
         />
         <button type="button" className="h-11 rounded-full bg-white px-4 text-sm font-semibold ring-1 ring-oxford/10" onClick={applyPromo}>
-          {t("apply")}
+          <EditableCopy k="apply" />
         </button>
       </div>
       <div className="mt-4">{totals}</div>
-      <p className="mt-2 text-xs text-muted-foreground">{pick(site.commerce.shippingDetails, locale)}</p>
+      <EditableLoc
+        className="mt-2 block text-xs text-muted-foreground"
+        value={site.commerce.shippingDetails}
+        fallback=""
+        onChange={(shippingDetails) => setCommerce({ shippingDetails })}
+      />
     </aside>
   );
 
@@ -308,11 +335,16 @@ export function CheckoutForm({
         className="inline-flex min-h-9 items-center gap-1 text-sm text-oxford/70 hover:text-oxford"
       >
         <BackChevron />
-        {onBack ? t("backDetails") : t("yourBag")}
+        {onBack ? t("backDetails") : <EditableCopy k="yourBag" />}
       </button>
-      <h1 className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-4xl lg:text-5xl"}`}>
-        {t("checkout")}
-      </h1>
+      <EditableCopy
+        k="checkout"
+        as="h1"
+        className={`font-heading text-oxford ${embedded ? "mt-1 text-3xl" : "text-4xl lg:text-5xl"}`}
+      />
+      <div className="mt-4">
+        <FreeShippingMeter amount={breakdown.subtotal - breakdown.discount} />
+      </div>
       <div
         className={
           embedded
@@ -332,106 +364,137 @@ export function CheckoutForm({
         <DynamicShopFields fields={checkoutFields} />
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-oxford">{t("payment")}</legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label
-              className={`rounded-2xl bg-white p-4 ring-1 transition ${
-                blockCod
-                  ? "cursor-not-allowed opacity-45 grayscale"
-                  : method === "cod"
-                    ? "cursor-pointer ring-2 ring-oxford"
-                    : "cursor-pointer ring-oxford/10"
-              }`}
-            >
-              <input
-                type="radio"
-                name="method"
-                className="sr-only"
-                checked={method === "cod"}
-                disabled={blockCod}
-                onChange={() => {
-                  if (!blockCod) setMethod("cod");
-                }}
-              />
-              <p className="font-heading text-lg text-oxford">{t("payCod")}</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {blockCod ? t("payCodCustom") : "COD"}
-              </p>
-            </label>
-            <label
-              className={`cursor-pointer rounded-2xl bg-white p-4 ring-1 transition ${
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Lock className="size-4 text-oxford" />
+              <EditableCopy k="paymentTitle" as="h2" className="font-heading text-lg text-oxford" />
+            </div>
+            <EditableCopy k="paymentSafe" as="p" className="text-xs text-oxford/50" />
+          </div>
+          <input type="hidden" name="method" value={method} />
+          <div className="space-y-3">
+            <div
+              className={`overflow-hidden rounded-2xl bg-white ring-1 transition ${
                 method === "online" ? "ring-2 ring-oxford" : "ring-oxford/10"
               }`}
             >
-              <input
-                type="radio"
-                name="method"
-                className="sr-only"
-                checked={method === "online"}
-                onChange={() => setMethod("online")}
-              />
-              <p className="font-heading text-lg text-oxford">{t("payOnline")}</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">InstaPay / wallet</p>
-            </label>
-          </div>
-
-          {method === "online" ? (
-            <div className="pay-online-in rounded-[1.6rem] bg-white p-5 ring-1 ring-oxford/10">
-              <p className="text-xs font-semibold tracking-[0.14em] text-oxford/45 uppercase">
-                {t("payOnline")}
-              </p>
-              <p className="mt-2 font-heading text-3xl tracking-wide text-oxford" dir="ltr">
-                {payPhone}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("payOnlineHint")}</p>
-              <label className="mt-5 block text-sm">
-                {t("transferPhone")}
-                <input
-                  required={method === "online"}
-                  name="transferPhone"
-                  inputMode="tel"
-                  className="mt-1 h-11 w-full rounded-full border border-oxford/20 bg-cream px-4"
-                />
-              </label>
-              <label className="mt-4 block text-sm">
-                {t("receipt")}
-                <span className="mt-1 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-oxford/20 bg-cream px-4 py-6 text-center">
-                  <span className="font-heading text-oxford">{receiptName || t("receipt")}</span>
-                  <span className="mt-1 text-xs text-muted-foreground">{t("receiptHint")}</span>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 p-4 text-start"
+                onClick={() => setMethod("online")}
+              >
+                <span
+                  className={`grid size-5 shrink-0 place-items-center rounded-full border ${
+                    method === "online" ? "border-oxford" : "border-oxford/30"
+                  }`}
+                >
+                  {method === "online" ? <span className="size-2.5 rounded-full bg-oxford" /> : null}
                 </span>
-                <input
-                  required={method === "online"}
-                  name="receipt"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(event) => setReceiptName(event.target.files?.[0]?.name ?? "")}
-                />
-              </label>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <EditableCopy k="payOnline" as="span" className="font-heading text-base text-oxford sm:text-lg" />
+                    <EditableCopy
+                      k="payOnlineFast"
+                      as="span"
+                      className="rounded-full bg-[#f0e092] px-2 py-0.5 text-[10px] font-semibold text-[#6e6322]"
+                    />
+                  </span>
+                  <EditableCopy k="payOnlineBody" as="span" className="mt-1 block text-xs leading-relaxed text-muted-foreground" />
+                </span>
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#f4f1ea] text-oxford">
+                  <QrCode className="size-6" />
+                </span>
+              </button>
+              {method === "online" ? (
+                <div className="pay-online-in space-y-4 border-t border-oxford/8 px-4 pb-4 pt-3">
+                  <p className="font-heading text-2xl tracking-wide text-oxford" dir="ltr">
+                    {payPhone}
+                  </p>
+                  <EditableCopy k="payOnlineHint" as="p" className="text-sm leading-relaxed text-muted-foreground" />
+                  <label className="block text-sm">
+                    <EditableCopy k="transferPhone" />
+                    <input
+                      required={method === "online"}
+                      name="transferPhone"
+                      inputMode="tel"
+                      className="mt-1 h-11 w-full rounded-full border border-oxford/20 bg-cream px-4"
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    <EditableCopy k="receipt" />
+                    <span className="mt-1 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-oxford/20 bg-cream px-4 py-6 text-center">
+                      <span className="font-heading text-oxford">{receiptName || pick(site.commerce.copy.receipt, locale) || t("receipt")}</span>
+                      <EditableCopy k="receiptHint" as="span" className="mt-1 text-xs text-muted-foreground" />
+                    </span>
+                    <input
+                      required={method === "online"}
+                      name="receipt"
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={(event) => setReceiptName(event.target.files?.[0]?.name ?? "")}
+                    />
+                  </label>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+
+            <button
+              type="button"
+              disabled={blockCod}
+              onClick={() => {
+                if (!blockCod) setMethod("cod");
+              }}
+              className={`flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-start ring-1 transition ${
+                blockCod
+                  ? "cursor-not-allowed opacity-45 grayscale ring-oxford/10"
+                  : method === "cod"
+                    ? "ring-2 ring-oxford"
+                    : "ring-oxford/10"
+              }`}
+            >
+              <span
+                className={`grid size-5 shrink-0 place-items-center rounded-full border ${
+                  method === "cod" ? "border-oxford" : "border-oxford/30"
+                }`}
+              >
+                {method === "cod" ? <span className="size-2.5 rounded-full bg-oxford" /> : null}
+              </span>
+              <span className="min-w-0 flex-1">
+                <EditableCopy k="payCod" as="span" className="font-heading text-base text-oxford sm:text-lg" />
+                <EditableCopy
+                  k={blockCod ? "payCodCustom" : "payCodBody"}
+                  as="span"
+                  className="mt-1 block text-xs leading-relaxed text-muted-foreground"
+                />
+              </span>
+              <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#f4f1ea] text-oxford">
+                <Banknote className="size-6" />
+              </span>
+            </button>
+          </div>
         </fieldset>
 
         <button type="submit" disabled={busy} className="btn-press sticky bottom-3 z-10 w-full lg:static">
-          {busy ? "…" : t("placeOrder")}
+          {busy ? "…" : <EditableCopy k="placeOrder" />}
         </button>
       </form>
       </div>
       {leaveOpen ? (
         <div className="fixed inset-0 z-[140] grid place-items-center bg-oxford/45 p-4">
           <div className="w-full max-w-sm rounded-[1.6rem] bg-white p-6 text-center shadow-2xl">
-            <h2 className="font-heading text-2xl text-oxford">{t("leaveCheckout")}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("leaveCheckoutBody")}</p>
+            <EditableCopy k="leaveCheckout" as="h2" className="font-heading text-2xl text-oxford" />
+            <EditableCopy k="leaveCheckoutBody" as="p" className="mt-2 text-sm leading-relaxed text-muted-foreground" />
             <div className="mt-5 flex gap-3">
               <button
                 type="button"
                 className="h-11 flex-1 rounded-full bg-cream text-sm font-semibold text-oxford"
                 onClick={() => setLeaveOpen(false)}
               >
-                {t("stayCheckout")}
+                <EditableCopy k="stayCheckout" />
               </button>
               <button type="button" className="h-11 flex-1 rounded-full bg-oxford text-sm font-semibold text-white" onClick={confirmLeave}>
-                {t("confirmLeave")}
+                <EditableCopy k="confirmLeave" />
               </button>
             </div>
           </div>

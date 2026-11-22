@@ -17,7 +17,7 @@ import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
-import { normalizeCategoryId, type Product } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { darkenHex } from "@/lib/color";
 import {
   pick,
@@ -545,14 +545,7 @@ function SectionView({
             {text("body", "mt-2 text-muted-foreground")}
           </div>
           <div className="mt-6 sm:mt-8">
-            <PageProducts
-              section={section}
-              products={
-                pageKey && pageKey !== "home" && site.chrome.catalogSections?.some((item) => item.id === pageKey)
-                  ? products.filter((product) => normalizeCategoryId(product.category) === pageKey)
-                  : products
-              }
-            />
+            <PageProducts section={section} products={products} />
           </div>
         </div>
       </SectionShell>

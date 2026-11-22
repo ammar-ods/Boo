@@ -107,6 +107,7 @@ export async function saveShopSettings(formData: FormData) {
       fontAr: String(formData.get("fontAr") ?? site.chrome.fontAr).trim() || site.chrome.fontAr,
     },
     commerce: {
+      ...site.commerce,
       shippingPrice: Math.max(0, Number(formData.get("shippingPrice") || 0)),
       freeShippingMin: Math.max(0, Number(formData.get("freeShippingMin") || 0)),
       shippingLabel: {

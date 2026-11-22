@@ -135,6 +135,7 @@ export type SiteChrome = {
   announcementFontSize: number;
   footerFontSize: number;
   shopAllLabel: Localized;
+  shopCustomLabel: Localized;
 };
 
 export type PromoPopup = {
@@ -160,6 +161,50 @@ export type ShopFormField = {
   enabled: boolean;
 };
 
+export const COMMERCE_COPY_KEYS = [
+  "cart",
+  "emptyCart",
+  "continue",
+  "yourOrder",
+  "yourBag",
+  "bagItems",
+  "subtotal",
+  "total",
+  "proceedCheckout",
+  "checkout",
+  "payment",
+  "paymentTitle",
+  "paymentSafe",
+  "payCod",
+  "payCodBody",
+  "payCodCustom",
+  "payOnline",
+  "payOnlineBody",
+  "payOnlineHint",
+  "payOnlineFast",
+  "transferPhone",
+  "receipt",
+  "receiptHint",
+  "placeOrder",
+  "promoCode",
+  "apply",
+  "freeShipping",
+  "shipping",
+  "leaveCheckout",
+  "leaveCheckoutBody",
+  "stayCheckout",
+  "confirmLeave",
+  "expressHint",
+  "discount",
+  "freeShipProgress",
+  "freeShipRemaining",
+  "freeShipUnlocked",
+  "customFilter",
+] as const;
+
+export type CommerceCopyKey = (typeof COMMERCE_COPY_KEYS)[number];
+export type CommerceCopy = Record<CommerceCopyKey, Localized>;
+
 export type Commerce = {
   shippingPrice: number;
   shippingLabel: Localized;
@@ -172,6 +217,7 @@ export type Commerce = {
   expressEnabled?: boolean;
   expressPrice?: number;
   expressLabel: Localized;
+  copy: CommerceCopy;
 };
 
 export type CmsPage = {
@@ -439,6 +485,7 @@ export const DEFAULT_CHROME: SiteChrome = {
   announcementFontSize: 11,
   footerFontSize: 14,
   shopAllLabel: loc("الكل", "All"),
+  shopCustomLabel: loc("مخصص", "Custom"),
 };
 
 export const DEFAULT_PROMO: PromoPopup = {
@@ -463,6 +510,62 @@ export const DEFAULT_CHECKOUT_FIELDS: ShopFormField[] = [
   { id: "notes", key: "notes", type: "textarea", required: false, enabled: true, label: loc("ملاحظات", "Notes") },
 ];
 
+export const DEFAULT_COMMERCE_COPY: CommerceCopy = {
+  cart: loc("السلة", "Cart"),
+  emptyCart: loc("السلة فاضية.", "Your bag is empty."),
+  continue: loc("كمّل التسوق", "Continue shopping"),
+  yourOrder: loc("طلبك", "Your order"),
+  yourBag: loc("سلتك", "Your bag"),
+  bagItems: loc("قطع", "items"),
+  subtotal: loc("المجموع", "Subtotal"),
+  total: loc("الإجمالي", "Total"),
+  proceedCheckout: loc("إتمام الشراء", "Proceed to checkout"),
+  checkout: loc("إتمام الطلب", "Checkout"),
+  payment: loc("طريقة الدفع", "Payment"),
+  paymentTitle: loc("اختر طريقة الدفع المناسبة", "Choose a payment method"),
+  paymentSafe: loc("جميع الطرق آمنة 100%", "All methods are 100% secure"),
+  payCod: loc("الدفع عند الاستلام (COD)", "Cash on delivery (COD)"),
+  payCodBody: loc(
+    "يتم سداد دفعة تأكيد حفر الاسم بقيمة 100 ج.م مسبقاً والباقي مع المندوب",
+    "A 100 EGP name-engraving confirmation is paid first; the rest is paid to the courier.",
+  ),
+  payCodCustom: loc("الطلبات المخصصة لازم تُدفع أونلاين", "Custom orders must pay online"),
+  payOnline: loc("المحافظ الإلكترونية و InstaPay", "E-wallets & InstaPay"),
+  payOnlineBody: loc(
+    "فودافون كاش، أورنج كاش، اتصالات كاش، وي باي، انستاباي",
+    "Vodafone Cash, Orange Cash, Etisalat Cash, WE Pay, InstaPay",
+  ),
+  payOnlineHint: loc(
+    "حوّل على الرقم ده، بعدين اكتب رقم التحويل وارفع صورة الإيصال.",
+    "Transfer to this number, then enter the sending phone and upload the receipt.",
+  ),
+  payOnlineFast: loc("الأسرع اعتماداً", "Fastest approval"),
+  transferPhone: loc("رقم التحويل", "Transfer phone number"),
+  receipt: loc("صورة الإيصال", "Receipt photo"),
+  receiptHint: loc("PNG أو JPG", "PNG or JPG"),
+  placeOrder: loc("أكد الطلب", "Place order"),
+  promoCode: loc("كود الخصم", "Promo code"),
+  apply: loc("تطبيق", "Apply"),
+  freeShipping: loc("شحن مجاني", "Free shipping"),
+  shipping: loc("الشحن", "Shipping"),
+  leaveCheckout: loc("مغادرة الدفع؟", "Leave checkout?"),
+  leaveCheckoutBody: loc(
+    "لو خرجت دلوقتي، البيانات اللي كتبتها في الفورم هتتمسح.",
+    "If you leave now, the details you entered on this form will be lost.",
+  ),
+  stayCheckout: loc("البقاء", "Stay"),
+  confirmLeave: loc("مغادرة", "Leave"),
+  expressHint: loc("توصيل أسرع مقابل رسوم إضافية.", "Faster delivery for an extra fee."),
+  discount: loc("الخصم", "Discount"),
+  freeShipProgress: loc(
+    "أحسنت! أضفت منتجات بقيمة {added} — باقي لك {remaining} فقط وتستمتع بالشحن المجاني! 🎉",
+    "Nice! You added {added} — add {remaining} more for free shipping! 🎉",
+  ),
+  freeShipRemaining: loc("متبقي {percent}% للوصول للشحن المجاني", "{percent}% left to free shipping"),
+  freeShipUnlocked: loc("وصلت للشحن المجاني! 🎉", "You unlocked free shipping! 🎉"),
+  customFilter: loc("مخصص", "Custom"),
+};
+
 export const DEFAULT_COMMERCE: Commerce = {
   shippingPrice: 80,
   shippingLabel: loc("الشحن", "Shipping"),
@@ -475,6 +578,7 @@ export const DEFAULT_COMMERCE: Commerce = {
   expressEnabled: true,
   expressPrice: 120,
   expressLabel: loc("طلب سريع", "Express order"),
+  copy: DEFAULT_COMMERCE_COPY,
 };
 
 export function newSection(type: SectionType): SiteSection {
@@ -808,6 +912,9 @@ export function migrateSite(raw: unknown): SiteDocument {
       shopAllLabel:
         fillLoc(asLoc(chrome.shopAllLabel, DEFAULT_CHROME.shopAllLabel.ar), DEFAULT_CHROME.shopAllLabel) ??
         DEFAULT_CHROME.shopAllLabel,
+      shopCustomLabel:
+        fillLoc(asLoc(chrome.shopCustomLabel, DEFAULT_CHROME.shopCustomLabel.ar), DEFAULT_CHROME.shopCustomLabel) ??
+        DEFAULT_CHROME.shopCustomLabel,
     },
     promo: {
       live: Boolean(promo.live),
@@ -917,7 +1024,18 @@ function migrateCommerce(raw: Partial<Commerce> | undefined): Commerce {
     expressLabel:
       fillLoc(asLoc(src.expressLabel, DEFAULT_COMMERCE.expressLabel.ar), DEFAULT_COMMERCE.expressLabel) ??
       DEFAULT_COMMERCE.expressLabel,
+    copy: migrateCommerceCopy(src.copy),
   };
+}
+
+function migrateCommerceCopy(raw: Partial<CommerceCopy> | undefined): CommerceCopy {
+  const src = raw ?? {};
+  const next = { ...DEFAULT_COMMERCE_COPY };
+  for (const key of COMMERCE_COPY_KEYS) {
+    next[key] =
+      fillLoc(asLoc(src[key], DEFAULT_COMMERCE_COPY[key].ar), DEFAULT_COMMERCE_COPY[key]) ?? DEFAULT_COMMERCE_COPY[key];
+  }
+  return next;
 }
 
 function looksArabic(value: string) {

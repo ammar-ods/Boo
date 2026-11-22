@@ -33,15 +33,13 @@ export function NavMenu({
   }
 
   function active(link: NavLink) {
-    if (!isNavClickable(link)) {
-      return (link.children ?? []).some((child) => child.visible && itemMatches(child.href, pathname, search));
-    }
-    return itemMatches(link.href, pathname, search);
+    if (itemMatches(link.href, pathname, search)) return true;
+    return (link.children ?? []).some((child) => child.visible && itemMatches(child.href, pathname, search));
   }
 
   return (
     <nav
-      className="hidden flex-wrap items-center justify-center gap-x-1 gap-y-1 overflow-visible py-1.5 text-oxford/70 md:flex"
+      className="hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 overflow-visible py-1.5 text-oxford/70 sm:gap-x-6 md:flex"
       style={{ fontSize: "var(--nav-font-size, 14px)" }}
     >
       {visible.map((link) => (
@@ -56,8 +54,8 @@ function DesktopItem({ link, locale, current }: { link: NavLink; locale: string;
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const itemClass = cn(
-    "transition-colors py-1",
-    current ? "font-bold text-oxford bg-[#eae8e4] rounded-lg px-3" : "hover:text-oxford px-1",
+    "rounded-lg px-4 py-2 transition-colors",
+    current ? "bg-[#eae8e4] font-bold text-oxford" : "hover:text-oxford",
   );
 
   useEffect(() => {
@@ -121,19 +119,36 @@ function DesktopItem({ link, locale, current }: { link: NavLink; locale: string;
         <div className="absolute top-full left-1/2 z-[80] min-w-52 -translate-x-1/2 pt-1">
           <div className="overflow-hidden rounded-xl bg-white py-1.5 shadow-[0_18px_40px_-22px_rgba(10,37,64,0.4)] ring-1 ring-oxford/10">
             {children.map((child) => (
-              <NavAnchor
-                key={child.id}
-                link={child}
-                className="block px-4 py-2.5 text-oxford hover:bg-cream"
-                onClick={() => setOpen(false)}
-              >
-                {pick(child.label, locale)}
-              </NavAnchor>
+              <ChildLink key={child.id} link={child} locale={locale} onPick={() => setOpen(false)} />
             ))}
           </div>
         </div>
       ) : null}
     </div>
+  );
+}
+
+function ChildLink({
+  link,
+  locale,
+  onPick,
+}: {
+  link: NavLink;
+  locale: string;
+  onPick: () => void;
+}) {
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const current = itemMatches(link.href, pathname, search);
+  return (
+    <NavAnchor
+      link={link}
+      className={cn("block px-4 py-2.5 text-oxford hover:bg-cream", current && "bg-cream font-semibold")}
+      aria-current={current ? "page" : undefined}
+      onClick={onPick}
+    >
+      {pick(link.label, locale)}
+    </NavAnchor>
   );
 }
 
@@ -148,6 +163,11 @@ function MobileItem({
   onNavigate?: () => void;
   depth?: number;
 }) {
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const current =
+    itemMatches(link.href, pathname, search) ||
+    (link.children ?? []).some((child) => child.visible && itemMatches(child.href, pathname, search));
   const children = (link.children ?? []).filter((item) => item.visible);
   const [open, setOpen] = useState(false);
 
@@ -156,7 +176,8 @@ function MobileItem({
       <NavAnchor
         link={link}
         onClick={onNavigate}
-        className="flex min-h-12 items-center font-medium text-oxford"
+        aria-current={current ? "page" : undefined}
+        className={cn("flex min-h-12 items-center px-2 font-medium text-oxford", current && "rounded-lg bg-[#eae8e4] font-bold")}
         style={{ fontSize: "var(--nav-font-size, 16px)", paddingInlineStart: depth ? depth * 16 : undefined }}
       >
         {pick(link.label, locale)}
@@ -168,7 +189,7 @@ function MobileItem({
 
   return (
     <div>
-      <div className="flex min-h-12 items-center gap-1">
+      <div className={cn("flex min-h-12 items-center gap-1 px-2", current && "rounded-lg bg-[#eae8e4]")}>
         {clickable ? (
           <NavAnchor
             link={link}

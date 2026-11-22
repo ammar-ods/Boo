@@ -21,6 +21,7 @@ import {
   type SectionContent,
   type SectionStyle,
   type SectionType,
+  type Commerce,
   type SiteChrome,
   type SiteDocument,
   type SiteSection,
@@ -39,6 +40,7 @@ type EditContextValue = {
   save: () => Promise<void>;
   discard: () => void;
   setChrome: (chrome: Partial<SiteChrome>) => void;
+  setCommerce: (commerce: Partial<Commerce>) => void;
   setNavLinks: (links: NavLink[]) => void;
   patchSection: (
     id: string,
@@ -164,6 +166,17 @@ export function EditProvider({
 
   const setChrome = useCallback((chrome: Partial<SiteChrome>) => {
     setSite((current) => ({ ...current, chrome: { ...current.chrome, ...chrome } }));
+  }, []);
+
+  const setCommerce = useCallback((commerce: Partial<Commerce>) => {
+    setSite((current) => ({
+      ...current,
+      commerce: {
+        ...current.commerce,
+        ...commerce,
+        copy: commerce.copy ? { ...current.commerce.copy, ...commerce.copy } : current.commerce.copy,
+      },
+    }));
   }, []);
 
   const setNavLinks = useCallback((navLinks: NavLink[]) => {
@@ -381,6 +394,7 @@ export function EditProvider({
       save,
       discard,
       setChrome,
+      setCommerce,
       setNavLinks,
       patchSection,
       pageKey,
@@ -411,6 +425,7 @@ export function EditProvider({
       saving,
       selectedId,
       setChrome,
+      setCommerce,
       setNavLinks,
       site,
       startEdit,

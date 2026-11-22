@@ -36,6 +36,7 @@ export function ProductGrid({
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
+  const [pageFilter, setPageFilter] = useState(collection && collection !== "all" ? collection : "all");
   const topRef = useRef<HTMLDivElement>(null);
   const skipPageScroll = useRef(true);
   const mapped = collection ? COLLECTIONS[collection] : undefined;
@@ -44,8 +45,10 @@ export function ProductGrid({
     let next = products;
     if (mapped === "staff") {
       next = products.slice(0, 3);
-    } else if (collection) {
-      next = products.filter((product) => normalizeCategoryId(product.category) === collection);
+    } else if (pageFilter === "custom") {
+      next = next.filter((product) => product.customizable !== false);
+    } else if (pageFilter && pageFilter !== "all") {
+      next = next.filter((product) => normalizeCategoryId(product.category) === pageFilter);
     }
     if (query) {
       const needle = query.toLowerCase();
@@ -64,12 +67,16 @@ export function ProductGrid({
       next = [...next].sort((a, b) => sellingPrice(a) - sellingPrice(b));
     }
     return next;
-  }, [collection, inStock, mapped, products, query, sort]);
+  }, [inStock, mapped, pageFilter, products, query, sort]);
+
+  useEffect(() => {
+    setPageFilter(collection && collection !== "all" ? collection : "all");
+  }, [collection]);
 
   useEffect(() => {
     setPage(1);
     setShowAll(false);
-  }, [collection, inStock, query, sort]);
+  }, [collection, inStock, pageFilter, query, sort]);
 
   useEffect(() => {
     if (skipPageScroll.current) {
@@ -114,7 +121,7 @@ export function ProductGrid({
 
   return (
     <div ref={topRef} className="scroll-mt-28 space-y-8">
-      <ShopFilterBar collection={collection} query={query} />
+      <ShopFilterBar products={products} filter={pageFilter} onFilter={setPageFilter} />
 
       <div className="flex flex-col justify-between gap-4 rounded-xl bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:p-5">
         <div className="flex flex-wrap items-center gap-3">
