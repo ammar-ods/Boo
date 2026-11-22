@@ -1,40 +1,59 @@
 "use client";
 
-import { EditableCopy } from "@/components/cms/editable-copy";
 import { ProductCard } from "@/components/catalog/product-card";
 import { remainingToFreeShipping, suggestCartProducts } from "@/lib/cart-suggestions";
 import type { Bundle } from "@/lib/bundles";
-import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
+import { useI18n } from "@/lib/i18n";
+import type { Product } from "@/lib/products";
+import type { SiteSection } from "@/lib/site";
 
 export function CartSuggestions({
   products,
   bundles = [],
   freeShippingMin,
-  subtotal,
+  section,
 }: {
   products: Product[];
   bundles?: Bundle[];
   freeShippingMin: number;
-  subtotal: number;
+  section?: SiteSection;
 }) {
   const items = useCart((s) => s.items);
+  const subtotal = items.reduce((sum, item) => sum + item.priceEgp * item.quantity, 0);
   const remaining = remainingToFreeShipping(subtotal, freeShippingMin);
-  const suggested = suggestCartProducts({ products, items, bundles, remaining });
+  const suggested = suggestCartProducts({
+    products,
+    items,
+    bundles,
+    remaining,
+    pinnedSlugs: section?.content.productSlugs ?? [],
+  });
   if (!suggested.products.length) return null;
 
+  const cardRounded = Boolean(section?.style.cardRounded);
+  const thumbRounded = Boolean(section?.style.imageRounded);
+  const { locale } = useI18n();
+  const note =
+    suggested.nearFreeShip && section
+      ? locale === "en"
+        ? section.content.body?.en || section.content.body?.ar
+        : section.content.body?.ar || section.content.body?.en
+      : "";
+
   return (
-    <section className="rounded-[20px] bg-white p-4 ring-1 ring-oxford/8 sm:p-6">
-      <EditableCopy
-        k={suggested.nearFreeShip ? "cartSuggestShipping" : "cartSuggestTitle"}
-        as="h2"
-        className="font-heading text-xl text-oxford sm:text-2xl"
-      />
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <div className="mt-3">
+      {note ? <p className="mb-3 max-w-md text-[12px] leading-relaxed text-foreground/45">{note}</p> : null}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         {suggested.products.map((product) => (
-          <ProductCard key={product.slug} product={product} cardRounded thumbRounded />
+          <ProductCard
+            key={product.slug}
+            product={product}
+            cardRounded={cardRounded}
+            thumbRounded={thumbRounded}
+          />
         ))}
       </div>
-    </section>
+    </div>
   );
 }

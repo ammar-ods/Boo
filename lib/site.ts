@@ -9,7 +9,9 @@ export type SectionType =
   | "cta"
   | "faq"
   | "marquee"
-  | "bundles";
+  | "bundles"
+  | "suggestions"
+  | "giftsets";
 
 export type Localized = { ar: string; en: string };
 
@@ -69,6 +71,11 @@ export type SectionContent = {
   galleryEn?: GalleryItem[];
   productSlugs?: string[];
   collection?: string;
+  tiles?: { title: Localized; body: Localized }[];
+  boxBadge?: Localized;
+  boxTitle?: Localized;
+  boxPrice?: Localized;
+  boxBody?: Localized;
 };
 
 export type SiteSection = {
@@ -310,7 +317,7 @@ export type SiteDocument = {
   commerce: Commerce;
 };
 
-export const APP_CMS_SLUGS = new Set(["bundles"]);
+export const APP_CMS_SLUGS = new Set(["bundles", "cart"]);
 
 export const RESERVED_PAGE_SLUGS = new Set([
   "admin",
@@ -364,6 +371,7 @@ export function normalizeNavHref(href: string) {
 export function pathPageKey(pathname: string): "home" | string | null {
   if (pathname === "/") return "home";
   if (pathname === "/bundles") return "bundles";
+  if (pathname === "/cart") return "cart";
   const nested = pathname.match(/^\/p\/([^/]+)\/?$/);
   if (nested) return pageSlugify(decodeURIComponent(nested[1]));
   const loose = pathname.match(/^\/([^/]+)\/?$/);
@@ -400,6 +408,8 @@ export const SECTION_TYPES: { type: SectionType; label: string; labelAr: string 
   { type: "faq", label: "FAQ / about", labelAr: "أسئلة / عنّا" },
   { type: "marquee", label: "Auto-scroll images", labelAr: "شريط تمرير" },
   { type: "bundles", label: "Bundles", labelAr: "باقات" },
+  { type: "suggestions", label: "Suggestions", labelAr: "اقتراحات" },
+  { type: "giftsets", label: "Gift sets", labelAr: "مجموعات الهدايا" },
 ];
 
 export function loc(ar: string, en: string): Localized {
@@ -414,7 +424,9 @@ function isThemePageFill(value?: string) {
     key === "var(--cream)" ||
     key === "#f6f3ea" ||
     key === "#faf9f6" ||
-    key === "#f4f3f0"
+    key === "#f4f3f0" ||
+    key === "#f5f3ef" ||
+    key === "#eceae6"
   );
 }
 
@@ -423,7 +435,7 @@ function isThemeCardFill(value?: string) {
   return key === "#ffffff" || key === "#fff" || key === "var(--card)";
 }
 
-function isThemeInk(value?: string) {
+export function isThemeInk(value?: string) {
   const key = (value || "").trim().toLowerCase();
   return (
     !key ||
@@ -889,6 +901,96 @@ export function newSection(type: SectionType): SiteSection {
         body: loc("", ""),
       },
     },
+    suggestions: {
+      id,
+      type,
+      visible: true,
+      style: {
+        background: "#f6f3ea",
+        color: "#0a2540",
+        fontSize: 16,
+        paddingY: 20,
+        align: "start",
+        cardRounded: true,
+        imageRounded: true,
+        imagePlacement: "hidden",
+        showPrimaryCta: false,
+        showSecondaryCta: false,
+        rounded: false,
+      },
+      content: {
+        eyebrow: loc("", ""),
+        title: loc("ممكن كمان يعجبك", "You might also like"),
+        body: loc(
+          "أضف منتج بالسعر ده أو أقل عشان توصل للشحن المجاني",
+          "Add one of these at this price or less to unlock free shipping",
+        ),
+        ctaLabel: loc("", ""),
+        ctaHref: "/catalog",
+        secondaryCtaLabel: loc("", ""),
+        secondaryCtaHref: "",
+        image: loc("", ""),
+        imageMobile: loc("", ""),
+        imageHref: "",
+        gallery: [],
+        productSlugs: [],
+      },
+    },
+    giftsets: {
+      id,
+      type,
+      visible: true,
+      style: {
+        background: "#f5f3ef",
+        color: "#0a2540",
+        fontSize: 44,
+        paddingY: 56,
+        align: "start",
+        imagePlacement: "hidden",
+        imageRounded: true,
+        showPrimaryCta: true,
+        showSecondaryCta: true,
+        ctaBackground: "#C59B27",
+        ctaColor: "#0a2540",
+      },
+      content: {
+        eyebrow: loc("مجموعات الهدايا الكاملة", "Complete gift sets"),
+        title: loc("جهّز هدية كاملة بالتصميم اللي تختاره", "Build a full gift with the design you choose"),
+        body: loc(
+          "شنطة، ميدالية، مج وكوستر في مجموعة واحدة متناسقة باسم وتصميم من تحب، مجهزة بكرتونة إهداء جاهزة للتقديم.",
+          "A coordinated set with the name and design you love, packed ready to give.",
+        ),
+        ctaLabel: loc("اختار مجموعة الهدايا", "Choose a gift set"),
+        ctaHref: "/bundles",
+        secondaryCtaLabel: loc("واتساب", "WhatsApp"),
+        secondaryCtaHref: "",
+        image: loc("", ""),
+        imageMobile: loc("", ""),
+        imageHref: "",
+        gallery: [],
+        tiles: [
+          {
+            title: loc("تطابق وتناسق كامل", "Fully coordinated"),
+            body: loc("نفس الثيم على كل المحتويات", "The same theme on every piece"),
+          },
+          {
+            title: loc("سعر أوفر من المفرد", "Better than buying singles"),
+            body: loc("خصومات على الباقات", "Exclusive bundle pricing"),
+          },
+          {
+            title: loc("كارت إهداء مجاني", "Free gift card"),
+            body: loc("مكتوب فيه رسالتك", "Your message written inside"),
+          },
+        ],
+        boxBadge: loc("بوكس التميز الأكثر طلباً", "Most requested gift box"),
+        boxTitle: loc("طقم الإهداء المتكامل", "Complete gifting set"),
+        boxPrice: loc("عرض خاص", "Special offer"),
+        boxBody: loc(
+          "حفر مخصص للاسم على محتويات الصندوق مع تغليف أنيق.",
+          "Custom name engraving on every piece, with elegant wrapping.",
+        ),
+      },
+    },
   };
   return defaults[type];
 }
@@ -912,19 +1014,55 @@ export const DEFAULT_BUNDLES_PAGE: CmsPage = {
   ],
 };
 
+export const DEFAULT_CART_PAGE: CmsPage = {
+  id: "page-cart",
+  slug: "cart",
+  title: loc("السلة", "Cart"),
+  visible: true,
+  sections: [
+    {
+      id: "cart-suggestions",
+      type: "suggestions",
+      visible: true,
+      style: {
+        background: "#f6f3ea",
+        color: "#0a2540",
+        fontSize: 16,
+        paddingY: 16,
+        align: "start",
+        cardRounded: true,
+        imageRounded: true,
+        imagePlacement: "hidden",
+        showPrimaryCta: false,
+        showSecondaryCta: false,
+        rounded: false,
+      },
+      content: {
+        title: loc("ممكن كمان يعجبك", "You might also like"),
+        body: loc(
+          "أضف منتج بالسعر ده أو أقل عشان توصل للشحن المجاني",
+          "Add one of these at this price or less to unlock free shipping",
+        ),
+        productSlugs: [],
+      },
+    },
+  ],
+};
+
 export const DEFAULT_SITE: SiteDocument = {
   chrome: DEFAULT_CHROME,
   promo: DEFAULT_PROMO,
   commerce: DEFAULT_COMMERCE,
-  pages: [DEFAULT_BUNDLES_PAGE],
+  pages: [DEFAULT_BUNDLES_PAGE, DEFAULT_CART_PAGE],
   sections: [
     newSection("hero"),
     newSection("collections"),
     newSection("products"),
+    newSection("giftsets"),
     newSection("cta"),
     newSection("faq"),
   ].map((section, index) => {
-    const id = ["hero", "collections", "products", "cta", "about"][index] ?? section.id;
+    const id = ["hero", "collections", "products", "giftsets", "cta", "about"][index] ?? section.id;
     if (section.type !== "products") return { ...section, id };
     const { productSlugs: _unused, collection: _collection, ...content } = section.content;
     return {
@@ -977,7 +1115,20 @@ function migrateContent(raw: Record<string, unknown> | undefined): SectionConten
       ? src.productSlugs.map((item) => String(item)).filter(Boolean)
       : undefined,
     collection: typeof src.collection === "string" ? src.collection : undefined,
+    tiles: parseTiles(src.tiles),
+    boxBadge: src.boxBadge ? asLoc(src.boxBadge) : undefined,
+    boxTitle: src.boxTitle ? asLoc(src.boxTitle) : undefined,
+    boxPrice: src.boxPrice ? asLoc(src.boxPrice) : undefined,
+    boxBody: src.boxBody ? asLoc(src.boxBody) : undefined,
   };
+}
+
+function parseTiles(value: unknown): { title: Localized; body: Localized }[] | undefined {
+  if (!Array.isArray(value) || !value.length) return undefined;
+  return value.map((row) => {
+    const item = (row ?? {}) as { title?: unknown; body?: unknown };
+    return { title: asLoc(item.title), body: asLoc(item.body) };
+  });
 }
 
 export function migrateSite(raw: unknown): SiteDocument {
@@ -1089,10 +1240,18 @@ export function migrateSite(raw: unknown): SiteDocument {
     },
     commerce: migrateCommerce(data.commerce),
     sections: Array.isArray(data.sections)
-      ? data.sections.map((section, index) => migrateSection(section, index))
+      ? migrateHomeGiftsets(data.sections.map((section, index) => migrateSection(section, index)))
       : DEFAULT_SITE.sections,
     pages: migratePages(data.pages),
   };
+}
+
+function migrateHomeGiftsets(sections: SiteSection[]): SiteSection[] {
+  if (sections.some((section) => section.type === "giftsets")) return sections;
+  const gift = migrateSection(newSection("giftsets"), sections.length);
+  const idx = sections.findLastIndex((section) => section.type === "products");
+  if (idx < 0) return [...sections, gift];
+  return [...sections.slice(0, idx + 1), gift, ...sections.slice(idx + 1)];
 }
 
 function migratePages(raw: CmsPage[] | Array<Record<string, unknown>> | undefined): CmsPage[] {
@@ -1117,6 +1276,12 @@ function migratePages(raw: CmsPage[] | Array<Record<string, unknown>> | undefine
     pages.push({
       ...DEFAULT_BUNDLES_PAGE,
       sections: DEFAULT_BUNDLES_PAGE.sections.map((section, index) => migrateSection(section, index)),
+    });
+  }
+  if (!pages.some((page) => page.slug === "cart")) {
+    pages.push({
+      ...DEFAULT_CART_PAGE,
+      sections: DEFAULT_CART_PAGE.sections.map((section, index) => migrateSection(section, index)),
     });
   }
   return pages;
@@ -1227,6 +1392,16 @@ function fillMissingEnglish(section: SiteSection): SiteSection {
       secondaryCtaLabel: fillLoc(section.content.secondaryCtaLabel, fallback.content.secondaryCtaLabel),
       image: section.content.image,
       imageMobile: section.content.imageMobile,
+      tiles: section.content.tiles?.length
+        ? section.content.tiles.map((tile, index) => ({
+            title: fillLoc(tile.title, fallback.content.tiles?.[index]?.title) ?? tile.title,
+            body: fillLoc(tile.body, fallback.content.tiles?.[index]?.body) ?? tile.body,
+          }))
+        : fallback.content.tiles,
+      boxBadge: fillLoc(section.content.boxBadge, fallback.content.boxBadge),
+      boxTitle: fillLoc(section.content.boxTitle, fallback.content.boxTitle),
+      boxPrice: fillLoc(section.content.boxPrice, fallback.content.boxPrice),
+      boxBody: fillLoc(section.content.boxBody, fallback.content.boxBody),
     },
   };
 }

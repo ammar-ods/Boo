@@ -121,7 +121,8 @@ export function ProductShelfEditor({
   const { locale } = useI18n();
   const stored = section.content.productSlugs ?? [];
   const live = products.filter((product) => !product.archived);
-  const slugs = stored.length ? stored : live.map((product) => product.slug);
+  const slugs =
+    stored.length || section.type === "suggestions" ? stored : live.map((product) => product.slug);
   const available = live.filter((product) => !slugs.includes(product.slug));
 
   function setSlugs(productSlugs: string[]) {

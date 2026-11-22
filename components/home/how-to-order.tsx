@@ -37,10 +37,10 @@ export function HowToOrder() {
               <div
                 className={`mb-5 grid size-16 place-items-center rounded-[16px] font-heading text-[32px] font-bold ${
                   step.tone === "gold"
-                    ? "bg-[#FBF5E6] text-[#C59B27]"
+                    ? "bg-[#FBF5E6] text-[#C59B27] dark:bg-[#C59B27]/15"
                     : step.tone === "green"
-                      ? "bg-[#eae8e4] text-[#25D366]"
-                      : "bg-[#eae8e4] text-oxford"
+                      ? "bg-cream text-[#25D366]"
+                      : "bg-cream text-foreground"
                 }`}
               >
                 <EditableCopy k={step.n} />

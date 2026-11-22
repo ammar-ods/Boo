@@ -98,8 +98,8 @@ export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
             <div
               className={`mb-3 grid size-16 place-items-center rounded-full transition-colors ${
                 gold
-                  ? "bg-[#FBF5E6] text-[#C59B27] group-hover:bg-[#C59B27] group-hover:text-white"
-                  : "bg-[#eae8e4] text-oxford group-hover:bg-oxford group-hover:text-white"
+                  ? "bg-[#FBF5E6] text-[#C59B27] group-hover:bg-[#C59B27] group-hover:text-white dark:bg-[#C59B27]/15"
+                  : "bg-cream text-foreground group-hover:bg-foreground group-hover:text-background"
               }`}
             >
               <Icon className="size-7" strokeWidth={1.75} />
@@ -177,7 +177,7 @@ export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
           />
           <button
             type="button"
-            className="h-8 rounded-full bg-oxford px-3 text-xs font-semibold text-white"
+            className="btn-press btn-press-sm h-8 rounded-full px-3 text-xs"
             onClick={addSection}
           >
             {locale === "ar" ? "إضافة قسم" : "Add section"}
@@ -190,7 +190,7 @@ export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
   if (embedded) return grid;
 
   return (
-    <div className="bg-[#f5f3ef]">
+    <div className="bg-cream">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:px-12">
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>

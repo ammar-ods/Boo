@@ -10,6 +10,7 @@ import {
   blankCmsPage,
   cmsPagePath,
   DEFAULT_BUNDLES_PAGE,
+  DEFAULT_CART_PAGE,
   loc,
   migrateSite,
   newSection,
@@ -339,7 +340,9 @@ export function EditProvider({
       const page =
         safe === "bundles"
           ? { ...DEFAULT_BUNDLES_PAGE, title: title ? loc(title.ar, title.en) : DEFAULT_BUNDLES_PAGE.title }
-          : blankCmsPage(safe, title ? loc(title.ar, title.en) : undefined);
+          : safe === "cart"
+            ? { ...DEFAULT_CART_PAGE, title: title ? loc(title.ar, title.en) : DEFAULT_CART_PAGE.title }
+            : blankCmsPage(safe, title ? loc(title.ar, title.en) : undefined);
       return {
         ...current,
         pages: [...current.pages, page],

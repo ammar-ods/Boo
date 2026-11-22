@@ -7,6 +7,7 @@ import { useEdit } from "@/lib/edit-context";
 import { ProductShelfEditor } from "@/components/cms/page-products";
 import type { Product } from "@/lib/products";
 import {
+  loc,
   SECTION_TYPES,
   type GalleryItem,
   type ImagePlacement,
@@ -170,6 +171,76 @@ function CopyTab({
           />
         </div>
       </div>
+      {section.type === "giftsets" ? <GiftSetsCopyFields section={section} patch={patch} /> : null}
+    </div>
+  );
+}
+
+function GiftSetsCopyFields({
+  section,
+  patch,
+}: {
+  section: SiteSection;
+  patch: ReturnType<typeof useEdit>["patchSection"];
+}) {
+  const tiles = section.content.tiles?.length
+    ? section.content.tiles
+    : [
+        { title: loc("", ""), body: loc("", "") },
+        { title: loc("", ""), body: loc("", "") },
+        { title: loc("", ""), body: loc("", "") },
+      ];
+
+  function setTile(index: number, next: Partial<(typeof tiles)[number]>) {
+    const current = tiles.map((tile, tileIndex) =>
+      tileIndex === index ? { ...tile, ...next } : tile,
+    );
+    patch(section.id, { content: { tiles: current } });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-cream/80 p-3">
+        <p className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">Feature tiles</p>
+        {tiles.slice(0, 3).map((tile, index) => (
+          <div key={index} className="mb-3 last:mb-0">
+            <BilingualField
+              label={`Tile ${index + 1} title`}
+              value={tile.title}
+              onChange={(title) => setTile(index, { title })}
+            />
+            <BilingualField
+              label={`Tile ${index + 1} body`}
+              value={tile.body}
+              onChange={(body) => setTile(index, { body })}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="rounded-2xl bg-cream/80 p-3">
+        <p className="mb-3 text-[11px] font-semibold tracking-[0.12em] text-oxford/45 uppercase">Gift box card</p>
+        <BilingualField
+          label="Badge"
+          value={section.content.boxBadge}
+          onChange={(boxBadge) => patch(section.id, { content: { boxBadge } })}
+        />
+        <BilingualField
+          label="Box title"
+          value={section.content.boxTitle}
+          onChange={(boxTitle) => patch(section.id, { content: { boxTitle } })}
+        />
+        <BilingualField
+          label="Price / offer"
+          value={section.content.boxPrice}
+          onChange={(boxPrice) => patch(section.id, { content: { boxPrice } })}
+        />
+        <BilingualField
+          label="Box body"
+          value={section.content.boxBody}
+          multiline
+          onChange={(boxBody) => patch(section.id, { content: { boxBody } })}
+        />
+      </div>
     </div>
   );
 }
@@ -280,7 +351,7 @@ function LayoutTab({
           checked={Boolean(section.style.rounded)}
           onChange={(rounded) => patch(section.id, { style: { rounded } })}
         />
-        {section.type === "products" ? (
+        {section.type === "products" || section.type === "suggestions" ? (
           <>
             <SwitchRow
               label="Card rounded corners"
@@ -345,6 +416,17 @@ function MediaTab({
   if (section.type === "products") {
     return <ProductShelfEditor section={section} products={products} patch={patch} />;
   }
+  if (section.type === "suggestions") {
+    return (
+      <div className="space-y-4">
+        <p className="text-xs leading-relaxed text-oxford/55">
+          Leave the product list empty to auto-suggest from the cart. Pinned cards still skip items already in the bag.
+        </p>
+        <ProductShelfEditor section={section} products={products} patch={patch} />
+        <DefaultMediaFields section={section} patch={patch} />
+      </div>
+    );
+  }
   if (section.type === "slideshow") {
     return (
       <div className="space-y-4">
@@ -372,6 +454,16 @@ function MediaTab({
     );
   }
 
+  return <DefaultMediaFields section={section} patch={patch} />;
+}
+
+function DefaultMediaFields({
+  section,
+  patch,
+}: {
+  section: SiteSection;
+  patch: ReturnType<typeof useEdit>["patchSection"];
+}) {
   return (
     <div className="space-y-4">
       <SelectField
@@ -492,11 +584,17 @@ function MediaTab({
       >
         Remove all images
       </button>
-      {section.type === "marquee" ? (
+      {section.type === "marquee" || section.type === "suggestions" || section.type === "giftsets" ? (
         <GalleryEditor
           items={section.content.gallery ?? []}
           onChange={(gallery) => patch(section.id, { content: { gallery } })}
-          heading="Scrolling images"
+          heading={
+            section.type === "marquee"
+              ? "Scrolling images"
+              : section.type === "giftsets"
+                ? "Gift box images"
+                : "Extra images"
+          }
         />
       ) : null}
     </div>

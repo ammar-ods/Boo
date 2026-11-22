@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Lock } from "lucide-react";
 import { EditableCopy, EditableLoc } from "@/components/cms/editable-copy";
 import { FreeShippingMeter } from "@/components/shop/free-shipping-meter";
-import { CartSuggestions } from "@/components/shop/cart-suggestions";
+import { SiteCanvas } from "@/components/cms/site-canvas";
+import { EnsureCmsPage } from "@/components/cms/ensure-cms-page";
 import { cartBreakdown } from "@/lib/commerce";
 import { cartTotal, useCart, useCartHydrated } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
@@ -23,6 +24,8 @@ export function CartPage({ products, bundles = [] }: { products: Product[]; bund
   if (!hydrated) return null;
 
   return (
+    <>
+    <EnsureCmsPage slug="cart" title={{ ar: "السلة", en: "Cart" }} />
     <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
       <EditableCopy k="cart" as="h1" className="font-heading text-4xl text-oxford lg:text-5xl" />
       {items.length === 0 ? (
@@ -99,14 +102,10 @@ export function CartPage({ products, bundles = [] }: { products: Product[]; bund
               </Link>
             </aside>
           </div>
-          <CartSuggestions
-            products={products}
-            bundles={bundles}
-            freeShippingMin={site.commerce.freeShippingMin}
-            subtotal={breakdown.subtotal}
-          />
         </div>
       )}
     </div>
+    <SiteCanvas products={products} bundles={bundles} />
+    </>
   );
 }

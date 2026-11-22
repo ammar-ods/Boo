@@ -60,7 +60,7 @@ export function CartLines({
               </div>
               {editable ? (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <div className="inline-flex items-center rounded-lg bg-[#f5f3ef] px-1.5 py-1">
+                  <div className="inline-flex items-center rounded-lg bg-cream px-1.5 py-1">
                     <button
                       type="button"
                       className="grid size-7 place-items-center text-oxford/50 hover:text-oxford"

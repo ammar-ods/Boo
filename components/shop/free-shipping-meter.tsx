@@ -17,27 +17,41 @@ export function FreeShippingMeter({ amount }: { amount: number }) {
   const unlocked = remaining === 0;
 
   return (
-    <div className="relative overflow-hidden rounded-full bg-[#eceae6] text-[11px] leading-snug sm:text-xs">
+    <div className="mx-auto w-full max-w-lg">
       <div
-        className="absolute inset-y-0 start-0 bg-gradient-to-l from-[#c9a44a] to-[#e0c56a]"
-        style={{ width: `${Math.max(unlocked ? 100 : pct, 8)}%` }}
-      />
-      <div className="relative z-10 flex min-h-11 items-center justify-between gap-3 px-4 py-2 sm:min-h-12 sm:px-5">
-        <p className="max-w-[75%] font-medium text-oxford">
-          {unlocked ? (
-            <EditableCopy k="freeShipUnlocked" />
-          ) : (
-            <EditableCopy
-              k="freeShipProgress"
-              vars={{ added: formatPrice(added), remaining: formatPrice(remaining), min: formatPrice(min) }}
-            />
-          )}
-        </p>
-        {!unlocked ? (
-          <p className="shrink-0 text-oxford/55">
-            <EditableCopy k="freeShipRemaining" vars={{ percent: remainPct }} />
+        className={`relative overflow-hidden rounded-full text-[11px] leading-snug ${
+          unlocked ? "bg-emerald-100 dark:bg-emerald-950/70" : "bg-muted"
+        }`}
+      >
+        <div
+          className={`absolute inset-y-0 start-0 ${
+            unlocked
+              ? "bg-gradient-to-l from-emerald-700 to-emerald-400"
+              : "bg-gradient-to-l from-[#c9a44a] to-[#e0c56a]"
+          }`}
+          style={{ width: `${Math.max(unlocked ? 100 : pct, 8)}%` }}
+        />
+        <div className="relative z-10 flex min-h-8 items-center justify-between gap-3 px-3 py-1.5">
+          <p
+            className={`max-w-[78%] font-medium ${
+              unlocked ? "text-emerald-950 dark:text-emerald-50" : "text-foreground"
+            }`}
+          >
+            {unlocked ? (
+              <EditableCopy k="freeShipUnlocked" />
+            ) : (
+              <EditableCopy
+                k="freeShipProgress"
+                vars={{ added: formatPrice(added), remaining: formatPrice(remaining), min: formatPrice(min) }}
+              />
+            )}
           </p>
-        ) : null}
+          {!unlocked ? (
+            <p className="shrink-0 text-foreground/50">
+              <EditableCopy k="freeShipRemaining" vars={{ percent: remainPct }} />
+            </p>
+          ) : null}
+        </div>
       </div>
     </div>
   );

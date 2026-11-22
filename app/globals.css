@@ -461,8 +461,16 @@ html.locale-fading body {
   color: #f4efe4;
 }
 
+.dark .btn-press {
+  --btn-bg: #f4efe4;
+  --btn-fg: #0e141c;
+  --btn-lip: #6f675c;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+
 .dark .btn-press-outline {
-  background: #141b24;
+  background: transparent;
   color: #f4efe4;
   border-color: #f4efe4;
 }

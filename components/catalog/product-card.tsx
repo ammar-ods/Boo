@@ -158,7 +158,7 @@ export function ProductCard({
       </Link>
       <button
         type="button"
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#f5f3ef] px-4 py-2.5 text-sm font-semibold text-oxford transition-all group-hover:bg-oxford group-hover:text-white"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-cream px-4 py-2.5 text-sm font-semibold text-foreground transition-all group-hover:bg-foreground group-hover:text-background"
         onClick={onPlus}
       >
         {customizable ? <PencilLine className="size-4" /> : <Plus className="size-4" />}

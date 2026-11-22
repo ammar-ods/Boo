@@ -52,31 +52,38 @@ export function suggestCartProducts({
   items,
   bundles = [],
   remaining,
+  pinnedSlugs = [],
 }: {
   products: Product[];
   items: CartItem[];
   bundles?: Bundle[];
   remaining: number;
+  pinnedSlugs?: string[];
 }) {
   const exclude = cartSlugs(items, bundles);
   const available = products.filter((product) => !product.archived && !exclude.has(product.slug));
   const cartProducts = products.filter((product) => exclude.has(product.slug));
   const nearFreeShip = remaining > 0 && remaining <= FREE_SHIP_SUGGEST_WINDOW;
-  const pool = nearFreeShip
-    ? available.filter((product) => {
-        const price = sellingPrice(product);
-        return price > 0 && price <= remaining;
-      })
-    : available;
-  if (!pool.length) return { products: [] as Product[], nearFreeShip };
+  const inRange = (product: Product) => {
+    const price = sellingPrice(product);
+    return price > 0 && price <= remaining;
+  };
+  const pool = nearFreeShip ? available.filter(inRange) : available;
+  const pinned = pinnedSlugs
+    .map((slug) => pool.find((product) => product.slug === slug))
+    .filter((product): product is Product => Boolean(product));
+  const leftover = pool.filter((product) => !pinned.some((item) => item.slug === product.slug));
+  if (!pinned.length && !leftover.length) return { products: [] as Product[], nearFreeShip };
+  if (!cartProducts.length) return { products: pinned.slice(0, LIMIT), nearFreeShip };
 
-  const similar = pool.filter((product) => similarity(product, cartProducts) > 0);
-  const rest = pool.filter((product) => similarity(product, cartProducts) === 0);
+  const similar = leftover.filter((product) => similarity(product, cartProducts) > 0);
+  const rest = leftover.filter((product) => similarity(product, cartProducts) === 0);
   const ordered = nearFreeShip
     ? [...rank(similar, cartProducts, true), ...rank(rest, cartProducts, true)]
     : similar.length
       ? rank(similar, cartProducts, false)
       : rank(rest, cartProducts, false);
 
-  return { products: ordered.slice(0, LIMIT), nearFreeShip };
+  const merged = [...pinned, ...ordered.filter((product) => !pinned.some((item) => item.slug === product.slug))];
+  return { products: merged.slice(0, LIMIT), nearFreeShip };
 }

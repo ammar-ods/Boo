@@ -14,6 +14,7 @@ import { BundlesGrid } from "@/components/shop/bundles-grid";
 import type { Bundle } from "@/lib/bundles";
 import { EditableCopy } from "@/components/cms/editable-copy";
 import { PageProducts } from "@/components/cms/page-products";
+import { CartSuggestions } from "@/components/shop/cart-suggestions";
 import { SectionInspector } from "@/components/cms/section-inspector";
 import { SectionTypeMenu } from "@/components/cms/section-type-menu";
 import { useEdit } from "@/lib/edit-context";
@@ -21,6 +22,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Product } from "@/lib/products";
 import { darkenHex } from "@/lib/color";
 import {
+  isThemeInk,
   pick,
   sectionGallery,
   sectionSurface,
@@ -39,6 +41,7 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
   const isHome = !pageKey || pageKey === "home";
   const hasProducts = visible.some((section) => section.type === "products");
   const hasCollections = visible.some((section) => section.type === "collections");
+  const hasGiftsets = visible.some((section) => section.type === "giftsets");
 
   useEffect(() => {
     if (!insertFor) return;
@@ -166,19 +169,14 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
             index={visible.indexOf(section)}
           />
         </div>
-        {isHome && section.type === "products" ? (
-          <>
-            <GiftSetsBanner products={products} bundles={bundles} />
-            <HowToOrder />
-          </>
-        ) : null}
+        {isHome && section.type === "giftsets" ? <HowToOrder /> : null}
+        {isHome && section.type === "products" && !hasGiftsets ? <HowToOrder /> : null}
         </Fragment>
       ))}
       {isHome && !hasProducts ? (
         <>
           {!hasCollections ? <ShopSectionsGrid /> : null}
-          <GiftSetsBanner products={products} bundles={bundles} />
-          <HowToOrder />
+          {!hasGiftsets ? <HowToOrder /> : null}
         </>
       ) : null}
         {visible.length === 0 ? (
@@ -271,19 +269,20 @@ function CmsButton({
   background?: string;
   color?: string;
 }) {
-  const lip = background ? darkenHex(background) : undefined;
+  const themed = !background || isThemeInk(background);
+  const lip = background && !themed ? darkenHex(background) : undefined;
   return (
     <Link
       href={href}
       className={`btn-press w-full sm:w-auto ${outline ? "btn-press-outline" : ""}`}
       style={
-        background || color
+        !themed || (color && !isThemeInk(color))
           ? {
-              ["--btn-bg" as string]: outline ? undefined : background,
-              ["--btn-fg" as string]: color,
-              ["--btn-lip" as string]: outline ? undefined : lip,
-              background: outline ? undefined : background,
-              color,
+              ["--btn-bg" as string]: outline || themed ? undefined : background,
+              ["--btn-fg" as string]: color && !isThemeInk(color) ? color : undefined,
+              ["--btn-lip" as string]: outline || themed ? undefined : lip,
+              background: outline || themed ? undefined : background,
+              color: color && !isThemeInk(color) ? color : undefined,
               borderColor: outline ? background || color : undefined,
             }
           : undefined
@@ -491,6 +490,96 @@ function SectionView({
           height={height}
           rounded={section.style.imageRounded !== false}
         />
+      </SectionShell>
+    );
+  }
+
+  if (section.type === "suggestions") {
+    const extras = section.content.gallery ?? [];
+    const grid = (
+      <CartSuggestions
+        products={products}
+        bundles={bundles}
+        freeShippingMin={site.commerce.freeShippingMin}
+        section={section}
+      />
+    );
+    const inner = (
+      <div className={centered ? "text-center" : "text-start"}>
+        {pick(section.content.eyebrow, locale) ? (
+          <p className="text-[10px] font-medium tracking-[0.16em] text-foreground/45 uppercase">
+            {pick(section.content.eyebrow, locale)}
+          </p>
+        ) : null}
+        {pick(section.content.title, locale) ? (
+          <h2 className="mt-1 text-[13px] font-medium tracking-wide text-foreground/55 sm:text-sm">
+            {pick(section.content.title, locale)}
+          </h2>
+        ) : null}
+        {grid}
+        {extras.length ? (
+          <div className={`mt-5 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-4 ${centered ? "justify-items-center" : ""}`}>
+            {extras.map((item, extraIndex) => (
+              <SectionMedia
+                key={`${item.src}-${extraIndex}`}
+                src={item.src}
+                srcMobile={item.srcMobile}
+                height={Math.min(height, 180)}
+                widthPct={100}
+                rounded={rounded}
+                href={item.href}
+                aspect={aspect}
+              />
+            ))}
+          </div>
+        ) : null}
+        {actions}
+      </div>
+    );
+    if (placement === "cover" && showImage) {
+      return (
+        <SectionShell section={section} index={index} cover={{ src: image, srcMobile: imageMobile, height, href: imageHref }}>
+          <div className="cms-copy relative z-10">{inner}</div>
+        </SectionShell>
+      );
+    }
+    if ((placement === "start" || placement === "end") && showImage) {
+      const imageCol = (
+        <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={100} rounded={rounded} href={imageHref} aspect={aspect} />
+      );
+      return (
+        <SectionShell section={section} index={index}>
+          <div className="cms-copy grid items-start gap-5 lg:grid-cols-2 lg:gap-8">
+            {placement === "start" ? imageCol : null}
+            {inner}
+            {placement === "end" ? imageCol : null}
+          </div>
+        </SectionShell>
+      );
+    }
+    return (
+      <SectionShell section={section} index={index}>
+        {placement === "bleed" && showImage ? (
+          <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={100} bleed rounded={rounded} href={imageHref} aspect={aspect} />
+        ) : null}
+        <div className={`cms-copy ${placement === "bleed" && showImage ? "pt-5 sm:pt-6" : ""}`}>
+          {inner}
+          {placement === "below" && showImage ? (
+            <div className={`mt-5 ${centered ? "flex justify-center" : ""} sm:mt-6`}>
+              <SectionMedia src={image} srcMobile={imageMobile} height={height} widthPct={widthPct} rounded={rounded} href={imageHref} aspect={aspect} />
+            </div>
+          ) : null}
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (section.type === "giftsets") {
+    return (
+      <SectionShell section={section} index={index}>
+        <div className="cms-copy">
+          <GiftSetsBanner products={products} bundles={bundles} section={section} />
+        </div>
       </SectionShell>
     );
   }
