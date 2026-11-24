@@ -14,6 +14,8 @@ import {
   productGallery,
   productThumbnail,
   localizedName,
+  localizedChoice,
+  normalizeCategoryId,
   optionPreview,
   productOptions,
   productAllowsImage,
@@ -24,6 +26,8 @@ import {
   sellingPrice,
   type Product,
 } from "@/lib/products";
+import { useEdit } from "@/lib/edit-context";
+import { pick } from "@/lib/site";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { useCart } from "@/lib/cart";
 import { revealCartAfterPause } from "@/lib/storefront-ui";
@@ -38,6 +42,7 @@ import { allRememberedFiles, clearRememberedFiles, rememberFile, uploadRegistry 
 export function ProductWorkspace({ product }: { product: Product }) {
   const router = useRouter();
   const { locale, t } = useI18n();
+  const { site } = useEdit();
   const hydrateProduct = useCustomizerStore((s) => s.hydrateProduct);
   const material = useCustomizerStore((s) => s.material);
   const setMaterial = useCustomizerStore((s) => s.setMaterial);
@@ -94,10 +99,17 @@ export function ProductWorkspace({ product }: { product: Product }) {
   }, []);
 
   function viewLabel(view: { id: string; label?: string }) {
-    if (view.label) return view.label;
-    if (view.id === "front") return locale === "ar" ? "الأمام" : "Front";
-    if (view.id === "back") return locale === "ar" ? "الخلف" : "Back";
-    return view.id;
+    const stock =
+      view.id === "front"
+        ? { ar: "الأمام", en: "Front" }
+        : view.id === "back"
+          ? { ar: "الخلف", en: "Back" }
+          : null;
+    const label = view.label?.trim();
+    if (stock && (!label || label.toLowerCase() === stock.en.toLowerCase() || label.toLowerCase() === view.id)) {
+      return locale === "ar" ? stock.ar : stock.en;
+    }
+    return label || view.id;
   }
 
   async function openPreview() {
@@ -216,7 +228,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
       return true;
     } catch (error) {
       hideFlash();
-      toast.error(error instanceof Error ? error.message : "Could not save the design");
+      toast.error(error instanceof Error ? error.message : t("couldNotSave"));
       return false;
     } finally {
       setCartBusy(false);
@@ -224,17 +236,20 @@ export function ProductWorkspace({ product }: { product: Product }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-6 sm:px-8 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5 px-5 py-6 sm:px-8 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
       <Link href="/catalog" className="inline-flex min-h-11 items-center gap-1 text-sm text-oxford lg:col-span-2">
         <BackChevron />
         <EditableCopy k="catalogTitle" />
       </Link>
       <div
-        className={`order-1 lg:col-start-2 lg:row-start-2 ${
+        className={`order-1 min-w-0 lg:col-start-2 lg:row-start-2 ${
           step === "checkout" ? "lg:hidden" : ""
         }`}
       >
-        <p className="text-xs font-medium text-oxford/60">{product.category}</p>
+        <p className="text-xs font-medium text-oxford/60">
+          {pick(site.chrome.catalogSections?.find((item) => item.id === normalizeCategoryId(product.category))?.label, locale) ||
+            localizedChoice(product.category, locale)}
+        </p>
         <h1 className="mt-1 font-heading text-3xl leading-tight text-oxford sm:text-4xl">{localizedName(product, locale)}</h1>
         <PriceTag product={product} size="lg" className="mt-2" />
         {productSpecPoints(product, locale).length ? (
@@ -245,7 +260,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
           </ul>
         ) : null}
       </div>
-      <div className="order-2 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
+      <div className="order-2 min-w-0 space-y-4 lg:col-start-1 lg:row-start-2 lg:row-span-2">
         {allowImage ? (
         <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-boo-teal bg-teal-50/70 px-3 py-3 text-sm font-semibold text-oxford lg:hidden">
           <Upload className="size-4" />
@@ -269,7 +284,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
               try {
                 await activeCanvas.addImageFromFile(file, id);
               } catch {
-                toast.error(`Could not place ${file.name}`);
+                toast.error(t("couldNotPlace"));
               }
             }}
           />
@@ -316,10 +331,10 @@ export function ProductWorkspace({ product }: { product: Product }) {
             return (
               <div
                 key={view.id}
-                className={`w-full max-w-[min(100%,22rem)] origin-center space-y-2 transition duration-300 sm:max-w-md ${
+                className={`w-full min-w-0 max-w-[min(100%,22rem)] origin-center space-y-2 transition duration-300 sm:max-w-md ${
                   active
-                    ? "z-10 scale-100 opacity-100 sm:scale-[1.03]"
-                    : "hidden scale-[0.86] opacity-40 grayscale brightness-90 sm:block"
+                    ? "z-10 opacity-100"
+                    : "hidden opacity-40 grayscale brightness-90 sm:block"
                 }`}
                 onPointerDown={() => {
                   if (multiView) setActiveViewId(view.id);
@@ -388,7 +403,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={photo} alt="" className="size-8 rounded-full object-cover" />
                       ) : null}
-                      {color}
+                      {localizedChoice(color, locale)}
                     </button>
                   );
                 })}
@@ -397,7 +412,7 @@ export function ProductWorkspace({ product }: { product: Product }) {
 
             <div className="mt-5">
               <p className="mb-2 text-sm font-medium">{t("quantity")}</p>
-              <div className="flex items-center gap-3">
+              <div dir="ltr" className="flex items-center gap-3">
                 <button type="button" className="icon-circle size-10" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
                   −
                 </button>

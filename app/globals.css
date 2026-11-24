@@ -237,6 +237,7 @@ html.locale-fading body {
 .cms-block {
   width: var(--cms-w, 100%);
   max-width: 100%;
+  min-width: 0;
   margin-inline: auto;
   padding-top: var(--cms-pad-t, var(--cms-pad, 48px));
   padding-bottom: var(--cms-pad-b, var(--cms-pad, 48px));
@@ -295,6 +296,45 @@ html.locale-fading body {
   object-fit: contain;
 }
 
+.gift-set {
+  container-type: inline-size;
+}
+
+.gift-set-grid,
+.gift-set-tiles {
+  display: grid;
+  min-width: 0;
+}
+
+.gift-set-grid {
+  gap: 2rem;
+}
+
+.gift-set-tiles {
+  gap: 1rem;
+}
+
+@container (min-width: 36rem) {
+  .gift-set-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 52rem) {
+  .gift-set-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+
+  .gift-set-copy {
+    grid-column: span 7;
+  }
+
+  .gift-set-box {
+    grid-column: span 5;
+  }
+}
+
 @media (max-width: 767px) {
   .cms-block-frame {
     padding-inline: max(var(--cms-mx, 0px), 0px);
@@ -311,6 +351,13 @@ html.locale-fading body {
     padding-top: max(0px, min(var(--cms-pad-t, var(--cms-pad, 48px)), 8vw));
     padding-bottom: max(0px, min(var(--cms-pad-b, var(--cms-pad, 48px)), 8vw));
     min-height: min(var(--cms-min-h, 0px), 46vh);
+  }
+
+  [data-cms-editing] .cms-block {
+    width: var(--cms-w, 100%);
+    padding-top: var(--cms-pad-t, var(--cms-pad, 48px));
+    padding-bottom: var(--cms-pad-b, var(--cms-pad, 48px));
+    min-height: var(--cms-min-h, 0px);
   }
 
   .cms-block-cover {

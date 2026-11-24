@@ -59,7 +59,17 @@ export function shopReturnPath() {
   return "/catalog";
 }
 
+function onCartPage() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return path === "/cart";
+}
+
 export function revealCartAfterPause(message?: string) {
+  if (onCartPage()) {
+    if (message) flashStatus(message);
+    return;
+  }
   startRouteLoading();
   window.setTimeout(() => {
     hideRouteLoading();

@@ -70,7 +70,7 @@ export function SiteCanvas({ products, bundles = [] }: { products: Product[]; bu
   }
 
   return (
-    <div className={editing && selectedId ? "sm:pe-[24.5rem]" : ""}>
+    <div className={editing && selectedId ? "sm:pe-[24.5rem]" : ""} data-cms-editing={editing ? "" : undefined}>
       {visible.map((section) => (
         <Fragment key={section.id}>
         {isHome && section.type === "products" && !hasCollections ? <ShopSectionsGrid /> : null}
@@ -605,8 +605,8 @@ function SectionView({
           {hasTitle ? (
             <div className={centered ? "text-center" : "text-start"}>{text("title", "font-heading", "h2")}</div>
           ) : (
-            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
+            <div className="mb-8 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0 flex-1">
                 <EditableCopy
                   k="shopByOccasion"
                   as="span"
@@ -615,10 +615,10 @@ function SectionView({
                 <EditableCopy
                   k="sectionsTitle"
                   as="h2"
-                  className="block font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]"
+                  className="block min-w-0 text-balance font-heading text-2xl font-bold leading-tight text-oxford sm:text-[32px]"
                 />
               </div>
-              <EditableCopy k="sectionsBody" as="p" className="max-w-md text-sm text-muted-foreground" />
+              <EditableCopy k="sectionsBody" as="p" className="min-w-0 max-w-md text-sm text-pretty text-muted-foreground sm:max-w-xs lg:max-w-md" />
             </div>
           )}
           <div className={hasTitle ? "mt-6" : ""}>

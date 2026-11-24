@@ -192,8 +192,8 @@ export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className="bg-cream">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:px-12">
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="mb-8 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 flex-1">
             <EditableCopy
               k="shopByOccasion"
               as="span"
@@ -202,10 +202,10 @@ export function ShopSectionsGrid({ embedded = false }: { embedded?: boolean }) {
             <EditableCopy
               k="sectionsTitle"
               as="h2"
-              className="block font-heading text-2xl font-bold text-oxford sm:text-[32px] sm:leading-[46px]"
+              className="block min-w-0 text-balance font-heading text-2xl font-bold leading-tight text-oxford sm:text-[32px]"
             />
           </div>
-          <EditableCopy k="sectionsBody" as="p" className="max-w-md text-sm text-muted-foreground" />
+          <EditableCopy k="sectionsBody" as="p" className="min-w-0 max-w-md text-sm text-pretty text-muted-foreground sm:max-w-xs lg:max-w-md" />
         </div>
         {grid}
       </div>

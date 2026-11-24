@@ -175,6 +175,40 @@ const SWATCH_COLORS: Record<string, string> = {
   chalk: "#e5e0d8",
 };
 
+const CHOICE_AR: Record<string, string> = {
+  white: "أبيض",
+  black: "أسود",
+  navy: "كحلي",
+  charcoal: "فحمي",
+  sandstone: "رملي",
+  chalk: "طباشيري",
+  silver: "فضي",
+  "natural pine": "صنوبر طبيعي",
+  walnut: "جوز",
+  cherry: "كرز",
+  standard: "قياسي",
+  red: "أحمر",
+  blue: "أزرق",
+  green: "أخضر",
+  pink: "وردي",
+  gold: "ذهبي",
+  beige: "بيج",
+  brown: "بني",
+  gray: "رمادي",
+  grey: "رمادي",
+  yellow: "أصفر",
+  orange: "برتقالي",
+  purple: "بنفسجي",
+  apparel: "ملابس",
+  drinkware: "أكواب",
+  wood: "خشب",
+};
+
+export function localizedChoice(choice: string, locale: string) {
+  if (locale !== "ar") return choice;
+  return CHOICE_AR[choice.trim().toLowerCase()] || choice;
+}
+
 export function optionSwatch(choice: string) {
   const raw = choice.trim();
   if (raw.startsWith("#")) return raw;

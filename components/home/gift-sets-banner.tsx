@@ -53,13 +53,24 @@ export function GiftSetsBanner({
   const title = pick(section.content.title, locale);
   const body = pick(section.content.body, locale);
   const rounded = Boolean(section.style.imageRounded);
+  const fontSize = Math.max(16, section.style.fontSize ?? 44);
+  const padTop = section.style.paddingTop ?? section.style.paddingY ?? 48;
+  const padBottom = section.style.paddingBottom ?? section.style.paddingY ?? 48;
+  const padInline = Math.max(16, Math.round(((padTop + padBottom) / 2) * 0.65));
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] bg-oxford p-8 text-white shadow-2xl dark:bg-card dark:text-foreground dark:ring-1 dark:ring-white/10 sm:p-12 lg:p-16">
+    <div
+      className="gift-set relative w-full min-w-0 max-w-full overflow-hidden rounded-[24px] bg-oxford text-white shadow-2xl dark:bg-card dark:text-foreground dark:ring-1 dark:ring-white/10"
+      style={{
+        paddingTop: Math.max(12, Math.round(padTop * 0.65)),
+        paddingBottom: Math.max(12, Math.round(padBottom * 0.65)),
+        paddingInline: padInline,
+      }}
+    >
       <div className="pointer-events-none absolute -top-24 -start-24 size-80 rounded-full bg-[#C59B27]/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -end-24 size-80 rounded-full bg-[#eec14b]/10 blur-3xl" />
-      <div className="relative z-10 grid items-start gap-10 lg:grid-cols-12">
-        <div className="min-w-0 lg:col-span-7">
+      <div className="gift-set-grid relative z-10 items-start">
+        <div className="gift-set-copy min-w-0">
           {eyebrow ? (
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#C59B27]/20 px-3.5 py-1.5 text-[11px] font-bold text-[#eec14b]">
               <Gift className="size-4" />
@@ -68,14 +79,21 @@ export function GiftSetsBanner({
           ) : null}
           {title ? (
             <h2
-              className="mb-4 font-heading text-[30px] font-bold leading-[44px] tracking-tight sm:text-[44px] sm:leading-[60px]"
-              style={{ fontSize: `clamp(28px, 6vw, ${section.style.fontSize ?? 44}px)` }}
+              className="mb-4 font-heading font-bold tracking-tight"
+              style={{ fontSize, lineHeight: 1.2 }}
             >
               {title}
             </h2>
           ) : null}
-          {body ? <p className="mb-8 max-w-xl text-base leading-7 text-white/70 dark:text-foreground/70">{body}</p> : null}
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {body ? (
+            <p
+              className="mb-8 max-w-xl leading-7 text-white/70 dark:text-foreground/70"
+              style={{ fontSize: Math.max(14, Math.round(fontSize * 0.36)) }}
+            >
+              {body}
+            </p>
+          ) : null}
+          <div className="gift-set-tiles mb-8">
             {tiles.slice(0, 3).map((tile, index) => {
               const Icon = TILE_ICONS[index] ?? Gift;
               const tileTitle = pick(tile.title, locale);
@@ -132,7 +150,7 @@ export function GiftSetsBanner({
             ) : null}
           </div>
         </div>
-        <div className="min-w-0 lg:col-span-5">
+        <div className="gift-set-box min-w-0">
           <div className="rounded-[16px] bg-white p-6 text-center text-oxford shadow-xl dark:bg-background dark:text-foreground">
             {pick(section.content.boxBadge, locale) ? (
               <span className="mb-4 inline-block rounded-full bg-[#FBF5E6] px-3 py-1 text-[11px] font-bold text-[#C59B27] dark:bg-[#C59B27]/15">

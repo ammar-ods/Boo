@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Lock } from "lucide-react";
 import { EditableCopy, EditableLoc } from "@/components/cms/editable-copy";
 import { FreeShippingMeter } from "@/components/shop/free-shipping-meter";
@@ -10,17 +12,23 @@ import { cartBreakdown } from "@/lib/commerce";
 import { cartTotal, useCart, useCartHydrated } from "@/lib/cart";
 import { useEdit } from "@/lib/edit-context";
 import { useI18n } from "@/lib/i18n";
+import { useStorefrontUi } from "@/lib/storefront-ui";
 import { CartLines } from "@/components/shop/cart-lines";
 import type { Bundle } from "@/lib/bundles";
 import type { Product } from "@/lib/products";
 
 export function CartPage({ products, bundles = [] }: { products: Product[]; bundles?: Bundle[] }) {
   const { t, formatPrice } = useI18n();
+  const pathname = usePathname();
+  const setCartOpen = useStorefrontUi((s) => s.setCartOpen);
   const { site, setCommerce } = useEdit();
   const hydrated = useCartHydrated();
   const items = useCart((s) => s.items);
   const subtotal = cartTotal(items);
   const breakdown = cartBreakdown(subtotal, site.commerce);
+  useEffect(() => {
+    if (pathname === "/cart") setCartOpen(false);
+  }, [pathname, setCartOpen, items]);
   if (!hydrated) return null;
 
   return (

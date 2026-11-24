@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PencilLine, Plus } from "lucide-react";
 import {
+  localizedChoice,
   localizedName,
   localizedTagline,
   normalizeCategoryId,
@@ -44,7 +45,8 @@ export function ProductCard({
   const { site } = useEdit();
   const categoryId = normalizeCategoryId(product.category);
   const categoryLabel =
-    pick(site.chrome.catalogSections?.find((item) => item.id === categoryId)?.label, locale) || product.category;
+    pick(site.chrome.catalogSections?.find((item) => item.id === categoryId)?.label, locale) ||
+    localizedChoice(product.category, locale);
   const addItem = useCart((s) => s.addItem);
   const [pressed, setPressed] = useState(false);
   const name = localizedName(product, locale);

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { productAllowsImage, productAllowsText, productOptions, type Product } from "@/lib/products";
+import { localizedChoice, productAllowsImage, productAllowsText, productOptions, type Product } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { useCustomizerStore } from "@/lib/store/customizer-store";
 import { forgetFile, rememberFile } from "@/lib/upload-registry";
@@ -38,7 +38,7 @@ export function ControlsPanel({
   const setQuantity = useCustomizerStore((s) => s.setQuantity);
   const setLaserPreview = useCustomizerStore((s) => s.setLaserPreview);
   const setTextDraft = useCustomizerStore((s) => s.setTextDraft);
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const options = productOptions(product);
   const addAsset = useCustomizerStore((s) => s.addAsset);
   const removeAsset = useCustomizerStore((s) => s.removeAsset);
@@ -60,11 +60,11 @@ export function ControlsPanel({
         try {
           await canvas.addImageFromFile(file, id);
         } catch {
-          toast.error(`Could not place ${file.name}`);
+          toast.error(t("couldNotPlace"));
         }
       }
     },
-    [addAsset, canvas],
+    [addAsset, canvas, t],
   );
 
   const dropzone = useDropzone({
@@ -85,15 +85,15 @@ export function ControlsPanel({
     <div className="space-y-6">
       {bleedWarning ? (
         <div className="rounded-2xl border border-dashed border-red-400 bg-red-50 px-3 py-2 text-sm text-red-700">
-          Artwork crosses the safe zone. This may clip or bleed in production.
+          {t("bleedWarning")}
         </div>
       ) : null}
 
       {allowImage ? (
       <section className="space-y-2">
-        <h3 className="font-heading text-lg">Upload artwork</h3>
+        <h3 className="font-heading text-lg">{t("customize")}</h3>
         <p className="text-sm text-oxford/70">
-          Adding to <span className="font-semibold">{activeViewId === "back" ? "back" : "front"}</span>. Select a side on the photos first.
+          {t("artworkOnSide").replace("{side}", activeViewId === "back" ? t("sideBack") : t("sideFront"))}
         </p>
         <div
           {...dropzone.getRootProps()}
@@ -101,9 +101,9 @@ export function ControlsPanel({
         >
           <input {...dropzone.getInputProps()} />
           <Upload className="mx-auto mb-2 size-5 text-boo-teal" />
-          <p className="font-heading">Tap to upload, or drop PNG, JPG, SVG, or PDF</p>
+          <p className="font-heading">{t("dropArtwork")}</p>
           <p className="text-xs text-muted-foreground">
-            You can also tap the dashed print area on the mockup.
+            {t("dropArtworkHint")}
           </p>
         </div>
         {assets.length ? (
@@ -130,7 +130,7 @@ export function ControlsPanel({
                     removeAsset(asset.id);
                   }}
                 >
-                  Remove
+                  {t("remove")}
                 </button>
               </li>
             ))}
@@ -141,21 +141,21 @@ export function ControlsPanel({
 
       {allowText ? (
       <section className="space-y-3">
-        <h3 className="font-heading text-lg">Text</h3>
+        <h3 className="font-heading text-lg">{t("textHeading")}</h3>
         <div className="space-y-1.5">
-          <Label>Copy</Label>
+          <Label>{t("copyLabel")}</Label>
           <Input
             value={textDraft.content}
             onChange={(e) => {
               setTextDraft({ content: e.target.value });
               canvas?.applyTextDraft();
             }}
-            placeholder="Type to add text on the product"
+            placeholder={t("textPlaceholder")}
           />
         </div>
         {selectedKind !== "none" ? (
           <Button type="button" variant="outline" onClick={() => canvas?.deleteSelected()}>
-            Remove
+            {t("remove")}
           </Button>
         ) : null}
       </section>
@@ -173,10 +173,10 @@ export function ControlsPanel({
           />
           <div>
             <p className="flex items-center gap-1 font-heading">
-              <Sparkles className="size-4 text-boo-orange" /> Laser etch preview
+              <Sparkles className="size-4 text-boo-orange" /> {t("laserTitle")}
             </p>
             <p className="text-xs text-muted-foreground">
-              Grayscale high-contrast filter approximates wood/acrylic engraving.
+              {t("laserBody")}
             </p>
           </div>
         </section>
@@ -192,20 +192,22 @@ export function ControlsPanel({
             }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {(value) => localizedChoice(typeof value === "string" ? value : material, locale)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {options.choices.map((item) => (
-                <SelectItem key={item} value={item}>
-                  {item}
+                <SelectItem key={item} value={item} label={localizedChoice(item, locale)}>
+                  {localizedChoice(item, locale)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Quantity</Label>
-          <div className="flex items-center gap-2">
+          <Label>{t("quantity")}</Label>
+          <div dir="ltr" className="flex items-center gap-2">
             <Button
               type="button"
               size="icon-sm"

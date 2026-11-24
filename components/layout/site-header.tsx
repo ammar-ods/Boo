@@ -85,8 +85,8 @@ export function SiteHeader() {
     ) : null}
     <header className="sticky top-0 z-40 overflow-visible">
       <div className="bg-oxford text-white/90 dark:bg-[#111820] dark:text-foreground/90" style={{ fontSize: "var(--announce-font-size, 12px)" }}>
-        <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 py-2 sm:px-8 lg:px-12">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-1 px-4 py-2 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-3 lg:px-12">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 p-0.5 text-[12px] font-medium backdrop-blur-sm dark:border-foreground/20 dark:bg-foreground/8">
               <button
@@ -114,15 +114,15 @@ export function SiteHeader() {
             </div>
             {chatHref ? (
               <>
-                <span className="hidden opacity-30 sm:inline">|</span>
+                <span className="hidden opacity-30 lg:inline">|</span>
                 <a
                   href={chatHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-white transition-colors hover:text-[#25D366] dark:text-foreground"
+                  className="flex min-w-0 items-center gap-1 text-white transition-colors hover:text-[#25D366] dark:text-foreground"
                 >
-                  <MessageCircle className="size-4" />
-                  <span className="hidden sm:inline">
+                  <MessageCircle className="size-4 shrink-0" />
+                  <span className="hidden truncate lg:inline">
                     <EditableCopy k="quickWhatsApp" />
                   </span>
                 </a>
@@ -132,33 +132,33 @@ export function SiteHeader() {
           {site.chrome.showAnnouncement ? (
             <EditableLoc
               as="p"
-              className="max-w-[min(42rem,46vw)] truncate text-center"
+              className="min-w-0 text-balance text-center leading-snug lg:truncate"
               value={site.chrome.announcement}
               fallback={t("freeShip")}
               onChange={(announcement) => setChrome({ announcement })}
             />
           ) : (
-            <span />
+            <span className="hidden lg:block" />
           )}
-          <span />
+          <span className="hidden lg:block" />
         </div>
       </div>
       {site.chrome.showHeader ? (
         <div className="relative border-b border-oxford/8 bg-card/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] backdrop-blur-xl">
-          <div className={`mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:gap-6 sm:px-8 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
+          <div className={`mx-auto flex min-w-0 max-w-7xl items-center gap-3 px-5 py-3 sm:gap-4 sm:px-8 lg:px-12 ${isAdmin ? "md:pe-44" : ""}`}>
             <Link href="/" className="shrink-0">
               <BooLogo src={site.chrome.logo} />
             </Link>
-            <form className="relative mx-4 hidden min-w-0 flex-1 md:block" onSubmit={submitSearch}>
+            <form className="relative mx-2 hidden min-w-0 flex-1 md:block" onSubmit={submitSearch}>
               <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-oxford/40" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={pick(site.chrome.copy.searchPlaceholder, locale) || t("searchPlaceholder")}
-                className="w-full rounded-full bg-background py-2.5 ps-11 pe-4 text-sm text-foreground shadow-[0_2px_10px_rgba(10,37,64,0.04)] outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-oxford/20"
+                className="w-full min-w-0 rounded-full bg-background py-2.5 ps-11 pe-4 text-sm text-foreground shadow-[0_2px_10px_rgba(10,37,64,0.04)] outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-oxford/20"
               />
             </form>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
@@ -181,7 +181,7 @@ export function SiteHeader() {
                     </span>
                   ) : null}
                 </span>
-                <span className="hidden flex-col text-start sm:flex">
+                <span className="hidden flex-col text-start lg:flex">
                   <span className="text-[11px] font-semibold text-foreground/50">
                     <EditableCopy k="cart" />
                   </span>

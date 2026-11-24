@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Lock, Minus, Plus, X } from "lucide-react";
 import { cartCount, cartTotal, useCart, useCartHydrated } from "@/lib/cart";
 import { EditableCopy } from "@/components/cms/editable-copy";
+import { localizedChoice } from "@/lib/products";
 import { useI18n } from "@/lib/i18n";
 import { useStorefrontUi } from "@/lib/storefront-ui";
 
@@ -78,7 +79,7 @@ export function CartPreview() {
                         </p>
                         {item.color ? (
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            <EditableCopy k="color" />: <span className="text-oxford">{item.color}</span>
+                            <EditableCopy k="color" />: <span className="text-oxford">{localizedChoice(item.color, locale)}</span>
                           </p>
                         ) : null}
                         {item.dimensions?.length || item.dimensions?.width ? (
