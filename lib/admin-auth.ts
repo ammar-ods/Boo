@@ -37,6 +37,7 @@ export async function createAdminSessionToken() {
 }
 
 export async function isValidAdminSession(token?: string | null) {
+  if (process.env.NODE_ENV === "production" && !productionSecretReady()) return false;
   if (!token) return false;
   const parts = token.split(".");
   if (parts.length !== 3) return false;
@@ -52,7 +53,13 @@ export async function isValidAdminSession(token?: string | null) {
   return Number(exp) > Date.now();
 }
 
+function productionSecretReady() {
+  const value = process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD || "";
+  return Boolean(value) && value !== "boo-studio" && value !== "change-me-in-env";
+}
+
 export function verifyAdminPassword(password: string) {
+  if (process.env.NODE_ENV === "production" && !productionSecretReady()) return false;
   const expected = process.env.ADMIN_PASSWORD || "boo-studio";
   return password === expected;
 }

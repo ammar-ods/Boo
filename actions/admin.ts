@@ -35,7 +35,13 @@ export async function logoutAdmin() {
   redirect("/admin/login");
 }
 
+async function requireAdmin() {
+  const token = (await cookies()).get(adminCookieName())?.value;
+  if (!(await isValidAdminSession(token))) redirect("/admin/login");
+}
+
 export async function updateInquiryStatus(formData: FormData) {
+  await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const status = inquiryStatusSchema.parse(String(formData.get("status") ?? "pending"));
   const quotedRaw = String(formData.get("quoted_price") ?? "");
@@ -54,6 +60,7 @@ export async function updateInquiryStatus(formData: FormData) {
 }
 
 export async function deleteInquiry(formData: FormData) {
+  await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id) redirect("/admin/inquiries?error=missing");
   try {

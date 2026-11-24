@@ -1,7 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { adminCookieName, isValidAdminSession } from "@/lib/admin-auth";
 import {
   MUG_WRAP_FLAT,
   normalizeCategoryId,
@@ -230,7 +232,13 @@ async function uploadViewFile(slug: string, file: File) {
   );
 }
 
+async function requireAdmin() {
+  const token = (await cookies()).get(adminCookieName())?.value;
+  if (!(await isValidAdminSession(token))) redirect("/admin/login");
+}
+
 export async function createProduct(formData: FormData) {
+  await requireAdmin();
   try {
     const product = await productFromForm(formData);
     const existing = await getCatalogProduct(product.slug);
@@ -250,6 +258,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(formData: FormData) {
+  await requireAdmin();
   try {
     const originalSlug = String(formData.get("originalSlug") || "");
     const current = await getCatalogProduct(originalSlug);
@@ -281,6 +290,7 @@ function isNextRedirect(error: unknown) {
 }
 
 export async function removeProduct(formData: FormData) {
+  await requireAdmin();
   const slug = String(formData.get("slug") || "");
   if (slug) {
     await deleteProduct(slug);

@@ -16,7 +16,7 @@ export function CartLines({
   compact?: boolean;
 }) {
   const { t, locale, formatPrice } = useI18n();
-  const setQuantity = useCart((s) => s.setQuantity);
+  const bumpQuantity = useCart((s) => s.bumpQuantity);
   const remove = useCart((s) => s.remove);
 
   return (
@@ -56,7 +56,7 @@ export function CartLines({
                     </p>
                   ) : null}
                 </div>
-                <p className="shrink-0 text-sm font-semibold text-oxford">{formatPrice(editable ? item.priceEgp : line)}</p>
+                <p className="shrink-0 text-sm font-semibold text-oxford">{formatPrice(line)}</p>
               </div>
               {editable ? (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -64,7 +64,7 @@ export function CartLines({
                     <button
                       type="button"
                       className="grid size-7 place-items-center text-oxford/50 hover:text-oxford"
-                      onClick={() => setQuantity(item.id, item.quantity - 1)}
+                      onClick={() => bumpQuantity(item.id, -1)}
                       aria-label={t("quantity")}
                     >
                       <Minus className="size-3.5" />
@@ -73,7 +73,7 @@ export function CartLines({
                     <button
                       type="button"
                       className="grid size-7 place-items-center text-oxford/50 hover:text-oxford"
-                      onClick={() => setQuantity(item.id, item.quantity + 1)}
+                      onClick={() => bumpQuantity(item.id, 1)}
                       aria-label={t("quantity")}
                     >
                       <Plus className="size-3.5" />

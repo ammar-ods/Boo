@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCatalogProduct, persistOrderMedia, saveOrder, nextReferenceCode, getSite } from "@/lib/local-db";
+import { getBundles, getCatalogProduct, persistOrderMedia, saveOrder, nextReferenceCode, getSite } from "@/lib/local-db";
 import { cartBreakdown, matchPromo } from "@/lib/commerce";
-import { productThumbnail } from "@/lib/products";
+import { productThumbnail, sellingPrice } from "@/lib/products";
 
 type CheckoutItem = {
   slug: string;
@@ -31,7 +31,27 @@ export async function POST(request: Request) {
       items?: CheckoutItem[];
     };
     const site = await getSite();
-    const items = Array.isArray(body.items) ? body.items : [];
+    const requested = Array.isArray(body.items) ? body.items : [];
+    const bundles = await getBundles();
+    const items: CheckoutItem[] = [];
+    for (const item of requested) {
+      const quantity = Math.floor(Number(item.quantity));
+      if (!Number.isFinite(quantity) || quantity < 1 || quantity > 99) {
+        return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
+      }
+      const product = item.slug ? await getCatalogProduct(item.slug) : undefined;
+      const bundle = bundles.find((row) => row.slug === item.slug);
+      const priceEgp = product && !product.archived ? sellingPrice(product) : bundle ? Math.max(0, Number(bundle.priceEgp) || 0) : 0;
+      if (!priceEgp) {
+        return NextResponse.json({ error: "A cart item is no longer available" }, { status: 400 });
+      }
+      items.push({
+        ...item,
+        quantity,
+        priceEgp,
+        name: product?.name || bundle?.name || item.name || item.slug,
+      });
+    }
     const paymentMethod = body.payment?.method === "online" ? "online" : "cod";
     const fields = body.fields ?? {};
     const name = String(fields.name || body.name || "").trim();
@@ -151,8 +171,7 @@ export async function POST(request: Request) {
       cleanup_requested_at: null,
     });
     return NextResponse.json({ ref: order.reference_code });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Checkout failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
   }
 }

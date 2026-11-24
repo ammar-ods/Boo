@@ -32,6 +32,7 @@ type CartState = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "id"> & { id?: string }) => void;
   setQuantity: (id: string, quantity: number) => void;
+  bumpQuantity: (id: string, delta: number) => void;
   remove: (id: string) => void;
   clear: () => void;
 };
@@ -62,12 +63,25 @@ export const useCart = create<CartState>()(
         set({ items: [...get().items, { ...item, id }] });
       },
       setQuantity: (id, quantity) => {
-        if (quantity < 1) {
+        const next = Math.floor(Number(quantity));
+        if (!Number.isFinite(next) || next < 1) {
           set({ items: get().items.filter((row) => row.id !== id) });
           return;
         }
         set({
-          items: get().items.map((row) => (row.id === id ? { ...row, quantity } : row)),
+          items: get().items.map((row) => (row.id === id ? { ...row, quantity: Math.min(99, next) } : row)),
+        });
+      },
+      bumpQuantity: (id, delta) => {
+        const current = get().items.find((row) => row.id === id);
+        if (!current) return;
+        const next = current.quantity + delta;
+        if (next < 1) {
+          set({ items: get().items.filter((row) => row.id !== id) });
+          return;
+        }
+        set({
+          items: get().items.map((row) => (row.id === id ? { ...row, quantity: Math.min(99, next) } : row)),
         });
       },
       remove: (id) => set({ items: get().items.filter((row) => row.id !== id) }),
